@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: new-felix-total:latest
+    container_name: new_fix_app
+    restart: unless-stopped
+    ports:
+      # ホスト:コンテナ。社内サーバーの <サーバーIP>:8090 でアクセス。
+      - "8090:80"
+    environment:
+      APP_NAME: "FELIX 実行予算"
+      APP_ENV: production
+      # 本番では必ず自前のキーに変更すること（`php artisan key:generate --show`）。
+      APP_KEY: "base64:6Tp4FxaoPVYxd6hg+OT++z47uIKLc7V0OE+exVwwCpE="
+      APP_DEBUG: "false"
+      # ★アクセスするURLに合わせる（アセットURL生成に使用）。例: http://192.168.10.50:8090
+      APP_URL: "http://localhost:8090"
+      LOG_CHANNEL: stderr
+
+      # 既存 felix_total の MySQL(fix_db) へ接続。
+      # fix_db は felix_total_default 上で alias `db` / `fix_db` で解決できる。
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_DATABASE: fix
+      DB_USERNAME: root
+      DB_PASSWORD: root_password
+      DB_CHARSET: utf8mb4
+      DB_COLLATION: utf8mb4_unicode_ci
+
+      # 自前DBにテーブルを作らないため file/sync を使用。
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
+    networks:
+      - felix_shared
+
+networks:
+  # 既存 felix_total の MySQL が居るネットワークに相乗りする。
+  felix_shared:
+    external: true
+    name: felix_total_default

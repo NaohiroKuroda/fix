@@ -1,94 +1,131 @@
 # new_felix_total 社内サーバー Docker デプロイ手順
 
-`new_felix_total` 単体を Docker 化し、既存 felix_total の MySQL（`fix_db`）へ接続して
-実装画面（実行予算一覧・詳細・ステータス管理）を社内ネットワークに公開する手順。
+`new_felix_total` を既存 felix_total と **同じ階層（兄弟ディレクトリ）** に置き、felix_total の
+MySQL（`fix_db`）へ接続して実装画面を社内ネットワークに **8090** で公開する。
 
-## 構成概要
+## 配置（兄弟ディレクトリ）
+
+```
+<親ディレクトリ>/
+├── felix_total/            ← 既存（サーバー稼働中。fix_db / shared-net を作成済み）
+│   ├── docker-compose.yml
+│   └── .env
+└── new_felix_total/        ← ここに配置
+    ├── docker-compose.yml  … 本アプリ用（8090 / shared-net / fix_db 接続）
+    ├── docker.env          … ★各自で作成（機密。Git管理外）
+    ├── docker.env.example  … テンプレート
+    └── Dockerfile
+```
+
+## 構成
 
 ```
 [ブラウザ] ──:8090──▶ new_fix_app (PHP8.4 + Apache, Inertia/Vue)
-                          │  DB_HOST=db (felix_total_default 上の alias)
+                          │  shared-net 経由, DB_HOST=fix_db
                           ▼
-                       fix_db (MySQL5.7 / DB:fix)   ← 既存 felix_total スタック
+                       fix_db (MySQL5.7 / DB:fix)   ← 既存 felix_total
 ```
 
-- Web: `new_fix_app` コンテナ（Apache, docroot=public）。ホスト **8090** で公開。
-- DB: 既存 `fix_db` に接続。**マイグレーションは行わず**読み取り中心（session/cache/queue は file/sync）。
-- ネットワーク: 既存 `felix_total_default`（`fix_db` が居る）に相乗り。
+- 既存 `fix_db` が居る外部ネットワーク **`shared-net`** に相乗りして接続。
+- DB認証・APP_URL 等のサイト固有値は **`docker.env`** から読む（配置場所に依存しない）。
+- **マイグレーションは行わない**（session/cache/queue は file/sync）。
 
 ## 前提
 
-1. サーバーで既存 felix_total の Docker スタックが起動済み（`fix_db` が Up）。
-   ```bash
-   docker ps | grep fix_db
-   docker network ls | grep felix_total_default   # ← このネットワークが必要
-   ```
-   ※ ネットワーク名が異なる場合は `docker-compose.yml` の `networks.felix_shared.name` を実際の名前に変更。
-2. イメージビルドにはインターネット接続が必要（base image / npm / composer / Web フォント取得）。
-   オフラインサーバーの場合は「オフライン配置」を参照。
+```bash
+docker ps | grep fix_db                 # 既存DBが Up
+docker network ls | grep shared-net     # 外部ネットワークが存在
+```
 
 ## デプロイ手順
 
-1. `new_felix_total/` ディレクトリ一式をサーバーへ配置（git clone / rsync 等）。
+> 社内サーバーが **インターネット未接続** の場合（base image / npm / composer を取得できない）は
+> サーバー上でビルドできない。**ネット接続のある端末でイメージを作って持ち込む**（手順A）。
+> サーバーがネット接続できる場合のみ手順B（サーバー上でビルド）。
 
-2. **`docker-compose.yml` の environment を 2 箇所だけ編集**：
-   - `APP_URL` を **実際のアクセスURL**に変更（重要。アセットURLに使われる）
-     例: `APP_URL: "http://192.168.10.50:8090"`
-   - `APP_KEY` を自前のキーに変更（推奨）
-     ```bash
-     # ローカルで生成して値をコピー
-     docker run --rm new-felix-total:latest php artisan key:generate --show
-     ```
+### 重要: CPUアーキテクチャを合わせる
+イメージは **サーバーと同じアーキテクチャ** でビルドすること。サーバーで確認：
+```bash
+uname -m          # x86_64 → amd64 / aarch64 → arm64
+```
+M系Macでビルドして amd64 サーバーに載せる場合は `--platform linux/amd64` が必須
+（合わないと `exec format error` で起動しない）。
 
-3. ビルド & 起動：
+### 手順A: オフラインサーバー（イメージ持ち込み）★今回はこちら
+
+1. **ネット接続のある端末**（例: 開発Mac）でイメージをビルドして保存：
    ```bash
    cd new_felix_total
-   docker compose up -d --build
+   # サーバーが x86_64 の場合
+   docker build --platform linux/amd64 -t new-felix-total:latest .
+   docker save new-felix-total:latest | gzip > new-felix-total-amd64.tar.gz
    ```
 
-4. アクセス確認：
-   ```
-   http://<サーバーIP>:8090/
-   ```
-   - 実行予算一覧（トップ）
-   - 物件名クリック → `/estimates/{id}` 詳細（新規タブ）
-   - サイドメニュー「ステータス管理」→ `/status-management`
+2. `new-felix-total-amd64.tar.gz` と `new_felix_total/` 一式（docker-compose.yml / docker.env.example 等。
+   `vendor` や `node_modules` は不要）をサーバーへ転送（scp / USB 等）。
+   配置先は felix_total と同じ階層。
 
-## 運用コマンド
+3. サーバーでイメージを読み込み：
+   ```bash
+   cd new_felix_total
+   gunzip -c new-felix-total-amd64.tar.gz | docker load
+   ```
+
+4. `docker.env` を作成・記入：
+   ```bash
+   cp docker.env.example docker.env
+   vi docker.env
+   ```
+   - **`APP_URL`**（必須）… 実アクセスURL。例 `http://192.168.10.180:8090`
+   - **`DB_PASSWORD`** … felix_total の `.env` の `MYSQL_ROOT_PASSWORD` と同じ値（空なら空）
+   - **`DB_DATABASE`** … ★環境によって名前が違う。必ずサーバーで確認：
+     ```bash
+     grep DB_DATABASE ../felix_total/.env
+     # または
+     docker exec fix_db mysql -uroot -p<パスワード> -e "SHOW DATABASES;"
+     ```
+   - `DB_USERNAME`（既定 `root`）… 通常そのまま
+
+5. **ビルドせずに**起動（イメージは読み込み済み）：
+   ```bash
+   docker compose up -d --no-build
+   ```
+
+6. アクセス：`http://<サーバーIP>:8090/`
+
+### 手順B: サーバーがネット接続できる場合
+
+```bash
+cd new_felix_total
+cp docker.env.example docker.env && vi docker.env   # APP_URL / DB_PASSWORD を記入
+docker compose up -d --build
+```
+
+## 運用
 
 | 操作 | コマンド |
 | --- | --- |
-| 起動 | `docker compose up -d` |
-| 停止 | `docker compose down` |
-| 再ビルド（コード更新後） | `docker compose up -d --build` |
+| 起動 / 停止 | `docker compose up -d` / `docker compose down` |
+| 再ビルド（更新後） | `docker compose up -d --build` |
 | ログ | `docker logs -f new_fix_app` |
-| コンテナ内シェル | `docker exec -it new_fix_app bash` |
 
-## ポイント / 注意
+## 注意点
 
-- **APP_URL は必ずアクセスURLに合わせる**こと。`@vite` のアセットURLが絶対パス（APP_URL基準）で出力されるため、
-  localhost のままサーバーIPでアクセスすると CSS/JS が 404 になる。
-- ポート 8090 が使用中なら `docker-compose.yml` の `ports` を変更（例 `"8095:80"`）。合わせて APP_URL も変更。
-- DB は既存 `fix_db` を共有。`new_fix_app` 側でテーブル作成・マイグレーションは行わない設計。
-- 文字コードは `utf8mb4`（既存データ準拠）。
-
-## オフライン配置（サーバーに外部接続が無い場合）
-
-ネット接続のある端末でイメージを作って持ち込む：
-```bash
-# ビルド端末
-cd new_felix_total
-docker build -t new-felix-total:latest .
-docker save new-felix-total:latest | gzip > new-felix-total.tar.gz
-
-# サーバー
-docker load < new-felix-total.tar.gz
-# docker-compose.yml の build 行を消すか、--no-build で起動
-docker compose up -d --no-build
-```
+- **APP_URL は必ずアクセスURLに合わせる**（最頻出のトラブル要因）。変更後 `docker compose up -d` で再キャッシュ。
+- `docker.env` は機密（DBパスワード等）を含む。Git にコミットしない（`.gitignore` 済）。
+- ポート 8090 が使用中なら compose の `ports` と `docker.env` の `APP_URL` を合わせて変更。
+- `shared-net` の名称がサーバーで異なる場合は compose の `networks.shared-net.name` を実名に。
+- 既存DBは共有のみ。new 側でテーブル作成・マイグレーションはしない。
 
 ## トラブルシュート
 
-- 画面は出るが CSS/JS が当たらない → `APP_URL` がアクセスURLと不一致。修正後 `docker compose up -d`（再起動で config 再キャッシュ）。
-- DB 接続エラー（`getaddrinfo for db failed` 等）→ `felix_total_default` に乗れていない。ネットワーク名を確認し `docker network ls`。
-- 502/403 → `docker logs new_fix_app` を確認。storage 権限はエントリポイントで補正済み。
+- `failed to resolve ... docker/dockerfile:1` / `registry-1.docker.io ... connection refused`
+  → サーバーがオフラインでビルドしようとしている。**手順A（イメージ持ち込み + `--no-build`）** を使う。
+- `exec format error` で起動しない → イメージのアーキテクチャ不一致。
+  サーバーで `uname -m` を確認し、`docker build --platform linux/amd64`（または arm64）で作り直す。
+- 画面は出るが CSS/JS 当たらない → `docker.env` の `APP_URL` 不一致。修正後 `docker compose up -d --no-build`。
+- `getaddrinfo for fix_db failed` → `shared-net` に乗れていない／DB未起動。`docker network ls`・`docker ps` を確認。
+- DB 認証エラー → `docker.env` の `DB_USERNAME`/`DB_PASSWORD` を felix_total の値に合わせる。
+
+> 検証: ローカルで `fix_db` を一時的に `shared-net` へ接続し、本 compose + `docker.env` で起動
+> → 実行予算 462件を fix_db から取得・全ルート 200 を確認済み（サーバーと同一機構）。

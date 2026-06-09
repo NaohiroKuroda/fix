@@ -177,7 +177,10 @@ export interface ExecutionBudget {
 export interface BudgetFilters {
     id: string;
     keyword: string;
+    dateColumn: string;
     monthFrom: string;
     monthTo: string;
+    dealerName: string;
+    ownerBankName: string;
     sort: string;
 }

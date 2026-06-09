@@ -9,13 +9,12 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Wallet, MapPin, CalendarDays, ChevronDown, Search } from 'lucide-vue-next';
+import { yen } from '@/lib/format';
 import type { BudgetSection, EstimateDetail } from '@/types';
 
 const props = defineProps<{
     budget: EstimateDetail;
 }>();
-
-const yen = (n: number | null): string => (n === null ? '—' : '¥' + n.toLocaleString('ja-JP'));
 
 const s = props.budget.summary;
 
@@ -61,21 +60,21 @@ const toggle = (key: string): void => {
 
                 <!-- 財務サマリ -->
                 <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div class="rounded-lg border bg-muted/30 px-4 py-2.5">
-                        <div class="text-[10px] text-muted-foreground">土地建売価(税抜)</div>
-                        <div class="font-mono text-sm font-semibold tabular-nums">{{ yen(s.sellTotal) }}</div>
+                    <div class="rounded-xl border bg-card px-4 py-3 shadow-xs transition-colors hover:border-primary/30">
+                        <div class="text-[11px] font-medium text-muted-foreground">土地建売価(税抜)</div>
+                        <div class="mt-0.5 font-mono text-base font-semibold tabular-nums">{{ yen(s.sellTotal) }}</div>
                     </div>
-                    <div class="rounded-lg border bg-muted/30 px-4 py-2.5">
-                        <div class="text-[10px] text-muted-foreground">土地建原価(税抜)</div>
-                        <div class="font-mono text-sm tabular-nums">{{ yen(s.costTotal) }}</div>
+                    <div class="rounded-xl border bg-card px-4 py-3 shadow-xs transition-colors hover:border-primary/30">
+                        <div class="text-[11px] font-medium text-muted-foreground">土地建原価(税抜)</div>
+                        <div class="mt-0.5 font-mono text-base tabular-nums">{{ yen(s.costTotal) }}</div>
                     </div>
-                    <div class="rounded-lg border bg-muted/30 px-4 py-2.5">
-                        <div class="text-[10px] text-muted-foreground">粗利額</div>
-                        <div class="font-mono text-sm font-semibold tabular-nums text-primary">{{ yen(s.profitTotal) }}</div>
+                    <div class="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 shadow-xs">
+                        <div class="text-[11px] font-medium text-primary/70">粗利額</div>
+                        <div class="mt-0.5 font-mono text-base font-bold tabular-nums text-primary">{{ yen(s.profitTotal) }}</div>
                     </div>
-                    <div class="rounded-lg border bg-muted/30 px-4 py-2.5">
-                        <div class="text-[10px] text-muted-foreground">粗利率</div>
-                        <div class="font-mono text-sm font-semibold tabular-nums">{{ s.profitRate !== null ? s.profitRate + '%' : '—' }}</div>
+                    <div class="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 shadow-xs">
+                        <div class="text-[11px] font-medium text-primary/70">粗利率</div>
+                        <div class="mt-0.5 font-mono text-base font-bold tabular-nums text-primary">{{ s.profitRate !== null ? s.profitRate + '%' : '—' }}</div>
                     </div>
                 </div>
             </div>

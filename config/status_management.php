@@ -10,10 +10,27 @@ return [
     // 1ページあたりの案件数（ページネーション）
     'per_page' => 10,
 
+    // ヘッダー右に表示するユーザー名（ログイン無し。docker.env の DISPLAY_USER_NAME で変更可）
+    'display_user' => env('DISPLAY_USER_NAME', '管理者'),
+
     // 実行予算一覧の並べ替え選択肢
+    // date_* は「対象日付カラム(budget_date_column)」に対して並べ替える。
     'budget_sort' => [
         'id_desc' => '新着順',
-        'handover_asc' => '引渡日が近い順',
+        'date_desc' => '対象日付: 新しい順',
+        'date_asc' => '対象日付: 古い順',
+    ],
+
+    // 実行予算一覧の「日付カラム選択」フィルタの選択肢。
+    // ここで選んだ日付列に対して、月度範囲(monthFrom/monthTo)と date_* 並べ替えが効く。
+    // 旧 felix_total の config('constant.estimate_date_column') を踏襲。
+    'budget_date_column' => [
+        'delivery_date' => '販売引渡日',
+        'purchase_contract_date' => '仕入契約日',
+        'purchase_settlement_date' => '仕入決済日',
+        'sail_start_date' => '販売掲載日',
+        'sales_contract_payment_date' => '販売買付申込入金日',
+        'sales_contract_date' => '販売契約日',
     ],
 
     // 選定承認（建設部/設計部/常務）の状態ラベル: tmp_status / design_status / fix_status

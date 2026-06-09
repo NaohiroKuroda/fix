@@ -1,0 +1,48 @@
+# =============================================================
+# 本番（社内サーバー）用 docker-compose（new_felix_total）
+#
+# 別リポジトリとして clone し、felix_total を docker 起動した状態で使う。
+# felix_total の MySQL はホストの 3307 に公開されているため、
+# host.docker.internal:3307 経由で接続する（felix_total 側は無変更）。
+#
+# 起動: docker compose -f docker-compose.prod.yml up -d --build
+# アクセス: http://<サーバーIP>:8090/
+# =============================================================
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: new-felix-total:latest
+    container_name: new_fix_app
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+
+    # サイト固有値（APP_URL / APP_KEY / DB_DATABASE / DB_USERNAME / DB_PASSWORD）を読む。
+    # docker.env.example をコピーして docker.env を作成し記入する。
+    env_file:
+      - docker.env
+
+    # 構造的な固定値（env_file より優先される）
+    environment:
+      APP_NAME: "FELIX 実行予算"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_CHANNEL: stderr
+
+      # felix_total の公開 MySQL（ホスト 3307）へ接続。
+      DB_CONNECTION: mysql
+      DB_HOST: host.docker.internal
+      DB_PORT: "3307"
+      DB_CHARSET: utf8mb4
+      DB_COLLATION: utf8mb4_unicode_ci
+
+      # 既存DBにテーブルを作らないため file/sync
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
+
+    # Linux でも host.docker.internal を有効化（Docker Desktop は標準で解決）
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

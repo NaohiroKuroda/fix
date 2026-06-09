@@ -37,6 +37,7 @@ class ExecutionBudgetController extends Controller
             ],
             'filters' => $request->filtersForView(),
             'sortOptions' => config('status_management.budget_sort'),
+            'dateColumnOptions' => config('status_management.budget_date_column'),
         ]);
     }
 }

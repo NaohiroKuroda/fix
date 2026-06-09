@@ -19,3 +19,5 @@ database/*.sqlite
 .serena
 tests
 *.log
+docker.env
+*.tar.gz

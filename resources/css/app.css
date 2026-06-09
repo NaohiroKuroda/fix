@@ -118,5 +118,15 @@
         background-color: var(--background);
         color: var(--foreground);
         -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        /* 日本語のプロポーショナル詰め(palt)＋カーニング・合字で字間を最適化 */
+        font-feature-settings: 'palt' 1, 'kern' 1, 'liga' 1;
+        letter-spacing: 0.01em;
+    }
+    /* 数値列は等幅で桁を揃える（金額・日付の視認性向上） */
+    .tabular-nums {
+        font-feature-settings: 'tnum' 1;
+        letter-spacing: 0;
     }
 }

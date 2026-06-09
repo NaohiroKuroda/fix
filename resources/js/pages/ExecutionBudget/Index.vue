@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import {
     Wallet, Search, RotateCcw, SlidersHorizontal, Hash,
-    PackageSearch, ChevronLeft, ChevronRight, ChevronDown, ArrowDownUp,
+    PackageSearch, ChevronLeft, ChevronRight, ChevronDown, ArrowDownUp, CalendarRange,
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -26,6 +26,7 @@ const props = defineProps<{
     pagination: Pagination;
     filters: BudgetFilters;
     sortOptions: LabelMap;
+    dateColumnOptions: LabelMap;
 }>();
 
 const form = reactive<BudgetFilters>({ ...props.filters });
@@ -35,8 +36,11 @@ function buildQuery(extra: Record<string, string | number> = {}): Record<string,
     const q: Record<string, string | number> = {};
     if (form.id) q.id = form.id;
     if (form.keyword) q.keyword = form.keyword;
+    if (form.dateColumn && form.dateColumn !== 'delivery_date') q.dateColumn = form.dateColumn;
     if (form.monthFrom) q.monthFrom = form.monthFrom;
     if (form.monthTo) q.monthTo = form.monthTo;
+    if (form.dealerName) q.dealerName = form.dealerName;
+    if (form.ownerBankName) q.ownerBankName = form.ownerBankName;
     if (form.sort && form.sort !== 'id_desc') q.sort = form.sort;
     return { ...q, ...extra };
 }
@@ -53,8 +57,11 @@ function goToPage(page: number): void {
 function reset(): void {
     form.id = '';
     form.keyword = '';
+    form.dateColumn = 'delivery_date';
     form.monthFrom = '';
     form.monthTo = '';
+    form.dealerName = '';
+    form.ownerBankName = '';
     form.sort = 'id_desc';
     submit();
 }
@@ -64,7 +71,7 @@ function reset(): void {
     <Head title="実行予算一覧" />
     <AppLayout>
         <!-- ヘッダー -->
-        <header class="sticky top-0 z-40 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <header class="sticky top-14 z-30 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
             <div class="mx-auto flex max-w-[1680px] items-center gap-3 px-4 py-3 md:px-6">
                 <span class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
                     <Wallet class="size-5" />
@@ -106,12 +113,32 @@ function reset(): void {
                             </div>
                         </div>
                         <div class="space-y-1.5">
-                            <Label>引渡月</Label>
+                            <Label>対象日付</Label>
+                            <Select v-model="form.dateColumn" @update:model-value="submit">
+                                <SelectTrigger>
+                                    <CalendarRange class="size-4 text-muted-foreground" />
+                                    <SelectValue placeholder="販売引渡日" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="(label, k) in dateColumnOptions" :key="k" :value="String(k)">{{ label }}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <Label>対象月（上の日付）</Label>
                             <div class="flex items-center gap-2">
                                 <Input v-model="form.monthFrom" type="month" class="w-full" />
                                 <span class="text-muted-foreground">〜</span>
                                 <Input v-model="form.monthTo" type="month" class="w-full" />
                             </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <Label>DL名</Label>
+                            <Input v-model="form.dealerName" placeholder="ディーラー名で検索" />
+                        </div>
+                        <div class="space-y-1.5">
+                            <Label>オーナー銀行名</Label>
+                            <Input v-model="form.ownerBankName" placeholder="金融機関名で検索" />
                         </div>
                         <div class="space-y-1.5">
                             <Label>並べ替え</Label>

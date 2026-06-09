@@ -4,6 +4,7 @@
 // - 物件名列は左固定。クリックで実行予算詳細(active=2 相当)を新規タブで開く
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink } from 'lucide-vue-next';
+import { yen } from '@/lib/format';
 import type { AggCell, ExecutionBudget } from '@/types';
 
 defineProps<{
@@ -73,7 +74,6 @@ const columns: Col[] = [
     { header: '販売利回り', type: 'yield', key: 'product_yield', keyDealer: 'dealer_product_yield', width: 110 },
 ];
 
-const yen = (v: number | null | undefined): string => (v === null || v === undefined ? '—' : '¥' + v.toLocaleString('ja-JP'));
 const cellOf = (b: ExecutionBudget, key?: string): AggCell | undefined => (key ? b.agg[key] : undefined);
 
 function buildLines(b: ExecutionBudget, col: Col): Line[] {
@@ -147,22 +147,21 @@ const labelVariant = (label?: string): string => {
     <div class="overflow-x-auto rounded-xl border bg-card">
         <table class="border-separate border-spacing-0 text-sm">
             <thead>
-                <tr class="[&>th]:bg-primary [&>th]:text-primary-foreground [&>th]:px-3 [&>th]:py-2.5 [&>th]:text-xs [&>th]:font-medium [&>th]:whitespace-nowrap [&>th]:border-b">
-                    <th class="sticky left-0 top-0 z-30 text-left! w-[300px] min-w-[300px] shadow-[1px_0_0_0_rgba(255,255,255,0.25)]">物件名</th>
+                <tr class="[&>th]:bg-primary [&>th]:text-primary-foreground [&>th]:px-3 [&>th]:py-3 [&>th]:text-xs [&>th]:font-semibold [&>th]:tracking-wide [&>th]:whitespace-nowrap [&>th]:border-b-2 [&>th]:border-r [&>th]:border-white/15 [&>th]:align-middle [&>th]:text-center">
+                    <th class="sticky left-0 top-0 z-30 w-[300px] min-w-[300px] shadow-[1px_0_0_0_rgba(255,255,255,0.25)]">物件名</th>
                     <th
                         v-for="col in columns"
                         :key="col.header"
                         :style="{ width: col.width + 'px', minWidth: col.width + 'px' }"
-                        :class="alignClass(col.align)"
                     >
                         {{ col.header }}
                     </th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="b in budgets" :key="b.id" class="border-b transition-colors hover:bg-accent/40">
+                <tr v-for="b in budgets" :key="b.id" class="group border-b transition-colors hover:bg-accent">
                     <!-- 物件名（固定・新規タブリンク） -->
-                    <td class="sticky left-0 z-10 bg-card border-b border-r px-3 py-2.5 align-top w-[300px] min-w-[300px] shadow-[1px_0_0_0_var(--border)]">
+                    <td class="sticky left-0 z-10 bg-card group-hover:bg-accent border-b border-r px-3 py-2.5 align-top w-[300px] min-w-[300px] shadow-[1px_0_0_0_var(--border)]">
                         <a
                             :href="detailUrl(b.id)"
                             target="_blank"

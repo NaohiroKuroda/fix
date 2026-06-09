@@ -1,44 +1,66 @@
+# =============================================================
+# 開発用 docker-compose（new_felix_total / Windows・Mac 対応）
+#
+# 前提: 兄弟ディレクトリ等の felix_total を docker 起動しておくこと。
+#       felix_total の MySQL はホストの 3307 に公開される（3307:3306）。
+#       本コンテナからは host.docker.internal:3307 で接続する（felix_total 側は無変更）。
+#
+# 起動:   docker compose up -d --build
+# 画面:   http://localhost:8090/        （Laravel / php artisan serve）
+# HMR:    http://localhost:5173/        （Vite dev server。直接開く必要はない）
+# 停止:   docker compose down
+# 依存再取得: docker compose down -v && docker compose up -d --build
+#
+# 本番ビルドは docker-compose.prod.yml を使用。
+# =============================================================
 services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
-    image: new-felix-total:latest
-    container_name: new_fix_app
+      dockerfile: Dockerfile.dev
+    image: new-felix-total-dev:latest
+    container_name: new_fix_dev
     restart: unless-stopped
     ports:
-      # ホスト:コンテナ。社内サーバーの <サーバーIP>:8090 でアクセス。
-      - "8090:80"
-    environment:
-      APP_NAME: "FELIX 実行予算"
-      APP_ENV: production
-      # 本番では必ず自前のキーに変更すること（`php artisan key:generate --show`）。
-      APP_KEY: "base64:6Tp4FxaoPVYxd6hg+OT++z47uIKLc7V0OE+exVwwCpE="
-      APP_DEBUG: "false"
-      # ★アクセスするURLに合わせる（アセットURL生成に使用）。例: http://192.168.10.50:8090
-      APP_URL: "http://localhost:8090"
-      LOG_CHANNEL: stderr
+      - "8090:8000"   # Laravel
+      - "5173:5173"   # Vite (HMR)
 
-      # 既存 felix_total の MySQL(fix_db) へ接続。
-      # fix_db は felix_total_default 上で alias `db` / `fix_db` で解決できる。
+    volumes:
+      - .:/var/www/html
+      # 依存はコンテナ内（名前付きボリューム）に保持。ホスト(特にWindows)の
+      # node_modules/vendor で上書きされないようにし、ネイティブ差異も回避する。
+      - vendor:/var/www/html/vendor
+      - node_modules:/var/www/html/node_modules
+
+    env_file:
+      - .env
+
+    # .env より優先される（Laravel の Dotenv は既存の環境変数を上書きしない）
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8090
+
+      # felix_total の公開 MySQL（ホスト 3307）へ接続。
       DB_CONNECTION: mysql
-      DB_HOST: db
-      DB_PORT: "3306"
-      DB_DATABASE: fix
-      DB_USERNAME: root
-      DB_PASSWORD: root_password
+      DB_HOST: host.docker.internal
+      DB_PORT: "3307"
       DB_CHARSET: utf8mb4
       DB_COLLATION: utf8mb4_unicode_ci
+      # DB_DATABASE / DB_USERNAME / DB_PASSWORD は .env から読む。
 
-      # 自前DBにテーブルを作らないため file/sync を使用。
+      # 既存DBを汚さない（テーブルを作らない）。
       SESSION_DRIVER: file
       CACHE_STORE: file
       QUEUE_CONNECTION: sync
-    networks:
-      - felix_shared
 
-networks:
-  # 既存 felix_total の MySQL が居るネットワークに相乗りする。
-  felix_shared:
-    external: true
-    name: felix_total_default
+      # Windows のバインドマウントでファイル変更を検知するため Vite の polling を有効化。
+      VITE_USE_POLLING: "1"
+
+    # Linux でも host.docker.internal を有効化（Win/Mac の Docker Desktop は標準で解決）。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  vendor:
+  node_modules:

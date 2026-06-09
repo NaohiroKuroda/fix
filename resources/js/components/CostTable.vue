@@ -6,31 +6,20 @@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExternalLink, CircleCheck } from 'lucide-vue-next';
+import { yen } from '@/lib/format';
+import { useEstimateStatus } from '@/composables/useEstimateStatus';
 import type { EstimateUnit, UnitCompany } from '@/types';
 
 defineProps<{
     units: EstimateUnit[];
 }>();
 
-const yen = (n: number | null): string => (n === null ? '—' : '¥' + n.toLocaleString('ja-JP'));
+const { variantOf } = useEstimateStatus();
 
 /** 採用業者の確定見積（last_price）。 */
 const adoptedPrice = (u: EstimateUnit): number | null => {
     const a = u.companies.find((c: UnitCompany) => c.adopted) ?? u.companies[0];
     return a ? a.lastPrice : null;
-};
-
-/** 状態 → バッジ variant（旧 label-* の配色に合わせる）。 */
-const variantOf = (state: string): string => {
-    const map: Record<string, string> = {
-        approved: 'info', selected: 'info', sent: 'info',
-        has: 'success',
-        denied: 'warning', replied: 'warning',
-        pending: 'danger', canceled: 'danger',
-        notified: 'secondary',
-        none: 'muted',
-    };
-    return map[state] ?? 'muted';
 };
 </script>
 
@@ -38,9 +27,9 @@ const variantOf = (state: string): string => {
     <div class="overflow-x-auto">
         <table class="border-separate border-spacing-0 text-sm">
             <thead>
-                <tr class="[&>th]:bg-primary [&>th]:text-primary-foreground [&>th]:px-3 [&>th]:py-2.5 [&>th]:text-xs [&>th]:font-medium [&>th]:whitespace-nowrap">
-                    <th class="sticky left-0 top-0 z-20 text-left! w-[230px] min-w-[230px]">項目</th>
-                    <th class="sticky left-[230px] top-0 z-20 text-left! w-[220px] min-w-[220px] shadow-[1px_0_0_0_rgba(255,255,255,0.25)]">請求先 / 発注先</th>
+                <tr class="[&>th]:bg-muted [&>th]:text-muted-foreground [&>th]:px-3 [&>th]:py-3 [&>th]:text-xs [&>th]:font-semibold [&>th]:tracking-wide [&>th]:whitespace-nowrap [&>th]:border-b-2 [&>th]:border-r [&>th]:border-border [&>th]:align-middle [&>th]:text-center">
+                    <th class="sticky left-0 top-0 z-20 w-[230px] min-w-[230px]">項目</th>
+                    <th class="sticky left-[230px] top-0 z-20 w-[220px] min-w-[220px] shadow-[1px_0_0_0_var(--border)]">請求先 / 発注先</th>
                     <th class="text-right w-[100px] min-w-[100px]">単価表(税抜)</th>
                     <th class="text-right w-[100px] min-w-[100px]">概算(税抜)</th>
                     <th class="text-right w-[110px] min-w-[110px]">相見積(税抜)</th>
@@ -64,7 +53,7 @@ const variantOf = (state: string): string => {
                     v-for="unit in units"
                     :key="unit.id"
                     class="border-b transition-colors"
-                    :class="unit.useFlg === 1 ? 'bg-card hover:bg-accent/40' : 'bg-muted/60 text-muted-foreground hover:bg-muted'"
+                    :class="unit.useFlg === 1 ? 'bg-card hover:bg-accent' : 'bg-muted text-muted-foreground hover:bg-muted'"
                 >
                     <!-- 項目 -->
                     <td class="sticky left-0 z-10 bg-inherit border-b border-r px-3 py-2.5 align-top w-[230px] min-w-[230px]">

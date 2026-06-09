@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 # =========================================================
 # Stage 1: build （PHP + Node 同居。wayfinder の vite プラグインが
 #           ビルド時に `php artisan` を実行するため両方必要）

@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, ExternalLink, ChevronDown } from 'lucide-vue-next';
+import { yen } from '@/lib/format';
+import { useEstimateStatus } from '@/composables/useEstimateStatus';
 import type { Estimate } from '@/types';
 
 const props = defineProps<{
@@ -17,22 +19,12 @@ const props = defineProps<{
 
 const open = ref(props.defaultOpen ?? true);
 
-const yen = (n: number | null): string => (n === null ? '—' : '¥' + n.toLocaleString('ja-JP'));
+const { variantOf } = useEstimateStatus();
 
 const activeUnits = computed(() => props.estimate.units.filter((u) => u.useFlg === 1).length);
 const totalAmount = computed(() =>
     props.estimate.units.filter((u) => u.useFlg === 1).reduce((s, u) => s + (u.estimatePrice ?? 0), 0),
 );
-
-/** 状態 → バッジ variant */
-const variantOf = (state: string): string => {
-    const map: Record<string, string> = {
-        approved: 'success', sent: 'success', has: 'success',
-        replied: 'warning', denied: 'warning', notified: 'secondary',
-        pending: 'muted', none: 'muted', canceled: 'destructive',
-    };
-    return map[state] ?? 'muted';
-};
 </script>
 
 <template>
@@ -65,9 +57,9 @@ const variantOf = (state: string): string => {
             <div class="overflow-x-auto">
                 <table class="w-full border-separate border-spacing-0 text-sm">
                     <thead>
-                        <tr class="[&>th]:bg-primary [&>th]:text-primary-foreground [&>th]:px-3 [&>th]:py-2.5 [&>th]:text-xs [&>th]:font-medium [&>th]:whitespace-nowrap [&>th]:align-middle">
-                            <th class="sticky left-0 top-0 z-30 text-left! w-[230px] min-w-[230px]">項目</th>
-                            <th class="sticky left-[230px] top-0 z-30 text-left! w-[210px] min-w-[210px] shadow-[1px_0_0_0_rgba(255,255,255,0.25)]">発注先</th>
+                        <tr class="[&>th]:bg-muted [&>th]:text-muted-foreground [&>th]:px-3 [&>th]:py-3 [&>th]:text-xs [&>th]:font-semibold [&>th]:tracking-wide [&>th]:whitespace-nowrap [&>th]:border-b-2 [&>th]:border-r [&>th]:border-border [&>th]:align-middle [&>th]:text-center">
+                            <th class="sticky left-0 top-0 z-30 w-[230px] min-w-[230px]">項目</th>
+                            <th class="sticky left-[230px] top-0 z-30 w-[210px] min-w-[210px] shadow-[1px_0_0_0_var(--border)]">発注先</th>
                             <th class="text-right w-[110px] min-w-[110px]">単価表(税抜)</th>
                             <th class="text-right w-[110px] min-w-[110px]">概算(税抜)</th>
                             <th class="text-right w-[110px] min-w-[110px]">相見積(税抜)</th>
@@ -91,7 +83,7 @@ const variantOf = (state: string): string => {
                             v-for="unit in estimate.units"
                             :key="unit.id"
                             class="border-b transition-colors"
-                            :class="unit.useFlg === 1 ? 'bg-card hover:bg-accent/40' : 'bg-muted/60 text-muted-foreground hover:bg-muted'"
+                            :class="unit.useFlg === 1 ? 'bg-card hover:bg-accent' : 'bg-muted text-muted-foreground hover:bg-muted'"
                         >
                             <!-- 項目 -->
                             <td class="sticky left-0 z-10 bg-inherit border-b border-r px-3 py-3 align-top w-[230px] min-w-[230px]">

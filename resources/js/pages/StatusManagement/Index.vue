@@ -89,7 +89,7 @@ function reset(): void {
     <Head title="ステータス管理" />
     <AppLayout>
         <!-- ヘッダー -->
-        <header class="sticky top-0 z-40 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <header class="sticky top-14 z-30 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
             <div class="mx-auto flex max-w-[1680px] items-center gap-3 px-4 py-3 md:px-6">
                 <span class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
                     <ClipboardList class="size-5" />

@@ -37,7 +37,12 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            //
+            // ヘッダー右に表示するユーザー（ログイン無し。表示名は config/status_management.php）
+            'auth' => [
+                'user' => [
+                    'name' => config('status_management.display_user'),
+                ],
+            ],
         ];
     }
 }

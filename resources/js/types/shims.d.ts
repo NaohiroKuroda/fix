@@ -9,6 +9,11 @@ import type { PageProps as InertiaPageProps } from '@inertiajs/core';
 
 declare module '@inertiajs/core' {
     interface PageProps extends InertiaPageProps {
-        // 共有プロップ（HandleInertiaRequests::share）の型をここに追加する
+        // 共有プロップ（HandleInertiaRequests::share）
+        auth: {
+            user: {
+                name: string;
+            };
+        };
     }
 }

@@ -36,7 +36,24 @@ export default defineConfig({
         }),
     ],
     server: {
+        // Docker コンテナ内でも待ち受けられるよう全インターフェースで listen。
+        host: '0.0.0.0',
+        port: 5173,
+        strictPort: true,
+        // 公開ポート経由でブラウザ（ホスト側）からアセット/HMR を取得する。
+        origin: 'http://localhost:5173',
+        // Laravel アプリ（:8090）から :5173 のモジュール/HMR を読み込むため CORS を許可。
+        // Vite v6+ はデフォルトで配信元オリジンしか許可しないため、localhost の任意ポートを許可する。
+        cors: {
+            origin: /^https?:\/\/localhost(:\d+)?$/,
+        },
+        hmr: {
+            host: 'localhost',
+        },
         watch: {
+            // Windows のバインドマウントは inotify が効かないため polling を使う
+            // （docker-compose で VITE_USE_POLLING=1 を渡す。ホスト直開発では未設定で高速）。
+            usePolling: process.env.VITE_USE_POLLING === '1' || process.env.VITE_USE_POLLING === 'true',
             ignored: ['**/storage/framework/views/**'],
         },
     },

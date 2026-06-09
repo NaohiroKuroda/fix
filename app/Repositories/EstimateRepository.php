@@ -86,17 +86,30 @@ class EstimateRepository implements EstimateRepositoryInterface
         'amount', 'unit_price', 'price', 'master_price', 'tmp_unit_price',
     ];
 
+    /** 日付カラム選択フィルタ／日付並べ替えで対象にできる集計カラム。 */
+    private const BUDGET_DATE_COLUMNS = [
+        'delivery_date',
+        'purchase_contract_date',
+        'purchase_settlement_date',
+        'sail_start_date',
+        'sales_contract_payment_date',
+        'sales_contract_date',
+    ];
+
     public function paginateBudgets(array $filters, int $perPage): LengthAwarePaginator
     {
         $monthFrom = $this->nonEmpty($filters['monthFrom'] ?? null);
         $monthTo = $this->nonEmpty($filters['monthTo'] ?? null);
         $sort = $filters['sort'] ?? null;
+        $dateColumn = $this->budgetDateColumn($filters['dateColumn'] ?? null);
+        $dealerName = $this->nonEmpty($filters['dealerName'] ?? null);
+        $ownerBankName = $this->nonEmpty($filters['ownerBankName'] ?? null);
 
         return Estimate::query()
-            // 旧 estimate_list と同じく、引渡日(delivery_date)集計を結合して絞り込み/並べ替えに使う。
-            ->leftJoin('estimate_aggregates as ea', function ($join): void {
+            // 選択された日付カラム（既定: 引渡日）の集計を結合し、絞り込み/並べ替えに使う。
+            ->leftJoin('estimate_aggregates as ea', function ($join) use ($dateColumn): void {
                 $join->on('estimates.id', '=', 'ea.estimate_id')
-                    ->where('ea.column', '=', 'delivery_date');
+                    ->where('ea.column', '=', $dateColumn);
             })
             ->select('estimates.id', 'estimates.name', 'estimates.tmp_budget_id', 'ea.date as delivery_date')
             // 旧画面の対象は「●」で始まる物件。
@@ -108,14 +121,39 @@ class EstimateRepository implements EstimateRepositoryInterface
                 $this->nonEmpty($filters['keyword'] ?? null),
                 fn (Builder $q, string $kw) => $q->where('estimates.name', 'like', "%{$kw}%")
             )
-            // 引渡月（delivery_date）範囲
+            // 選択日付カラムの月度範囲
             ->when($monthFrom, fn (Builder $q, string $m) => $q->whereDate('ea.date', '>=', $m.'-01'))
             ->when($monthTo, fn (Builder $q, string $m) => $q->whereDate('ea.date', '<=', date('Y-m-t', strtotime($m.'-01'))))
+            // DL名 / オーナー銀行名（集計テーブルのテキスト値で絞り込み）
+            ->when($dealerName, fn (Builder $q, string $v) => $this->whereAggregateSummaryLike($q, 'dealer_name', $v))
+            ->when($ownerBankName, fn (Builder $q, string $v) => $this->whereAggregateSummaryLike($q, 'owner_bank_name', $v))
             ->with(['aggregates:id,estimate_id,column,date,aggregate,summary'])
-            ->when($sort === 'handover_asc', fn (Builder $q) => $q->orderByRaw('ea.date IS NULL, ea.date ASC'))
+            // 並べ替え（選択日付カラムの date を NULL 後ろで昇順/降順）
+            ->when($sort === 'date_asc', fn (Builder $q) => $q->orderByRaw('ea.date IS NULL, ea.date ASC'))
+            ->when($sort === 'date_desc', fn (Builder $q) => $q->orderByRaw('ea.date IS NULL, ea.date DESC'))
             ->orderByDesc('estimates.id')
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    /** 日付カラム選択値をホワイトリストで検証（不正/未指定は delivery_date）。 */
+    private function budgetDateColumn(mixed $value): string
+    {
+        $value = $this->nonEmpty($value);
+
+        return in_array($value, self::BUDGET_DATE_COLUMNS, true) ? (string) $value : 'delivery_date';
+    }
+
+    /** 指定 column の集計テキスト(summary)に対する部分一致条件（estimate_id で相関）。 */
+    private function whereAggregateSummaryLike(Builder $q, string $column, string $value): Builder
+    {
+        return $q->whereExists(function ($sub) use ($column, $value): void {
+            $sub->selectRaw('1')
+                ->from('estimate_aggregates as eaf')
+                ->whereColumn('eaf.estimate_id', 'estimates.id')
+                ->where('eaf.column', '=', $column)
+                ->where('eaf.summary', 'like', "%{$value}%");
+        });
     }
 
     public function findBudgetDetail(int $id): ?\App\Models\Estimate

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -35,13 +36,16 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $admin = Auth::guard('admin')->user();
+
         return [
             ...parent::share($request),
-            // ヘッダー右に表示するユーザー（ログイン無し。表示名は config/status_management.php）
+            // ヘッダー右に表示する認証ユーザー（admin ガード）。未ログイン時は null。
             'auth' => [
-                'user' => [
-                    'name' => config('status_management.display_user'),
-                ],
+                'user' => $admin ? [
+                    'id' => $admin->id,
+                    'name' => $admin->name,
+                ] : null,
             ],
         ];
     }

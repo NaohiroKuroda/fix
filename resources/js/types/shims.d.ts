@@ -12,8 +12,9 @@ declare module '@inertiajs/core' {
         // 共有プロップ（HandleInertiaRequests::share）
         auth: {
             user: {
+                id: number;
                 name: string;
-            };
+            } | null;
         };
     }
 }

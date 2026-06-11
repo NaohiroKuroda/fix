@@ -3,10 +3,10 @@
 // - サイドバーは開閉可能（デスクトップ: collapsed / モバイル: オーバーレイ）
 // - ヘッダー右端にユーザー名を表示（felix_total 踏襲）
 import { computed, ref } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { index as budgetRoute } from '@/routes/execution-budgets';
 import { index as statusRoute } from '@/routes/status-management';
-import { Wallet, ClipboardList, Menu, Building2, PanelLeftClose, PanelLeftOpen, User } from 'lucide-vue-next';
+import { Wallet, ClipboardList, Menu, Building2, PanelLeftClose, PanelLeftOpen, User, LogOut } from 'lucide-vue-next';
 
 interface NavItem {
     label: string;
@@ -26,6 +26,9 @@ const nav = computed<NavItem[]>(() => [
 
 const mobileOpen = ref(false);  // モバイル: オーバーレイ表示
 const collapsed = ref(false);   // デスクトップ: 折りたたみ
+
+// ログアウト（AuthController@logout へ POST）
+const logout = () => router.post('/logout');
 </script>
 
 <template>
@@ -101,12 +104,19 @@ const collapsed = ref(false);   // デスクトップ: 折りたたみ
                 </button>
                 <span class="font-semibold tracking-tight md:hidden">FELIX</span>
 
-                <!-- 右端: ユーザー名 -->
+                <!-- 右端: ユーザー名 + ログアウト -->
                 <div class="ml-auto flex items-center gap-2.5">
                     <span class="hidden text-sm text-foreground sm:inline">{{ userName }}</span>
                     <span class="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <User class="size-4.5" />
                     </span>
+                    <button
+                        class="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        title="ログアウト"
+                        @click="logout"
+                    >
+                        <LogOut class="size-4.5" />
+                    </button>
                 </div>
             </header>
 

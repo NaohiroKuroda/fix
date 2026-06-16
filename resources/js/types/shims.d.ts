@@ -16,5 +16,7 @@ declare module '@inertiajs/core' {
                 name: string;
             } | null;
         };
+        // 現行 felix_total の URL（明細リンクの iframe 先）
+        felixTotalUrl: string | null;
     }
 }

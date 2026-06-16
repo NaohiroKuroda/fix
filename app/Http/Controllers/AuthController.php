@@ -51,6 +51,9 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        // felix_total と共有する同期クッキーも削除（発行時と同じ domain/path）。
+        return redirect('/login')->withCookie(
+            cookie()->forget('cross_auth', '/', config('cross_auth.domain'))
+        );
     }
 }

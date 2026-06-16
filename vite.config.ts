@@ -43,9 +43,13 @@ export default defineConfig({
         // 公開ポート経由でブラウザ（ホスト側）からアセット/HMR を取得する。
         origin: 'http://localhost:5173',
         // Laravel アプリ（:8090）から :5173 のモジュール/HMR を読み込むため CORS を許可。
-        // Vite v6+ はデフォルトで配信元オリジンしか許可しないため、localhost の任意ポートを許可する。
+        // Vite v6+ はデフォルトで配信元オリジンしか許可しないため、localhost と
+        // 開発用サブドメイン（*.felix-japan.local。felix_total 連携の検証で使用）を許可する。
         cors: {
-            origin: /^https?:\/\/localhost(:\d+)?$/,
+            origin: [
+                /^https?:\/\/localhost(:\d+)?$/,
+                /^https?:\/\/[\w.-]+\.felix-japan\.(local|test)(:\d+)?$/,
+            ],
         },
         hmr: {
             host: 'localhost',

@@ -25,6 +25,9 @@ class EstimateUnitCompanyResource extends JsonResource
         $completeStatus = (int) ($this->unit->complete_status ?? 0);
 
         return [
+            // estimate_unit_companies.id（felix_total の /admin 編集 iframe を開くのに使う）
+            'id' => (int) $this->id,
+
             // 発注先
             'name' => $this->mainCompanyName(),
             'payName' => $this->payCompanyName(),

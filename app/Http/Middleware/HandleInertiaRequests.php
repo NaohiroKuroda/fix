@@ -47,6 +47,8 @@ class HandleInertiaRequests extends Middleware
                     'name' => $admin->name,
                 ] : null,
             ],
+            // 現行 felix_total の URL（明細リンクの iframe 先）。
+            'felixTotalUrl' => config('services.felix_total.url'),
         ];
     }
 }

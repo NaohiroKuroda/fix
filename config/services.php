@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    // 現行 felix_total（laravel-admin）の URL。明細リンクの iframe 先に使う。
+    'felix_total' => [
+        'url' => env('FELIX_TOTAL_URL'),
+    ],
+
 ];

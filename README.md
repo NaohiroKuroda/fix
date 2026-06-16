@@ -57,6 +57,104 @@ composer run dev   # server / queue / logs / vite を同時起動
 
 `.env` の `DB_HOST=127.0.0.1` / `DB_PORT=3307` で `fix_db` に接続する。
 
+## felix_total ⇄ fix の Cookie 同期（認証連携）
+
+実行予算明細の **iframe 埋め込み**（fix → felix_total の `/admin` 編集画面）と、
+felix_total から fix へ戻る **メニューリンク**で、両システムが**同一ログインを共有**する。
+仕組みは**同期クッキー方式（`cross_auth`）**：親ドメイン（`.felix-japan.local`）に
+発行した「`userId` の平文＋HMAC 署名」クッキーを両サブドメインで読み書きし、
+未ログイン側のミドルウェア（[`app/Http/Middleware/CrossAuthCookie.php`](app/Http/Middleware/CrossAuthCookie.php)）が
+署名を検証して自前セッションを復元する。**設計の正は [`docs/plans/cross-auth-cookie-plan.md`](docs/plans/cross-auth-cookie-plan.md)。**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as ユーザー
+    participant B as ブラウザ
+    participant FX as fix<br/>(renew.felix-japan.local:8090)
+    participant FT as felix_total<br/>(fix.felix-japan.local:8070)
+
+    Note over FX,FT: 共有: CROSS_AUTH_SECRET（同一）<br/>Cookie: cross_auth (Domain=.felix-japan.local)
+
+    rect rgb(235, 245, 255)
+    Note over U,FT: ① 片方でログイン → cross_auth 発行
+    U->>B: fix にログイン
+    B->>FX: POST /login
+    FX->>FX: 認証成功 → issue()<br/>v1.{userId}.{exp}.{HMAC}
+    FX-->>B: Set-Cookie: cross_auth<br/>(Domain=.felix-japan.local, HttpOnly, Lax)
+    end
+
+    rect rgb(235, 255, 240)
+    Note over U,FT: ② もう片方へアクセス → セッション復元（ログインスキップ）
+    U->>B: felix_total のメニュー→fix へ遷移<br/>(or fix→felix_total iframe)
+    B->>FT: GET /admin ... <br/>Cookie: cross_auth を自動送信
+    FT->>FT: CrossAuthCookie: 未ログイン&cross_auth有<br/>verify() HMAC一致 → loginUsingId()
+    FT->>FT: スライディング更新: issue() で再発行
+    FT-->>B: 認証済みレスポンス + Set-Cookie: cross_auth
+    B-->>U: ログイン画面を経ずに表示
+    end
+```
+
+> 共有の根拠は **`CROSS_AUTH_SECRET` の一致**のみ。両アプリで同じ値だから署名検証が通り、相互に信用してログインする（不一致だと SSO が成立しない）。
+
+### ローカル検証の前提（最重要）
+
+クッキーは親ドメイン単位で共有されるため、**両アプリをサブドメインで開く**こと。
+`localhost:8090` で開くと `cross_auth`（`Domain=.felix-japan.local`）が送られず、
+frame-ancestors（後述）も一致しないため**認証共有も iframe 表示も成立しない**。
+
+| システム | アクセス URL |
+| --- | --- |
+| fix（本リポジトリ） | `http://renew.felix-japan.local:8090` ← **localhost では開かない** |
+| felix_total（現行） | `http://fix.felix-japan.local:8070` |
+
+#### 1. hosts に2サブドメインを登録
+
+```
+# /etc/hosts （macOS/Linux） … Windows は C:\Windows\System32\drivers\etc\hosts
+127.0.0.1  renew.felix-japan.local  fix.felix-japan.local
+```
+
+#### 2. fix 側 `.env`
+
+```env
+# 現行 felix_total（iframe 先）の URL
+FELIX_TOTAL_URL=http://fix.felix-japan.local:8070
+
+# 同期クッキー。★felix_total と「完全に同じ値」にする（一致しないと認証共有が壊れる）
+CROSS_AUTH_SECRET=<felix_total と共通の秘密鍵>
+# 両サブドメインの共通親（本番は .felix-japan.co.jp 等）
+CROSS_AUTH_DOMAIN=.felix-japan.local
+CROSS_AUTH_TTL=1800
+# ローカル http 検証は false。本番(HTTPS)は true
+CROSS_AUTH_SECURE=false
+```
+
+#### 3. felix_total 側で必要な対応(実装済みなので、最新を取得し、dockerを起動させてください)
+
+| 項目 | 対応 |
+| --- | --- |
+| `CROSS_AUTH_SECRET` | **fix と一致**させる（SSO の信頼の根拠） |
+| `CrossAuthCookie` ミドルウェア | admin ガードで `cross_auth` を復元/発行（fix と対） |
+| `EncryptCookies` | `cross_auth` を `$except` に追加（平文＋HMAC のため） |
+| **frame-ancestors（iframe 許可）** | `/admin`（最低 `?iframe=on`）応答に `Content-Security-Policy: frame-ancestors 'self' http://renew.felix-japan.local:8090` を付与し `X-Frame-Options` を緩和。**アプリ内ミドルウェアで /admin 限定**（サーバ全体ヘッダにしない） |
+
+### 動作確認
+
+1. `http://renew.felix-japan.local:8090/estimates/{id}` を開いてログイン。
+2. 明細リンク → モーダル iframe に felix_total の `/admin` 編集画面が表示される。
+3. felix_total(`fix.felix-japan.local:8070`)のメニューから fix へ遷移すると**ログインがスキップ**される（＝`cross_auth` SSO が成立）。
+4. DevTools > Application > Cookies に `cross_auth`（`Domain=.felix-japan.local` / `HttpOnly` / `SameSite=Lax`）。
+
+### トラブルシュート
+
+| 症状 | 原因 / 対処 |
+| --- | --- |
+| `サーバーの IP アドレスが見つかりません`（`ERR_NAME_NOT_RESOLVED`） | hosts 未登録 or `.test`/`.local` 不一致。hosts を確認し DNS フラッシュ |
+| `接続が拒否されました`＋Console に `frame-ancestors ... violates` | 親を `localhost:8090` で開いている。`renew.felix-japan.local:8090` で開く |
+| iframe URL が古い TLD のまま | ブラウザのフルリロード（Cmd+Shift+R）。直らなければ `docker exec new_fix_dev php artisan optimize:clear` 後にコンテナ再起動 |
+| iframe 内で `/admin/auth/login` に飛ぶ | `cross_auth` が送られていない or `CROSS_AUTH_SECRET` 不一致。Cookie 送信と両アプリの secret 一致を確認 |
+
 ## よく使うコマンド
 
 | 目的 | コマンド |
@@ -102,11 +200,7 @@ docs/           … アーキテクチャ / デプロイ / CI-CD ドキュメン
 | [`docs/architecture/README.md`](docs/architecture/README.md) | 全体アーキテクチャ・技術スタック |
 | [`docs/architecture/frontend.md`](docs/architecture/frontend.md) | フロントエンド（Vue / Inertia / TS） |
 | [`docs/architecture/backend.md`](docs/architecture/backend.md) | バックエンド（Laravel / PHP） |
+| [`docs/plans/cross-auth-cookie-plan.md`](docs/plans/cross-auth-cookie-plan.md) | felix_total ⇄ fix の Cookie 同期（認証連携）設計 |
 | [`docs/docker-development.md`](docs/docker-development.md) | Docker 開発環境ガイド |
 | [`docs/deploy.md`](docs/deploy.md) | 社内サーバー Docker デプロイ手順 |
 | [`docs/cicd.md`](docs/cicd.md) | CI/CD（GitHub Actions）ガイド |
-
-## ライセンス
-
-本リポジトリは社内利用を目的とする。フレームワーク（Laravel）は
-[MIT License](https://opensource.org/licenses/MIT)。

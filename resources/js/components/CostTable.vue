@@ -3,11 +3,14 @@
 // AJAX 描画では step を渡さないため no-step のフル列が出る:
 // 項目 / 請求先(発注先) / 単価表 / 概算 / 相見積 / 確定見積 / 工期設定 / 選定 / 依頼 / 見積UP /
 // 常務承認 / 承認 / 見積書発行日 / 承認納期日 / 発注書送付日 / 必須ファイル / 請求日 / 入出金日
+import { computed, ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExternalLink, CircleCheck } from 'lucide-vue-next';
 import { yen } from '@/lib/format';
 import { useEstimateStatus } from '@/composables/useEstimateStatus';
+import LegacyIframeModal from '@/components/LegacyIframeModal.vue';
 import type { EstimateUnit, UnitCompany } from '@/types';
 
 defineProps<{
@@ -15,6 +18,16 @@ defineProps<{
 }>();
 
 const { variantOf } = useEstimateStatus();
+
+// 業者リンク → felix_total の編集画面を iframe モーダルで開く。
+const page = usePage();
+const felixTotalUrl = computed(() => page.props.felixTotalUrl ?? '');
+const iframeSrc = ref<string | null>(null);
+
+const openCompany = (c: UnitCompany): void => {
+    if (!c.id || !felixTotalUrl.value) return;
+    iframeSrc.value = `${felixTotalUrl.value}/admin/estimate-unit-companies/${c.id}/edit?iframe=on`;
+};
 
 /** 採用業者の確定見積（last_price）。 */
 const adoptedPrice = (u: EstimateUnit): number | null => {
@@ -65,11 +78,18 @@ const adoptedPrice = (u: EstimateUnit): number | null => {
                     <td class="sticky left-[230px] z-10 bg-inherit border-b border-r px-3 py-2.5 align-top w-[220px] min-w-[220px] shadow-[1px_0_0_0_var(--border)]">
                         <div v-if="unit.companies.length" class="flex flex-col gap-1.5">
                             <div v-for="(c, ci) in unit.companies" :key="ci" class="flex items-center justify-between gap-1.5 group/co">
-                                <span class="truncate text-sm" :class="c.emphasized || c.adopted ? 'font-semibold' : ''">{{ c.name }}</span>
-                                <div class="flex items-center gap-1 shrink-0">
-                                    <Badge v-if="c.payName" variant="success" class="font-normal">{{ c.payName }}</Badge>
-                                    <ExternalLink class="size-3.5 text-muted-foreground opacity-0 group-hover/co:opacity-100 transition" />
-                                </div>
+                                <button
+                                    type="button"
+                                    class="flex min-w-0 items-center gap-1 text-left hover:text-primary hover:underline disabled:pointer-events-none disabled:no-underline"
+                                    :class="c.emphasized || c.adopted ? 'font-semibold' : ''"
+                                    :disabled="!c.id || !felixTotalUrl"
+                                    title="felix_total の編集画面を開く"
+                                    @click="openCompany(c)"
+                                >
+                                    <span class="truncate text-sm">{{ c.name }}</span>
+                                    <ExternalLink class="size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover/co:opacity-100 transition" />
+                                </button>
+                                <Badge v-if="c.payName" variant="success" class="font-normal shrink-0">{{ c.payName }}</Badge>
                             </div>
                         </div>
                         <span v-else class="text-muted-foreground">—</span>
@@ -189,5 +209,8 @@ const adoptedPrice = (u: EstimateUnit): number | null => {
                 </tr>
             </tbody>
         </table>
+
+        <!-- 業者リンク → felix_total 編集画面（iframe モーダル） -->
+        <LegacyIframeModal :src="iframeSrc" @close="iframeSrc = null" />
     </div>
 </template>

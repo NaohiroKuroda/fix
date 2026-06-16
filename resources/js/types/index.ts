@@ -41,6 +41,8 @@ export interface RequiredCell {
 
 /** 発注先（業者）— EstimateUnitCompanyResource */
 export interface UnitCompany {
+    /** estimate_unit_companies.id（felix_total の編集 iframe を開くのに使う） */
+    id: number;
     name: string;
     payName: string | null;
     adopted: boolean;

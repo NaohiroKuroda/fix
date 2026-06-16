@@ -3,6 +3,25 @@
 > 対象: `new_felix_total` のフロントエンド層。
 > 実装前に必ず本ドキュメントを確認すること。
 
+## 技術スタック
+
+| 分類 | 採用技術 | バージョン |
+| --- | --- | --- |
+| 言語 | TypeScript | `^6.0` |
+| UI フレームワーク | Vue（`<script setup lang="ts">` / Composition API） | `^3.5` |
+| SPA 連携 | Inertia.js（`@inertiajs/vue3`） | `^3.3` |
+| UI コンポーネント | shadcn-vue（内部で reka-ui を利用） | reka-ui `^2.9` |
+| CSS | Tailwind CSS（`@tailwindcss/vite`） | `^4.0` |
+| アイコン | `lucide-vue-next` | `^1.0` |
+| ユーティリティ | `@vueuse/core` / `clsx` / `tailwind-merge` / `class-variance-authority` | `^14.3` / `^2.1` / `^3.6` / `^0.7` |
+| 日付処理 | `dayjs` | `^1.11` |
+| ルーティング型 | Laravel Wayfinder（`@laravel/vite-plugin-wayfinder`） | `^0.1` |
+| ビルド | Vite（`laravel-vite-plugin` / `@vitejs/plugin-vue`） | Vite `^8.0` |
+| 型チェック | `vue-tsc` | `^3.3` |
+
+> パッケージ単位の詳細は §4.1、各技術の運用方針は §4.2 以降を参照。
+> 新規パッケージを追加する場合は、本ドキュメントに追記してから導入する（[`CLAUDE.md`](../../CLAUDE.md)）。
+
 ## 4.1 フロントエンド（Vue 3 / Inertia.js 3.x）
 
 * **役割**

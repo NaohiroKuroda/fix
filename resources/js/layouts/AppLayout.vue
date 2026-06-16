@@ -4,25 +4,30 @@
 // - ヘッダー右端にユーザー名を表示（felix_total 踏襲）
 import { computed, ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { index as budgetRoute } from '@/routes/execution-budgets';
-import { index as statusRoute } from '@/routes/status-management';
-import { Wallet, ClipboardList, Menu, Building2, PanelLeftClose, PanelLeftOpen, User, LogOut } from 'lucide-vue-next';
+import { ClipboardList, ChevronDown, Menu, Building2, PanelLeftClose, PanelLeftOpen, User, LogOut } from 'lucide-vue-next';
 
-interface NavItem {
+interface NavChild {
     label: string;
     href: string;
-    icon: unknown;
     active: boolean;
+    /** 未対応件数バッジ（LINE の未読数風）。0/未指定なら非表示。※現状はダミー値。 */
+    badge?: number;
 }
 
 const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
 
-const nav = computed<NavItem[]>(() => [
-    { label: '実行予算一覧', href: budgetRoute.url(), icon: Wallet, active: path.value === '/' || path.value.startsWith('/execution-budgets') },
-    { label: 'ステータス管理', href: statusRoute.url(), icon: ClipboardList, active: path.value.startsWith('/status-management') },
+// 見積管理（トグル）。配下の画面はシート名の()内をメニュー名にする。
+// ※ badge は未対応件数の表示用（現状はダミー値。今後 Inertia 共有プロパティで実件数を配る）。
+const estimateChildren = computed<NavChild[]>(() => [
+    { label: 'FELIX→業者依頼前', href: '/estimate-management/quote-request', active: path.value.startsWith('/estimate-management/quote-request'), badge: 5 },
+    { label: '業者→FELIX返答済', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: 7 },
 ]);
+const estimateMenuOpen = ref(true);
+
+// 親「見積管理」に出す合計バッジ。
+const estimateBadgeTotal = computed(() => estimateChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 
 const mobileOpen = ref(false);  // モバイル: オーバーレイ表示
 const collapsed = ref(false);   // デスクトップ: 折りたたみ
@@ -47,7 +52,7 @@ const logout = () => router.post('/logout');
                 </span>
                 <div class="leading-tight min-w-0 flex-1">
                     <div class="text-sm font-bold tracking-wide">FELIX</div>
-                    <div class="text-[10px] text-white/60">業務管理システム</div>
+                    <div class="text-[10px] text-white/60">業務管理システム-FIX-</div>
                 </div>
                 <button
                     class="flex size-8 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
@@ -60,16 +65,40 @@ const logout = () => router.post('/logout');
 
             <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
                 <p class="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">メニュー</p>
-                <Link
-                    v-for="item in nav"
-                    :key="item.href"
-                    :href="item.href"
-                    class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors"
-                    :class="item.active ? 'bg-white/15 font-semibold' : 'text-white/80 hover:bg-white/10'"
+                <!-- 見積管理（トグル）。クリックで配下の画面リンクを開閉する。 -->
+                <button
+                    type="button"
+                    class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
+                    @click="estimateMenuOpen = !estimateMenuOpen"
                 >
-                    <component :is="item.icon" class="size-4.5 shrink-0" />
-                    {{ item.label }}
-                </Link>
+                    <ClipboardList class="size-4.5 shrink-0" />
+                    <span class="flex-1 text-left">見積管理</span>
+                    <span
+                        v-if="estimateBadgeTotal"
+                        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                    >
+                        <span class="block translate-y-[0.5px] leading-none">{{ estimateBadgeTotal > 99 ? '99+' : estimateBadgeTotal }}</span>
+                    </span>
+                    <ChevronDown class="size-4 shrink-0 transition-transform" :class="estimateMenuOpen ? '' : '-rotate-90'" />
+                </button>
+                <div v-show="estimateMenuOpen" class="mt-1 space-y-1 pl-4">
+                    <Link
+                        v-for="child in estimateChildren"
+                        :key="child.href"
+                        :href="child.href"
+                        class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors"
+                        :class="child.active ? 'bg-white/15 font-semibold' : 'text-white/80 hover:bg-white/10'"
+                    >
+                        <span class="flex-1">{{ child.label }}</span>
+                        <span
+                            v-if="child.badge"
+                            class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                        >
+                            <span class="block translate-y-[0.5px] leading-none">{{ child.badge > 99 ? '99+' : child.badge }}</span>
+                        </span>
+                    </Link>
+                    <p v-if="!estimateChildren.length" class="px-3 py-2 text-xs text-white/40">準備中</p>
+                </div>
             </nav>
 
             <div class="border-t border-white/10 px-5 py-3 text-[10px] text-white/40">

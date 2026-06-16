@@ -3,6 +3,23 @@
 > 対象: `new_felix_total` のバックエンド層（Laravel 13 / PHP 8.3）。
 > 実装前に必ず本ドキュメントを確認すること。
 
+## 技術スタック
+
+| 分類 | 採用技術 | バージョン |
+| --- | --- | --- |
+| 言語 | PHP | `^8.3` |
+| フレームワーク | Laravel | `^13.8` |
+| SPA アダプタ | Inertia.js サーバ（`inertiajs/inertia-laravel`） | `^3.1` |
+| ルーティング型生成 | Laravel Wayfinder（`laravel/wayfinder`） | `^0.1` |
+| REPL | `laravel/tinker` | `^3.0` |
+| Lint / Format | `laravel/pint` | `^1.27` |
+| テスト | `phpunit/phpunit`（Feature テストで Inertia 応答を検証） | `^12.5` |
+| 開発補助 | `laravel/pail`（ログ） / `nunomaduro/collision` / `mockery/mockery` / `fakerphp/faker` | — |
+| データベース | MySQL（既存 `felix_total` の `fix_db` を参照） | — |
+
+> パッケージ単位の詳細は §4.2、各技術の運用方針（Repository / JsonResource / Wayfinder 等）は §1 以降を参照。
+> 新規パッケージを追加する場合は、本ドキュメントに追記してから導入する（[`CLAUDE.md`](../../CLAUDE.md)）。
+
 ## 4.2 バックエンド（Laravel 13 / PHP 8.3）
 
 * **役割**
@@ -39,11 +56,43 @@ Route ─▶ Middleware ─▶ Controller ─▶ FormRequest（バリデーシ�
 ```
 
 - **Controller** は薄く保つ。入力の受け取りと応答生成に専念する。
+- **Controller は Repository を直接呼ばない**。データアクセス・業務処理は必ず **Service 層**を経由する（Controller → Service → Repository）。
 - ドメインロジックは **Action / Service クラス**へ切り出す。
 - バリデーションは **FormRequest** に集約する。
 - **DB アクセスは必ず Repository クラスを経由する**。Controller / Service / Action から Eloquent モデル（`Model::query()` / `Model::find()` 等）を直接呼ばない（→ [3. データアクセス](#3-データアクセスrepository-パターン)）。
 - レスポンスに渡すデータは **JsonResource** で整形する（→ [4. レスポンス整形](#4-レスポンス整形jsonresource)）。
-- ヘルパ的な共通処理は **共通関数クラス（Support）** に集約する（→ [5. 共通関数クラス](#5-共通関数クラスsupport--helper)）。
+- 横断的な補助処理は **ユーティリティ（`Utils`）／ヘルパー（`Helpers`）** に集約する（→ 「5. 共通処理クラス」）。
+
+## 1.5 サービス層（Controller とデータアクセスの仲介）
+
+**Controller は Repository を直接呼ばず、必ず Service を経由する**（Controller → Service → Repository）。
+Service は `app/Services/` に置き、1 集約（≒主要モデル）につき 1 つを基本とする
+（例: `Estimate` 集約に対する `EstimateService`）。
+
+- **責務**: ユースケース単位の入口。Repository を介したデータ取得/永続化の呼び出しと、
+  業務ルール（判断・複数手順の調整）の実装を担う。
+- **業務ロジックの置き場所**: 業務ルールは Service（または単一目的の `Action`）に書く。
+  Controller / Repository / Resource には業務判断を持たせない。
+- **依存**: Service はコンストラクタで **Repository のインターフェース**を受け取る。
+  Service 自体は concrete クラスとして注入する（差し替え/モックが必要になるまで
+  インターフェースは作らない＝過剰設計を避ける）。
+- **read 中心の現状**: 取得処理の委譲が中心で業務ルールがほぼ無い場合でも、
+  Controller からの単一の入口として Service を通す（将来ルールが増えた時の差し込み口になる）。
+
+```php
+class EstimateService
+{
+    public function __construct(
+        private readonly EstimateRepositoryInterface $estimates,
+    ) {}
+
+    /** @param array<string, mixed> $filters */
+    public function searchForStatusManagement(array $filters, int $perPage): LengthAwarePaginator
+    {
+        return $this->estimates->search($filters, $perPage);
+    }
+}
+```
 
 ## 2. ディレクトリ構成
 
@@ -59,9 +108,12 @@ app/
 │   │   └── EstimateRepositoryInterface.php
 │   └── EstimateRepository.php
 ├── Actions/                # 単一目的のドメイン処理（任意）
-├── Services/               # 複数手順のドメインロジック（任意）
-├── Support/                # 共通関数クラス（ステートレスなヘルパ）
-│   └── Format.php
+├── Services/               # ドメインロジック（Controller の単一の入口・必須経路）
+├── Utils/                  # ユーティリティクラス（ステートレス・static のみ）
+│   ├── Format.php
+│   └── StatusLabel.php
+├── Helpers/                # ヘルパークラス（コンテキスト依存・状態あり・インスタンス化）
+│   └── SampleHelper.php
 ├── Models/                 # Eloquent モデル
 └── Providers/
     ├── AppServiceProvider.php
@@ -145,8 +197,7 @@ class EstimateRepository implements EstimateRepositoryInterface
 
 ### 3.4 バインドと利用
 
-`app/Providers/RepositoryServiceProvider.php` で interface と実装を紐付け、
-利用側はコンストラクタインジェクションで **インターフェース**を受け取る。
+`app/Providers/RepositoryServiceProvider.php` で interface と実装を紐付ける。
 
 ```php
 // RepositoryServiceProvider::register()
@@ -156,24 +207,46 @@ $this->app->bind(
 );
 ```
 
+**Repository を利用するのは Service 層**であり、Controller は Repository を直接注入しない。
+Service はコンストラクタインジェクションで **インターフェース**を受け取る。
+
 ```php
-class StatusManagementController extends Controller
+class EstimateService
 {
     public function __construct(
         private readonly EstimateRepositoryInterface $estimates,
     ) {}
 
-    public function index(): \Inertia\Response
+    /** @param array<string, mixed> $filters */
+    public function searchForStatusManagement(array $filters, int $perPage): LengthAwarePaginator
     {
-        $estimates = $this->estimates->search(request()->only('keyword'));
+        return $this->estimates->search($filters, $perPage);
+    }
+}
+```
+
+Controller は **Service** を受け取り、データアクセスを委譲する（Controller → Service → Repository）。
+
+```php
+class StatusManagementController extends Controller
+{
+    public function __construct(
+        private readonly EstimateService $estimateService,
+    ) {}
+
+    public function index(SearchEstimateRequest $request): \Inertia\Response
+    {
+        $paginator = $this->estimateService->searchForStatusManagement($request->filters(), $perPage);
 
         return Inertia::render('StatusManagement/Index', [
-            'estimates' => EstimateResource::collection($estimates),
+            'estimates' => EstimateResource::collection($paginator->getCollection()),
+            // pagination / filters / options は省略
         ]);
     }
 }
 ```
 
+> Service は concrete クラスのためコンテナが自動解決する（バインド不要）。
 > 新しい Repository を追加したら `RepositoryServiceProvider` に bind を追記し、`bootstrap/providers.php` への登録を確認すること。
 
 ## 4. レスポンス整形（JsonResource）
@@ -223,28 +296,34 @@ return Inertia::render('StatusManagement/Index', [
 ]);
 ```
 
-## 5. 共通関数クラス（Support / Helper）
+## 5. 共通処理クラス（ユーティリティ / ヘルパー）
 
-複数の層・機能から再利用する **汎用処理**は、`app/Support/` 配下の
-**共通関数クラス**に集約する。グローバル関数（`helpers.php`）や各クラスへの
-重複実装は避ける。
+層をまたいで再利用する補助処理は、性質に応じて **ユーティリティクラス**と
+**ヘルパークラス**に分けて配置する。グローバル関数（`helpers.php`）や各クラスへの
+重複実装は避ける。どちらも **業務ルール（判断・業務手順・データアクセス）は持たない**
+（それは Service / Action / Repository の責務）。
 
-### 5.1 方針
+### 5.1 使い分け
 
-- **ステートレス**であること。状態を持たず、入力に対して同じ出力を返す純粋な処理を基本とする。
-- メソッドは **`static`** で公開し、`Format::yen(1000)` のように呼び出す（DI 不要・副作用なしのもの）。状態や依存注入が必要な処理は Service 層に置く。
-- 1 クラス 1 関心。整形系は `Format`、日付系は `DateHelper` のように責務で分割する。
-- ドメインロジック（業務ルール）はここに置かない。あくまで横断的・技術的なユーティリティに限定する。
+| 種類 | 役割 | 状態 | 呼び出し | 置き場所 / namespace | 例 |
+| --- | --- | --- | --- | --- | --- |
+| **ユーティリティクラス** | 広範な汎用タスク | 持たない（ステートレス） | `static` で直接 | `app/Utils/`（`App\Utils`） | `Format` / `StatusLabel` |
+| **ヘルパークラス** | 特定のコンテキスト/機能に密接した補助 | 持ってよい（コンテキスト依存） | インスタンス化して使う | `app/Helpers/`（`App\Helpers`） | `XxxHelper` |
+
+判断基準: **状態を持たず汎用** → ユーティリティ（`Support`）。
+**特定のコンテキスト（あるモデル・画面・処理）に紐づき、状態を持つ** → ヘルパー（`Helpers`）。
+
+### 5.2 ユーティリティクラス（`app/Utils/`）
+
+- **ステートレス**。状態を持たず、入力に対して同じ出力を返す純粋な処理。
+- メソッドは **`static`**。`Format::yen(1000)` のように直接呼ぶ（DI 不要・副作用なし）。
+- 1 クラス 1 関心。整形系は `Format`、ステータス解決は `StatusLabel` のように責務で分割する。
 - すべてのメソッドに引数型・戻り値型を付与する。
-
-### 5.2 実装例
-
-`app/Support/Format.php`:
 
 ```php
 <?php
 
-namespace App\Support;
+namespace App\Utils;
 
 class Format
 {
@@ -253,23 +332,55 @@ class Format
     {
         return $value === null ? '' : '¥' . number_format((float) $value);
     }
+}
+```
 
-    /** null/空文字を「—」に置き換える。 */
-    public static function dash(?string $value): string
+```php
+use App\Utils\Format;
+
+$label = Format::yen($unit->master_price); // "¥1,200,000"
+```
+
+### 5.3 ヘルパークラス（`app/Helpers/`）
+
+- 特定のコンテキスト（あるモデル/画面/処理）に**密接に関連する補助的役割**を担う。
+- **状態（インスタンス変数）を持ってよい**。コンストラクタでコンテキストを受け取り、インスタンスメソッドで提供する。
+- **インスタンス化して使う**（`new XxxHelper($context)` もしくは DI）。`static` の寄せ集めにしない。
+- あくまで補助（整形・組み立て）。**業務ルールやデータアクセスは持たない**（→ Service / Repository）。
+- クラス名は `XxxHelper`。すべてのメソッドに引数型・戻り値型を付与する。
+
+```php
+<?php
+
+namespace App\Helpers;
+
+use App\Models\Estimate;
+
+/**
+ * 1 件の実行予算に紐づく表示補助（コンテキスト = 対象 Estimate）。
+ */
+class EstimateViewHelper
+{
+    public function __construct(
+        private readonly Estimate $estimate,
+    ) {}
+
+    /** 対象案件の表示用タイトル。 */
+    public function title(): string
     {
-        return ($value === null || $value === '') ? '—' : $value;
+        return "#{$this->estimate->id} {$this->estimate->name}";
     }
 }
 ```
 
 ```php
-use App\Support\Format;
+use App\Helpers\EstimateViewHelper;
 
-$label = Format::yen($unit->master_price); // "¥1,200,000"
+$title = (new EstimateViewHelper($estimate))->title(); // "#123 ●○マンション"
 ```
 
-> 表示専用の整形は JsonResource 内から共通関数クラスを呼び出して再利用してよい
-> （例: `EstimateResource` で `Format::yen(...)`）。
+> 表示専用の整形は JsonResource から呼び出して再利用してよい（例: Resource で `Format::yen(...)`）。
+> ユーティリティ／ヘルパーが業務判断を持ち始めたら、それは Service / Action へ移すサイン。
 
 ## 6. Inertia レスポンス
 

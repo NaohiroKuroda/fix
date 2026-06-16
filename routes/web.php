@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EstimateDetailController;
+use App\Http\Controllers\EstimateManagementController;
 use App\Http\Controllers\ExecutionBudgetController;
 use App\Http\Controllers\StatusManagementController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,12 @@ Route::middleware('auth:admin')->group(function () {
     // ステータス管理画面（業者選定承認・材料納品日・完了報告書）
     Route::get('/status-management', [StatusManagementController::class, 'index'])
         ->name('status-management.index');
+
+    // 見積管理（申請/承認専用。felix_total 実行予算の見積部分を切り出した画面群）
+    Route::get('/estimate-management/quote-request', [EstimateManagementController::class, 'quoteRequest'])
+        ->name('estimate-management.quote-request');     // 見積り依頼（F→業者依頼前）
+    Route::get('/estimate-management/vendor-selection', [EstimateManagementController::class, 'vendorSelection'])
+        ->name('estimate-management.vendor-selection');  // 発注業者選定（業者→F返答済）
 
     // ログアウト（安全のために POST で処理）
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

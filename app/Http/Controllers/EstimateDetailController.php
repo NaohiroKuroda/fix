@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\EstimateDetailResource;
-use App\Repositories\Contracts\EstimateRepositoryInterface;
+use App\Services\EstimateService;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -11,7 +11,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class EstimateDetailController extends Controller
 {
     public function __construct(
-        private readonly EstimateRepositoryInterface $estimates,
+        private readonly EstimateService $estimateService,
     ) {}
 
     /**
@@ -22,7 +22,7 @@ class EstimateDetailController extends Controller
      */
     public function show(int $estimate): Response
     {
-        $model = $this->estimates->findBudgetDetail($estimate);
+        $model = $this->estimateService->findBudgetDetail($estimate);
 
         if ($model === null) {
             throw new NotFoundHttpException("実行予算 #{$estimate} が見つかりません。");

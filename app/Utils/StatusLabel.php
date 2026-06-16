@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support;
+namespace App\Utils;
 
 /**
  * ステータス値 → 表示ラベルの解決（ステートレス）。

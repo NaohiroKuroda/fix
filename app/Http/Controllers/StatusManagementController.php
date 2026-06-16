@@ -4,26 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SearchEstimateRequest;
 use App\Http\Resources\EstimateResource;
-use App\Repositories\Contracts\EstimateRepositoryInterface;
+use App\Services\EstimateService;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class StatusManagementController extends Controller
 {
     public function __construct(
-        private readonly EstimateRepositoryInterface $estimates,
+        private readonly EstimateService $estimateService,
     ) {}
 
     /**
      * ステータス管理画面（業者選定承認・材料納品日・完了報告書）。
      *
-     * 既存 felix_total のデータ（Docker MySQL: fix）を Repository 経由で取得し、
+     * 既存 felix_total のデータ（Docker MySQL: fix）を Service 経由で取得し、
      * JsonResource で整形して Inertia ページに渡す。検索とページネーションに対応。
      */
     public function index(SearchEstimateRequest $request): Response
     {
         $perPage = (int) config('status_management.per_page', 15);
-        $paginator = $this->estimates->search($request->filters(), $perPage);
+        $paginator = $this->estimateService->searchForStatusManagement($request->filters(), $perPage);
 
         return Inertia::render('StatusManagement/Index', [
             'estimates' => EstimateResource::collection($paginator->getCollection()),

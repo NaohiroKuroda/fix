@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SearchBudgetRequest;
 use App\Http\Resources\ExecutionBudgetResource;
-use App\Repositories\Contracts\EstimateRepositoryInterface;
+use App\Services\EstimateService;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ExecutionBudgetController extends Controller
 {
     public function __construct(
-        private readonly EstimateRepositoryInterface $estimates,
+        private readonly EstimateService $estimateService,
     ) {}
 
     /**
@@ -23,7 +23,7 @@ class ExecutionBudgetController extends Controller
     public function index(SearchBudgetRequest $request): Response
     {
         $perPage = (int) config('status_management.per_page', 10);
-        $paginator = $this->estimates->paginateBudgets($request->filters(), $perPage);
+        $paginator = $this->estimateService->paginateBudgets($request->filters(), $perPage);
 
         return Inertia::render('ExecutionBudget/Index', [
             'budgets' => ExecutionBudgetResource::collection($paginator->getCollection()),

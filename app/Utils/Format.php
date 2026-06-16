@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support;
+namespace App\Utils;
 
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;

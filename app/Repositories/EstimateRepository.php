@@ -156,7 +156,7 @@ class EstimateRepository implements EstimateRepositoryInterface
         });
     }
 
-    public function findBudgetDetail(int $id): ?\App\Models\Estimate
+    public function findBudgetDetail(int $id): ?Estimate
     {
         return Estimate::query()
             ->select(['id', 'name', 'tmp_budget_id'])
@@ -173,6 +173,47 @@ class EstimateRepository implements EstimateRepositoryInterface
                 },
             ])
             ->find($id);
+    }
+
+    public function forEstimateManagement(array $filters, int $perPage): LengthAwarePaginator
+    {
+        $keyword = $this->nonEmpty($filters['keyword'] ?? null);      // 物件名
+        $itemLabel = $this->nonEmpty($filters['itemLabel'] ?? null);  // 項目名
+
+        // 対象ユニットの共通条件（本見積・確定・未クローズ）＋項目名の絞り込み。
+        $unitFilter = function (Builder $q) use ($itemLabel): void {
+            $this->applyBudgetBaseFilter($q);
+            if ($itemLabel !== false) {
+                $q->where('label', 'like', "%{$itemLabel}%");
+            }
+        };
+
+        return Estimate::query()
+            ->select(['id', 'name', 'department_id'])
+            ->where('name', 'like', '●%')
+            ->when($keyword, fn (Builder $q, string $kw) => $q->where('name', 'like', "%{$kw}%"))
+            ->whereHas('units', fn (Builder $q) => $unitFilter($q))
+            ->with(['units' => function (HasMany $q) use ($unitFilter): void {
+                $unitFilter($q->getQuery());
+                $q->select(self::BUDGET_UNIT_COLUMNS)
+                    ->orderBy('sort')
+                    ->orderBy('id')
+                    ->with(['companies' => function ($c): void {
+                        // 見積部分のみ：業者名・最新見積書(type=1)・依頼履歴・採用フラグ。
+                        $c->select(self::COMPANY_COLUMNS)
+                            ->whereNull('deleted_at')
+                            ->orderByDesc('adoption_flg')
+                            ->orderBy('id')
+                            ->with([
+                                'company:id,company_name',
+                                'files:id,estimate_unit_company_id,price,date,type',
+                                'orderHistories:id,estimate_unit_company_id,created_at',
+                            ]);
+                    }]);
+            }])
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     /** 業者（請求先/発注先）の全リレーションを読み込むクロージャ（一覧・詳細で共用）。 */

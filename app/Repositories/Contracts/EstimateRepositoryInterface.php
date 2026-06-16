@@ -27,4 +27,13 @@ interface EstimateRepositoryInterface
      * 実行予算 詳細（原価明細セクション表示用）。集計値 + 明細ユニット + 採用業者を読み込む。
      */
     public function findBudgetDetail(int $id): ?\App\Models\Estimate;
+
+    /**
+     * 見積管理画面（申請/承認専用）用。● 物件の本見積ユニット + 見積先を、見積部分の
+     * 表示に必要な範囲（単価・見積書ファイル・依頼履歴・採用フラグ）で読み込みページネーションする。
+     *
+     * @param  array<string, mixed>  $filters 正規化済みの絞り込み条件（keyword=物件名 / itemLabel=項目名）
+     * @return LengthAwarePaginator<int, \App\Models\Estimate>
+     */
+    public function forEstimateManagement(array $filters, int $perPage): LengthAwarePaginator;
 }

@@ -3,8 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Models\EstimateUnit;
-use App\Support\Format;
-use App\Support\StatusLabel;
+use App\Utils\Format;
+use App\Utils\StatusLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

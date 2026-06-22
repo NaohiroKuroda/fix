@@ -20,7 +20,7 @@ MySQL（`fix_db`）へ接続して実装画面を社内ネットワークに **8
 ## 構成
 
 ```
-[ブラウザ] ──:8090──▶ new_fix_app (PHP8.4 + Apache, Inertia/Vue)
+[ブラウザ] ──:8090──▶ new_fix_app (PHP8.3 + Apache, Inertia/Vue)
                           │  shared-net 経由, DB_HOST=fix_db
                           ▼
                        fix_db (MySQL5.7 / DB:fix)   ← 既存 felix_total

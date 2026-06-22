@@ -49,6 +49,11 @@ class HandleInertiaRequests extends Middleware
             ],
             // 現行 felix_total の URL（明細リンクの iframe 先）。
             'felixTotalUrl' => config('services.felix_total.url'),
+            // フラッシュメッセージ（成功 / エラー）。Controller の back()->with(...) で積む。
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+            ],
         ];
     }
 }

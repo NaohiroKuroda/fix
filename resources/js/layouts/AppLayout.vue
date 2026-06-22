@@ -1,15 +1,17 @@
 <script setup lang="ts">
-// アプリ共通レイアウト（felix_total 風サイドメニュー + ヘッダー + コンテンツ）。
+// アプリ共通レイアウト（サイドメニュー + コンテンツ）。
+// - グローバルヘッダーは撤去。アカウント名 + ログアウトはサイドバー上部（ロゴ直下）に配置。
 // - サイドバーは開閉可能（デスクトップ: collapsed / モバイル: オーバーレイ）
-// - ヘッダー右端にユーザー名を表示（felix_total 踏襲）
 import { computed, ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { ClipboardList, ChevronDown, Menu, Building2, PanelLeftClose, PanelLeftOpen, User, LogOut } from 'lucide-vue-next';
+import { ClipboardList, ChevronDown, Menu, PanelLeftClose, PanelLeftOpen, User, LogOut } from 'lucide-vue-next';
+import FlashMessages from '@/components/feedback/FlashMessages.vue';
 
 interface NavChild {
     label: string;
-    href: string;
-    active: boolean;
+    /** 未実装（プレースホルダ）の場合は href を持たない。 */
+    href?: string;
+    active?: boolean;
     /** 未対応件数バッジ（LINE の未読数風）。0/未指定なら非表示。※現状はダミー値。 */
     badge?: number;
 }
@@ -18,16 +20,27 @@ const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
 
-// 見積管理（トグル）。配下の画面はシート名の()内をメニュー名にする。
+// 見積管理（トグル）。配下はシート名（業務（状態））をそのままメニュー名にする。
+// href 付き＝実装済み（リンク）。href 無し＝未実装（プレースホルダ「準備中」）。
 // ※ badge は未対応件数の表示用（現状はダミー値。今後 Inertia 共有プロパティで実件数を配る）。
 const estimateChildren = computed<NavChild[]>(() => [
-    { label: 'FELIX→業者依頼前', href: '/estimate-management/quote-request', active: path.value.startsWith('/estimate-management/quote-request'), badge: 5 },
-    { label: '業者→FELIX返答済', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: 7 },
+    { label: '見積依頼【FELIX→業者依頼前】', href: '/estimate-management/quote-request', active: path.value.startsWith('/estimate-management/quote-request'), badge: 5 },
+    { label: '発注業者選定【業者→FELIX返答済】', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: 7 },
+    { label: '部長承認【業者選定済→FELIX(建設部)】', href: '/estimate-management/manager-approval', active: path.value.startsWith('/estimate-management/manager-approval'), badge: 3 },
+    { label: '設計部承認【FELIX(建設部)→FELIX(設計部)】', href: '/estimate-management/design-selection', active: path.value.startsWith('/estimate-management/design-selection') },
+    { label: '部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/estimate-management/cancel-request', active: path.value.startsWith('/estimate-management/cancel-request') },
+    { label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/estimate-management/cancel-approval', active: path.value.startsWith('/estimate-management/cancel-approval') },
 ]);
 const estimateMenuOpen = ref(true);
 
 // 親「見積管理」に出す合計バッジ。
 const estimateBadgeTotal = computed(() => estimateChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
+
+// ラベルを最初の「【」の前で2行に分割する（業務名 / 【状態】）。
+const splitLabel = (label: string): { head: string; tail: string } => {
+    const i = label.search(/【/);
+    return i < 0 ? { head: label, tail: '' } : { head: label.slice(0, i), tail: label.slice(i) };
+};
 
 const mobileOpen = ref(false);  // モバイル: オーバーレイ表示
 const collapsed = ref(false);   // デスクトップ: 折りたたみ
@@ -38,17 +51,20 @@ const logout = () => router.post('/logout');
 
 <template>
     <div class="min-h-screen bg-muted/30">
+        <!-- フラッシュメッセージ（成功 / エラー）。全画面共通で右上に表示 -->
+        <FlashMessages />
+
         <!-- サイドバー -->
         <aside
-            class="fixed inset-y-0 left-0 z-50 w-60 flex flex-col bg-primary text-primary-foreground transition-transform"
+            class="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-primary to-[#0e1838] text-primary-foreground transition-transform"
             :class="[
                 mobileOpen ? 'translate-x-0' : '-translate-x-full',
                 collapsed ? 'md:-translate-x-full' : 'md:translate-x-0',
             ]"
         >
             <div class="flex items-center gap-2.5 px-4 h-14 border-b border-white/10">
-                <span class="flex size-9 items-center justify-center rounded-lg bg-white/15 shrink-0">
-                    <Building2 class="size-5" />
+                <span class="flex size-9 items-center justify-center rounded-lg bg-white shrink-0 p-1 ring-1 ring-[#c4a35b]/40">
+                    <img src="/images/felix-logo.png" alt="FELIX" class="size-full object-contain" />
                 </span>
                 <div class="leading-tight min-w-0 flex-1">
                     <div class="text-sm font-bold tracking-wide">FELIX</div>
@@ -63,12 +79,27 @@ const logout = () => router.post('/logout');
                 </button>
             </div>
 
+            <!-- アカウント（ロゴ直下）：ユーザー名 + ログアウト -->
+            <div class="flex items-center gap-2.5 border-b border-white/10 px-4 py-3">
+                <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white">
+                    <User class="size-4.5" />
+                </span>
+                <span class="min-w-0 flex-1 truncate text-sm text-white/90">{{ userName }}</span>
+                <button
+                    class="flex size-8 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    title="ログアウト"
+                    @click="logout"
+                >
+                    <LogOut class="size-4.5" />
+                </button>
+            </div>
+
             <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-                <p class="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">メニュー</p>
+                <p class="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c4a35b]/80">メニュー</p>
                 <!-- 見積管理（トグル）。クリックで配下の画面リンクを開閉する。 -->
                 <button
                     type="button"
-                    class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
+                    class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-base font-medium text-white/80 transition-colors hover:bg-white/10"
                     @click="estimateMenuOpen = !estimateMenuOpen"
                 >
                     <ClipboardList class="size-4.5 shrink-0" />
@@ -82,34 +113,48 @@ const logout = () => router.post('/logout');
                     <ChevronDown class="size-4 shrink-0 transition-transform" :class="estimateMenuOpen ? '' : '-rotate-90'" />
                 </button>
                 <div v-show="estimateMenuOpen" class="mt-1 space-y-1 pl-4">
-                    <Link
-                        v-for="child in estimateChildren"
-                        :key="child.href"
-                        :href="child.href"
-                        class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors"
-                        :class="child.active ? 'bg-white/15 font-semibold' : 'text-white/80 hover:bg-white/10'"
-                    >
-                        <span class="flex-1">{{ child.label }}</span>
-                        <span
-                            v-if="child.badge"
-                            class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                    <template v-for="child in estimateChildren" :key="child.label">
+                        <!-- 実装済み：リンク -->
+                        <Link
+                            v-if="child.href"
+                            :href="child.href"
+                            class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-snug transition"
+                            :class="child.active
+                                ? 'bg-white/12 font-semibold text-white shadow-[inset_3px_0_0_#c4a35b,inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm'
+                                : 'text-white/75 hover:bg-white/10'"
                         >
-                            <span class="block translate-y-[0.5px] leading-none">{{ child.badge > 99 ? '99+' : child.badge }}</span>
-                        </span>
-                    </Link>
-                    <p v-if="!estimateChildren.length" class="px-3 py-2 text-xs text-white/40">準備中</p>
+                            <span class="flex-1">
+                                <span class="block">{{ splitLabel(child.label).head }}</span>
+                                <span v-if="splitLabel(child.label).tail" class="block text-[11px] leading-tight opacity-70">{{ splitLabel(child.label).tail }}</span>
+                            </span>
+                            <span
+                                v-if="child.badge"
+                                class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                            >
+                                <span class="block translate-y-[0.5px] leading-none">{{ child.badge > 99 ? '99+' : child.badge }}</span>
+                            </span>
+                        </Link>
+                        <!-- 未実装：準備中プレースホルダ -->
+                        <div
+                            v-else
+                            class="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-snug text-white/35"
+                            title="準備中"
+                        >
+                            <span class="flex-1">
+                                <span class="block">{{ splitLabel(child.label).head }}</span>
+                                <span v-if="splitLabel(child.label).tail" class="block text-[11px] leading-tight opacity-70">{{ splitLabel(child.label).tail }}</span>
+                            </span>
+                            <span class="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[9px] text-white/45">準備中</span>
+                        </div>
+                    </template>
                 </div>
             </nav>
-
-            <div class="border-t border-white/10 px-5 py-3 text-[10px] text-white/40">
-                new_felix_total
-            </div>
         </aside>
 
         <!-- モバイル用オーバーレイ -->
         <div v-if="mobileOpen" class="fixed inset-0 z-40 bg-black/40 md:hidden" @click="mobileOpen = false" />
 
-        <!-- デスクトップ: 折りたたみ時の再オープンボタン（ヘッダー外・閉じた時のみ） -->
+        <!-- デスクトップ: 折りたたみ時の再オープンボタン（閉じた時のみ） -->
         <button
             v-show="collapsed"
             class="fixed left-2 top-2.5 z-50 hidden size-9 items-center justify-center rounded-lg border bg-card text-foreground shadow-sm hover:bg-accent md:flex"
@@ -119,36 +164,18 @@ const logout = () => router.post('/logout');
             <PanelLeftOpen class="size-5" />
         </button>
 
-        <!-- コンテンツ -->
-        <div class="transition-[padding]" :class="collapsed ? 'md:pl-0' : 'md:pl-60'">
-            <!-- グローバルヘッダー（左: モバイルのみメニュー / 右: ユーザー名） -->
-            <header class="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-card px-3 md:px-5">
-                <!-- モバイルのみ: オーバーレイメニューを開く -->
-                <button
-                    class="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent md:hidden"
-                    title="メニュー"
-                    @click="mobileOpen = true"
-                >
-                    <Menu class="size-5" />
-                </button>
-                <span class="font-semibold tracking-tight md:hidden">FELIX</span>
+        <!-- モバイル: メニューを開く（ヘッダー撤去に伴う最小限の開閉ボタン） -->
+        <button
+            v-show="!mobileOpen"
+            class="fixed left-3 top-3 z-40 flex size-10 items-center justify-center rounded-lg border bg-card text-foreground shadow-sm md:hidden"
+            title="メニュー"
+            @click="mobileOpen = true"
+        >
+            <Menu class="size-5" />
+        </button>
 
-                <!-- 右端: ユーザー名 + ログアウト -->
-                <div class="ml-auto flex items-center gap-2.5">
-                    <span class="hidden text-sm text-foreground sm:inline">{{ userName }}</span>
-                    <span class="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <User class="size-4.5" />
-                    </span>
-                    <button
-                        class="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                        title="ログアウト"
-                        @click="logout"
-                    >
-                        <LogOut class="size-4.5" />
-                    </button>
-                </div>
-            </header>
-
+        <!-- コンテンツ（グローバルヘッダーは撤去。アカウント/ログアウトはサイドバーへ移動） -->
+        <div class="transition-[padding]" :class="collapsed ? 'md:pl-0' : 'md:pl-72'">
             <slot />
         </div>
     </div>

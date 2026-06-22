@@ -3,10 +3,13 @@
 namespace App\Repositories;
 
 use App\Models\Estimate;
+use App\Models\EstimateOrderHistory;
+use App\Models\EstimateUnitCompany;
 use App\Repositories\Contracts\EstimateRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 /**
  * ステータス管理画面のデータアクセス。
@@ -21,15 +24,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class EstimateRepository implements EstimateRepositoryInterface
 {
-    /** 表示するユニットの列（不要列を読み込まない）。 */
-    private const UNIT_COLUMNS = [
-        'id', 'estimate_id', 'sort', 'label', 'sub_cate', 'use_flg',
-        'master_price', 'tmp_unit_price', 'unit_price',
-        'company_select_status', 'complete_status',
-        'tmp_construct_at', 'fix_construct_at', 'tmp_completion_at', 'fix_completion_at',
-        'ordered_at',
-    ];
-
     /** 発注先（業者）の列。 */
     private const COMPANY_COLUMNS = [
         'id', 'estimate_unit_id', 'company_id', 'branch_id', 'pay_company_id',
@@ -37,143 +31,11 @@ class EstimateRepository implements EstimateRepositoryInterface
         'tmp_status', 'design_status', 'fix_status', 'denial_comment',
     ];
 
-    public function search(array $filters, int $perPage): LengthAwarePaginator
-    {
-        return Estimate::query()
-            ->select(['id', 'name', 'department_id', 'status', 'complete_date'])
-            ->whereHas('units', fn (Builder $q) => $this->applyUnitFilters($q, $filters))
-            ->when(
-                $this->nonEmpty($filters['keyword'] ?? null),
-                fn (Builder $q, string $keyword) => $q->where(function (Builder $w) use ($keyword): void {
-                    $w->where('name', 'like', "%{$keyword}%");
-                    if (ctype_digit($keyword)) {
-                        $w->orWhere('id', (int) $keyword);
-                    }
-                })
-            )
-            ->with(['units' => function (HasMany $q) use ($filters): void {
-                $this->applyUnitFilters($q->getQuery(), $filters);
-                $q->select(self::UNIT_COLUMNS)
-                    ->orderBy('sort')
-                    ->orderBy('id')
-                    ->with(['companies' => function ($c): void {
-                        $c->select(self::COMPANY_COLUMNS)
-                            ->whereNull('deleted_at')
-                            ->orderByDesc('adoption_flg')
-                            ->orderBy('id')
-                            ->with([
-                                'company:id,company_name,sub_cate',
-                                'branch:id,company_name',
-                                'payCompany:id,company_name',
-                                'files:id,estimate_unit_company_id,price,date,type,file_cate,complete_flg',
-                                'changeHistories:id,estimate_unit_company_id,type,created_at',
-                                'orderHistories:id,estimate_unit_company_id,created_at',
-                                'completeHistories:id,estimate_unit_company_id,status,created_at',
-                                'endReports:id,estimate_unit_company_id,status,denial_flg,updated_at',
-                                'orders:id,estimate_unit_company_id,date,status,adoption_flg',
-                                'dates:id,estimate_unit_company_id,reply_date,adoption_flg',
-                            ]);
-                    }]);
-            }])
-            ->orderByDesc('id')
-            ->paginate($perPage)
-            ->withQueryString();
-    }
-
     /** 実行予算一覧で読み込む明細ユニットの列。 */
     private const BUDGET_UNIT_COLUMNS = [
         'id', 'estimate_id', 'sort', 'label', 'sub_cate', 'use_flg',
         'amount', 'unit_price', 'price', 'master_price', 'tmp_unit_price',
     ];
-
-    /** 日付カラム選択フィルタ／日付並べ替えで対象にできる集計カラム。 */
-    private const BUDGET_DATE_COLUMNS = [
-        'delivery_date',
-        'purchase_contract_date',
-        'purchase_settlement_date',
-        'sail_start_date',
-        'sales_contract_payment_date',
-        'sales_contract_date',
-    ];
-
-    public function paginateBudgets(array $filters, int $perPage): LengthAwarePaginator
-    {
-        $monthFrom = $this->nonEmpty($filters['monthFrom'] ?? null);
-        $monthTo = $this->nonEmpty($filters['monthTo'] ?? null);
-        $sort = $filters['sort'] ?? null;
-        $dateColumn = $this->budgetDateColumn($filters['dateColumn'] ?? null);
-        $dealerName = $this->nonEmpty($filters['dealerName'] ?? null);
-        $ownerBankName = $this->nonEmpty($filters['ownerBankName'] ?? null);
-
-        return Estimate::query()
-            // 選択された日付カラム（既定: 引渡日）の集計を結合し、絞り込み/並べ替えに使う。
-            ->leftJoin('estimate_aggregates as ea', function ($join) use ($dateColumn): void {
-                $join->on('estimates.id', '=', 'ea.estimate_id')
-                    ->where('ea.column', '=', $dateColumn);
-            })
-            ->select('estimates.id', 'estimates.name', 'estimates.tmp_budget_id', 'ea.date as delivery_date')
-            // 旧画面の対象は「●」で始まる物件。
-            ->where('estimates.name', 'like', '●%')
-            // ID 検索（カンマ/空白区切りで複数可）
-            ->when($this->idList($filters['id'] ?? null), fn (Builder $q, array $ids) => $q->whereIn('estimates.id', $ids))
-            // 物件名
-            ->when(
-                $this->nonEmpty($filters['keyword'] ?? null),
-                fn (Builder $q, string $kw) => $q->where('estimates.name', 'like', "%{$kw}%")
-            )
-            // 選択日付カラムの月度範囲
-            ->when($monthFrom, fn (Builder $q, string $m) => $q->whereDate('ea.date', '>=', $m.'-01'))
-            ->when($monthTo, fn (Builder $q, string $m) => $q->whereDate('ea.date', '<=', date('Y-m-t', strtotime($m.'-01'))))
-            // DL名 / オーナー銀行名（集計テーブルのテキスト値で絞り込み）
-            ->when($dealerName, fn (Builder $q, string $v) => $this->whereAggregateSummaryLike($q, 'dealer_name', $v))
-            ->when($ownerBankName, fn (Builder $q, string $v) => $this->whereAggregateSummaryLike($q, 'owner_bank_name', $v))
-            ->with(['aggregates:id,estimate_id,column,date,aggregate,summary'])
-            // 並べ替え（選択日付カラムの date を NULL 後ろで昇順/降順）
-            ->when($sort === 'date_asc', fn (Builder $q) => $q->orderByRaw('ea.date IS NULL, ea.date ASC'))
-            ->when($sort === 'date_desc', fn (Builder $q) => $q->orderByRaw('ea.date IS NULL, ea.date DESC'))
-            ->orderByDesc('estimates.id')
-            ->paginate($perPage)
-            ->withQueryString();
-    }
-
-    /** 日付カラム選択値をホワイトリストで検証（不正/未指定は delivery_date）。 */
-    private function budgetDateColumn(mixed $value): string
-    {
-        $value = $this->nonEmpty($value);
-
-        return in_array($value, self::BUDGET_DATE_COLUMNS, true) ? (string) $value : 'delivery_date';
-    }
-
-    /** 指定 column の集計テキスト(summary)に対する部分一致条件（estimate_id で相関）。 */
-    private function whereAggregateSummaryLike(Builder $q, string $column, string $value): Builder
-    {
-        return $q->whereExists(function ($sub) use ($column, $value): void {
-            $sub->selectRaw('1')
-                ->from('estimate_aggregates as eaf')
-                ->whereColumn('eaf.estimate_id', 'estimates.id')
-                ->where('eaf.column', '=', $column)
-                ->where('eaf.summary', 'like', "%{$value}%");
-        });
-    }
-
-    public function findBudgetDetail(int $id): ?Estimate
-    {
-        return Estimate::query()
-            ->select(['id', 'name', 'tmp_budget_id'])
-            ->with([
-                'aggregates:id,estimate_id,column,date,aggregate,summary',
-                'units' => function (HasMany $q): void {
-                    $this->applyBudgetBaseFilter($q->getQuery());
-                    // 原価明細セクションごとに全列（請求先・各種ステータス）を表示するため、
-                    // ステータス画面と同じ全業者・全リレーションを読み込む。
-                    $q->select(array_merge(self::UNIT_COLUMNS, ['cate']))
-                        ->orderBy('sort')
-                        ->orderBy('id')
-                        ->with(['companies' => $this->companyEagerLoad()]);
-                },
-            ])
-            ->find($id);
-    }
 
     public function forEstimateManagement(array $filters, int $perPage): LengthAwarePaginator
     {
@@ -216,27 +78,148 @@ class EstimateRepository implements EstimateRepositoryInterface
             ->withQueryString();
     }
 
-    /** 業者（請求先/発注先）の全リレーションを読み込むクロージャ（一覧・詳細で共用）。 */
-    private function companyEagerLoad(): \Closure
+    public function recordQuoteRequests(array $companyIds): int
     {
-        return function ($c): void {
-            $c->select(self::COMPANY_COLUMNS)
-                ->whereNull('deleted_at')
-                ->orderByDesc('adoption_flg')
-                ->orderBy('id')
-                ->with([
-                    'company:id,company_name,sub_cate',
-                    'branch:id,company_name',
-                    'payCompany:id,company_name',
-                    'files:id,estimate_unit_company_id,price,date,type,file_cate,complete_flg',
-                    'changeHistories:id,estimate_unit_company_id,type,created_at',
-                    'orderHistories:id,estimate_unit_company_id,created_at',
-                    'completeHistories:id,estimate_unit_company_id,status,created_at',
-                    'endReports:id,estimate_unit_company_id,status,denial_flg,updated_at',
-                    'orders:id,estimate_unit_company_id,date,status,adoption_flg',
-                    'dates:id,estimate_unit_company_id,reply_date,adoption_flg',
+        if ($companyIds === []) {
+            return 0;
+        }
+
+        // 依頼履歴がまだ無い見積先だけを対象にする（重複送信を防ぐ）。
+        $companies = EstimateUnitCompany::query()
+            ->whereIn('id', $companyIds)
+            ->whereNull('deleted_at')
+            ->whereDoesntHave('orderHistories')
+            ->get(['id', 'company_id', 'estimate_unit_id']);
+
+        if ($companies->isEmpty()) {
+            return 0;
+        }
+
+        return DB::transaction(function () use ($companies): int {
+            foreach ($companies as $company) {
+                EstimateOrderHistory::create([
+                    'estimate_unit_company_id' => $company->id,
+                    'company_id' => $company->company_id,
+                    'estimate_unit_id' => $company->estimate_unit_id,
                 ]);
-        };
+            }
+
+            return $companies->count();
+        });
+    }
+
+    public function recordVendorSelections(array $companyIds): int
+    {
+        if ($companyIds === []) {
+            return 0;
+        }
+
+        // 実在する（未削除の）見積先だけを対象にする。
+        $companies = EstimateUnitCompany::query()
+            ->whereIn('id', $companyIds)
+            ->whereNull('deleted_at')
+            ->get(['id', 'estimate_unit_id']);
+
+        if ($companies->isEmpty()) {
+            return 0;
+        }
+
+        return DB::transaction(function () use ($companies): int {
+            $unitIds = $companies->pluck('estimate_unit_id')->unique()->all();
+            $selectedIds = $companies->pluck('id')->all();
+
+            // 選定対象を含むユニット内は一度すべて採用解除し、選定された見積先のみ採用する
+            // （項目ごとに採用業者は1社、という発注業者選定の前提を満たす）。
+            EstimateUnitCompany::query()
+                ->whereIn('estimate_unit_id', $unitIds)
+                ->whereNull('deleted_at')
+                ->update(['adoption_flg' => 0]);
+
+            EstimateUnitCompany::query()
+                ->whereIn('id', $selectedIds)
+                ->update(['adoption_flg' => 1]);
+
+            return count($selectedIds);
+        });
+    }
+
+    public function recordDesignSelections(array $companyIds): int
+    {
+        if ($companyIds === []) {
+            return 0;
+        }
+
+        // 実在する（未削除の）見積先だけを対象にする。
+        $companies = EstimateUnitCompany::query()
+            ->whereIn('id', $companyIds)
+            ->whereNull('deleted_at')
+            ->get(['id', 'estimate_unit_id']);
+
+        if ($companies->isEmpty()) {
+            return 0;
+        }
+
+        return DB::transaction(function () use ($companies): int {
+            $unitIds = $companies->pluck('estimate_unit_id')->unique()->all();
+            $selectedIds = $companies->pluck('id')->all();
+
+            // 選定対象を含むユニット内は一度すべて設計部選定を解除し、選定された見積先のみ選定する
+            // （項目ごとに設計部選定は1社、という前提を満たす）。
+            EstimateUnitCompany::query()
+                ->whereIn('estimate_unit_id', $unitIds)
+                ->whereNull('deleted_at')
+                ->update(['design_status' => 0]);
+
+            EstimateUnitCompany::query()
+                ->whereIn('id', $selectedIds)
+                ->update(['design_status' => 1]);
+
+            return count($selectedIds);
+        });
+    }
+
+    public function recordManagerApprovals(array $companyIds): int
+    {
+        // 部長承認 = 常務承認フラグ（fix_status）を承認済み(1)にする。
+        return $this->updateCompanyColumn($companyIds, 'fix_status', 1);
+    }
+
+    public function recordCancelRequests(array $companyIds): int
+    {
+        // 取消申請 = cancel_flg を申請中(1)にする。
+        return $this->updateCompanyColumn($companyIds, 'cancel_flg', 1);
+    }
+
+    public function recordCancelApprovals(array $companyIds): int
+    {
+        // 取消承認 = cancel_flg を承認済み(2)にする。
+        return $this->updateCompanyColumn($companyIds, 'cancel_flg', 2);
+    }
+
+    /**
+     * 指定の見積先（EstimateUnitCompany）の1カラムを一括更新する。
+     * 実在（未削除）の ID のみを対象に、更新件数を返す。
+     *
+     * @param  list<int>  $companyIds
+     */
+    private function updateCompanyColumn(array $companyIds, string $column, int $value): int
+    {
+        if ($companyIds === []) {
+            return 0;
+        }
+
+        $ids = EstimateUnitCompany::query()
+            ->whereIn('id', $companyIds)
+            ->whereNull('deleted_at')
+            ->pluck('id');
+
+        if ($ids->isEmpty()) {
+            return 0;
+        }
+
+        return EstimateUnitCompany::query()
+            ->whereIn('id', $ids->all())
+            ->update([$column => $value]);
     }
 
     /** 実行予算一覧の対象ユニット条件（本見積・確定・未クローズ）。 */
@@ -245,80 +228,6 @@ class EstimateRepository implements EstimateRepositoryInterface
         $q->where('step', 2)
             ->where('estimate_clear_flg', 1)
             ->whereNull('tmp_close_date');
-    }
-
-    /** ID 検索文字列を整数配列へ。 */
-    private function idList(mixed $value): array
-    {
-        if ($value === null || $value === '') {
-            return [];
-        }
-
-        return collect(preg_split('/[\s,]+/', (string) $value))
-            ->filter(fn ($v) => $v !== '' && ctype_digit($v))
-            ->map(fn ($v) => (int) $v)
-            ->values()
-            ->all();
-    }
-
-    /**
-     * 表示対象ユニットの基本条件 + 検索条件を適用する。
-     *
-     * @param  array<string, mixed>  $f
-     */
-    private function applyUnitFilters(Builder $q, array $f): void
-    {
-        // 基本条件（本見積・確定・未クローズ）
-        $q->where('step', 2)
-            ->where('estimate_clear_flg', 1)
-            ->whereNull('tmp_close_date');
-
-        // 区分（0 を含む有効値があるため null 判定で分岐）
-        if (($f['subCate'] ?? null) !== null) {
-            $q->where('sub_cate', (int) $f['subCate']);
-        }
-
-        // 選定承認ステータス
-        if (($f['companySelectStatus'] ?? null) !== null) {
-            $q->where('company_select_status', (int) $f['companySelectStatus']);
-        }
-
-        // 完了報告（承認待ち）ステータス
-        if (($f['completeStatus'] ?? null) !== null) {
-            $q->where('complete_status', (int) $f['completeStatus']);
-        }
-
-        // 工期（開始日以降）
-        if ($this->nonEmpty($f['constructAt'] ?? null)) {
-            $q->whereNotNull('tmp_construct_at')
-                ->whereDate('tmp_construct_at', '>=', $f['constructAt']);
-        }
-
-        // 工期（完了日以前）
-        if ($this->nonEmpty($f['completionAt'] ?? null)) {
-            $q->whereNotNull('tmp_completion_at')
-                ->whereDate('tmp_completion_at', '<=', $f['completionAt']);
-        }
-
-        // 業者名 / 採用 / 金額変更（いずれか1社が全条件を満たすこと）
-        $companyName = $this->nonEmpty($f['company'] ?? null) ? (string) $f['company'] : null;
-        $adoption = ! empty($f['adoptionFlg']);
-        $changed = ! empty($f['changedFlg']);
-
-        if ($companyName !== null || $adoption || $changed) {
-            $q->whereHas('companies', function (Builder $c) use ($companyName, $adoption, $changed): void {
-                $c->whereNull('deleted_at');
-                if ($adoption) {
-                    $c->where('adoption_flg', 1);
-                }
-                if ($changed) {
-                    $c->where('changed_flg', 1);
-                }
-                if ($companyName !== null) {
-                    $c->whereHas('company', fn (Builder $co) => $co->where('company_name', 'like', "%{$companyName}%"));
-                }
-            });
-        }
     }
 
     /** 値が「未指定（null/空文字/'all'）」でなければ文字列として返す。 */

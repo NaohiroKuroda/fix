@@ -77,6 +77,13 @@ class EstimateManagementResource extends JsonResource
             'requested' => $this->isRequested($company),
             // 発注業者選定（採用フラグ = 1）
             'selected' => $company !== null && (int) $company->adoption_flg === 1,
+            // 設計部選定（design_status = 1）
+            'designSelected' => $company !== null && (int) $company->design_status === 1,
+            // 部長承認（常務承認フラグ fix_status = 1）
+            'approved' => $company !== null && (int) $company->fix_status === 1,
+            // 取消申請中（cancel_flg >= 1）／取消承認済み（cancel_flg >= 2）
+            'cancelRequested' => $company !== null && (int) $company->cancel_flg >= 1,
+            'cancelApproved' => $company !== null && (int) $company->cancel_flg >= 2,
         ];
     }
 

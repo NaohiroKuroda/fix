@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 発注業者選定（業者→FELIX返答済）。共通コンポーネントに mode='vendor-selection' を渡す。
+// 設計部選定（業者→FELIX返答済）。共通コンポーネントに mode='design-selection' を渡す。
 import EstimateManagementScreen from '@/components/estimate-management/EstimateManagementScreen.vue';
 import type {
     EstimateManagementFilters,
@@ -16,10 +16,10 @@ defineProps<{
 
 <template>
     <EstimateManagementScreen
-        title="発注業者選定"
-        status-label="【業者→FELIX返答済】"
-        mode="vendor-selection"
-        action-label="発注業者を確定"
+        title="設計部承認"
+        status-label="【FELIX(建設部)→FELIX(設計部)】"
+        mode="design-selection"
+        action-label="設計部承認を確定"
         glass
         :projects="projects"
         :pagination="pagination"

@@ -18,5 +18,10 @@ declare module '@inertiajs/core' {
         };
         // 現行 felix_total の URL（明細リンクの iframe 先）
         felixTotalUrl: string | null;
+        // フラッシュメッセージ（成功 / エラー）。リダイレクト後に1回だけ表示する。
+        flash: {
+            success: string | null;
+            error: string | null;
+        };
     }
 }

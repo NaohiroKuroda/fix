@@ -140,6 +140,14 @@ function submit() {
 - ローカル UI 状態は `ref` / `reactive` / `computed` で管理する。
 - 横断的な再利用ロジックは `composables/`（`useXxx`）に切り出す。
 
+### フラッシュメッセージ（成功 / エラー通知）
+
+- サーバ側の処理結果は **Inertia 共有プロパティ `flash`**（`{ success, error }`）で配る。Controller は `back()->with('success', ...)` / `->with('error', ...)` で積み、`HandleInertiaRequests::share()` が `flash` として公開する。
+- 表示は `components/feedback/` の常設コンポーネントが担う。
+    - `FlashMessages.vue` … `usePage().props.flash` を購読し、画面右上にトーストを積んで自動消去する。`AppLayout.vue` に常設し全画面で共用する。
+    - `AppToast.vue` … 1件分のトースト（`variant: 'success' | 'error'`）。表示専用。
+- フォーム成功時に「メッセージ表示＋一覧の再読込」を行いたい場合は、Controller で `back()` を返す（Inertia が同一ページを再取得＝リロード）。クライアントで個別に再取得処理を書かない。
+
 ## 4.6 ルーティング（Laravel Wayfinder）
 
 - ルート/コントローラアクションへの参照は **Wayfinder が生成する型付き関数**を使用する。

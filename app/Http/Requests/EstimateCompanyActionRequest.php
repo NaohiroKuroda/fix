@@ -11,12 +11,21 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class EstimateCompanyActionRequest extends FormRequest
 {
+    /**
+     * リクエストの認可可否を返す。
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * バリデーションルールを返す。
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -25,7 +34,11 @@ class EstimateCompanyActionRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, string> */
+    /**
+     * バリデーションエラーメッセージを返す。
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [

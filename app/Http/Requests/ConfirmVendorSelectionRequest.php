@@ -5,18 +5,27 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * 発注業者選定の確定（発注業者選定画面）の入力。
+ * 業者選定の確定（業者選定画面）の入力。
  *
  * ボタンで選定された見積先（EstimateUnitCompany.id）の配列を受け取り、採用業者として確定する。
  */
 class ConfirmVendorSelectionRequest extends FormRequest
 {
+    /**
+     * リクエストの認可可否を返す。
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * バリデーションルールを返す。
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -25,7 +34,11 @@ class ConfirmVendorSelectionRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, string> */
+    /**
+     * バリデーションエラーメッセージを返す。
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [

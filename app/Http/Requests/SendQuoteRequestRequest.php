@@ -7,25 +7,36 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * 見積依頼送信（見積り依頼画面）の入力。
  *
- * 選択された見積先（EstimateUnitCompany.id）の配列を受け取り、相見積依頼を記録する。
+ * 選択された見積先（t_cost_quotations.id）の配列を受け取り、見積依頼を記録する。
  */
 class SendQuoteRequestRequest extends FormRequest
 {
+    /**
+     * リクエストの認可可否を返す。
+     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * バリデーションルールを返す。
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
             'companyIds' => ['required', 'array', 'min:1'],
-            'companyIds.*' => ['integer', 'distinct', 'exists:estimate_unit_companies,id'],
+            'companyIds.*' => ['integer', 'distinct', 'exists:t_cost_quotations,id'],
         ];
     }
 
-    /** @return array<string, string> */
+    /**
+     * バリデーションエラーメッセージを返す。
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [

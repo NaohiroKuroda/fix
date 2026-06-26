@@ -2,7 +2,7 @@
 
 namespace App\Services\Quotation;
 
-use App\Models\Estimate;
+use App\Models\TBuilding;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -19,7 +19,7 @@ class CancelApprovalService
      * 部長取消承認画面の案件一覧（承認済み・取消申請中の見積先）を取得する。
      *
      * @param  array<string, mixed>  $filters
-     * @return LengthAwarePaginator<int, Estimate>
+     * @return LengthAwarePaginator<int, TBuilding>
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {

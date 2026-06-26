@@ -2,7 +2,7 @@
 
 namespace App\Services\Quotation;
 
-use App\Models\Estimate;
+use App\Models\TBuilding;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -19,7 +19,7 @@ class QuoteRequestService
      * 見積依頼画面の案件一覧（未依頼の見積先）を取得する。
      *
      * @param  array<string, mixed>  $filters
-     * @return LengthAwarePaginator<int, Estimate>
+     * @return LengthAwarePaginator<int, TBuilding>
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {

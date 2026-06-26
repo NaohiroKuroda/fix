@@ -23,5 +23,12 @@ declare module '@inertiajs/core' {
             success: string | null;
             error: string | null;
         };
+        // サイドメニューの未処理件数バッヂ（部分リロード時は未送出のため null になりうる）。
+        menuBadges: {
+            'quote-request': number;
+            'vendor-selection': number;
+            'manager-approval': number;
+            'cancel-approval': number;
+        } | null;
     }
 }

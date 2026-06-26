@@ -20,15 +20,18 @@ const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
 
+// サイドメニューの未処理件数バッヂ（Inertia 共有プロパティ menuBadges）。
+const badges = computed(() => page.props.menuBadges ?? null);
+
 // 見積管理（トグル）。配下はシート名（業務（状態））をそのままメニュー名にする。
 // href 付き＝実装済み（リンク）。href 無し＝未実装（プレースホルダ「準備中」）。
-// ※ badge は未対応件数の表示用（現状はダミー値。今後 Inertia 共有プロパティで実件数を配る）。
+// badge は各画面の未処理件数（部長取消申請はバッヂ対象外）。
 const estimateChildren = computed<NavChild[]>(() => [
-    { label: '見積依頼【FELIX→業者依頼前】', href: '/estimate-management/quote-request', active: path.value.startsWith('/estimate-management/quote-request'), badge: 5 },
-    { label: '業者選定【業者→FELIX返答済】', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: 7 },
-    { label: '部長承認【業者選定済→FELIX(建設部)】', href: '/estimate-management/manager-approval', active: path.value.startsWith('/estimate-management/manager-approval'), badge: 3 },
+    { label: '見積依頼【FELIX→業者依頼前】', href: '/estimate-management/quote-request', active: path.value.startsWith('/estimate-management/quote-request'), badge: badges.value?.['quote-request'] },
+    { label: '業者選定【業者→FELIX返答済】', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: badges.value?.['vendor-selection'] },
+    { label: '部長承認【業者選定済→FELIX(建設部)】', href: '/estimate-management/manager-approval', active: path.value.startsWith('/estimate-management/manager-approval'), badge: badges.value?.['manager-approval'] },
     { label: '部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/estimate-management/cancel-request', active: path.value.startsWith('/estimate-management/cancel-request') },
-    { label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/estimate-management/cancel-approval', active: path.value.startsWith('/estimate-management/cancel-approval') },
+    { label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/estimate-management/cancel-approval', active: path.value.startsWith('/estimate-management/cancel-approval'), badge: badges.value?.['cancel-approval'] },
 ]);
 const estimateMenuOpen = ref(true);
 

@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Http\Controllers\Quotation;
+
+use App\Http\Requests\EstimateManagementRequest;
+use App\Http\Requests\SendQuoteRequestRequest;
+use App\Services\Quotation\QuoteRequestService;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Response;
+
+/**
+ * 見積依頼（F→業者依頼前）画面。
+ */
+class QuoteRequestController extends AbstractQuotationScreenController
+{
+    public function __construct(
+        private readonly QuoteRequestService $service,
+    ) {}
+
+    /**
+     * 一覧表示。
+     *
+     * @param  EstimateManagementRequest  $request  絞り込み条件（物件名 / 項目名 / 見積先）
+     * @return Response Inertia ページ（projects / pagination / filters）
+     */
+    public function index(EstimateManagementRequest $request): Response
+    {
+        return $this->renderScreen(
+            $request,
+            'EstimateManagement/QuoteRequest',
+            $this->service->paginate($request->filters(), self::PER_PAGE),
+        );
+    }
+
+    /**
+     * 見積依頼送信（選択業者へ相見積依頼）。
+     *
+     * @param  SendQuoteRequestRequest  $request  送信対象の見積先（EstimateUnitCompany）ID 配列
+     * @return RedirectResponse 元画面へ戻し、成功 / エラーのフラッシュメッセージを表示
+     */
+    public function send(SendQuoteRequestRequest $request): RedirectResponse
+    {
+        try {
+            $count = $this->service->send($request->companyIds());
+        } catch (\RuntimeException $e) {
+            // 新スキーマは felix_total へサーバ間 HTTP で依頼する。連携失敗はエラーとして表示する。
+            report($e);
+
+            return back()->with('error', '見積依頼の送信に失敗しました。時間をおいて再度お試しください。');
+        }
+
+        if ($count === 0) {
+            return back()->with('error', '見積依頼を送信できませんでした。選択した見積先は既に依頼済みの可能性があります。');
+        }
+
+        return back()->with('success', "見積依頼を送信しました。（{$count}件）");
+    }
+}

@@ -19,8 +19,6 @@ interface NavChild {
 const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
-// データソース（legacy=現行 felix_total スキーマ / new=新スキーマ）。サイドメニューのトグルで切替。
-const quotationSource = computed(() => page.props.quotationSource ?? 'legacy');
 
 // 見積管理（トグル）。配下はシート名（業務（状態））をそのままメニュー名にする。
 // href 付き＝実装済み（リンク）。href 無し＝未実装（プレースホルダ「準備中」）。
@@ -146,23 +144,6 @@ const logout = () => router.post('/logout');
                     </template>
                 </div>
             </nav>
-
-            <!-- データソース切替（現行 felix_total スキーマ ⇔ 新スキーマ）。 -->
-            <div class="shrink-0 border-t border-white/10 px-3 py-3">
-                <p class="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c4a35b]/80">データソース</p>
-                <div class="flex items-center gap-0.5 rounded-lg bg-white/5 p-0.5">
-                    <Link
-                        href="/quotation-source/legacy"
-                        class="flex-1 rounded-md px-2 py-1.5 text-center text-[11px] font-semibold transition"
-                        :class="quotationSource === 'legacy' ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-white/60 hover:bg-white/10'"
-                    >現行</Link>
-                    <Link
-                        href="/quotation-source/new"
-                        class="flex-1 rounded-md px-2 py-1.5 text-center text-[11px] font-semibold transition"
-                        :class="quotationSource === 'new' ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-white/60 hover:bg-white/10'"
-                    >新スキーマ</Link>
-                </div>
-            </div>
 
             <!-- フッター（コピーライト風）：サイドバー最下部にシステム名を控えめに表示。 -->
             <div class="shrink-0 border-t border-white/10 px-4 py-3 text-center text-[10px] tracking-wide text-white/40">

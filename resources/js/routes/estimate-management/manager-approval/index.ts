@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:41
@@ -32,28 +32,6 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: confirm.url(options),
     method: 'post',
 })
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:41
-* @route '/estimate-management/manager-approval'
-*/
-const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: confirm.url(options),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:41
-* @route '/estimate-management/manager-approval'
-*/
-confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: confirm.url(options),
-    method: 'post',
-})
-
-confirm.form = confirmForm
 
 const managerApproval = {
     confirm: Object.assign(confirm, confirm),

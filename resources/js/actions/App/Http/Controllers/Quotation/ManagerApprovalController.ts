@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::index
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
@@ -44,43 +44,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::index
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
-* @route '/estimate-management/manager-approval'
-*/
-const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::index
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
-* @route '/estimate-management/manager-approval'
-*/
-indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::index
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
-* @route '/estimate-management/manager-approval'
-*/
-indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url({
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'HEAD',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'get',
-})
-
-index.form = indexForm
-
-/**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:41
 * @route '/estimate-management/manager-approval'
@@ -113,28 +76,6 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: confirm.url(options),
     method: 'post',
 })
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:41
-* @route '/estimate-management/manager-approval'
-*/
-const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: confirm.url(options),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:41
-* @route '/estimate-management/manager-approval'
-*/
-confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: confirm.url(options),
-    method: 'post',
-})
-
-confirm.form = confirmForm
 
 const ManagerApprovalController = { index, confirm }
 

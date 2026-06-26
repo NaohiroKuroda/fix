@@ -1,5 +1,5 @@
 // 見積管理画面（見積り依頼 / 業者選定 ほか）の型。
-// サーバの EstimateManagementResource と一致させること。
+// サーバの BuildingQuotationResource と一致させること。
 
 /** 案件 → 項目 → 見積先 を展開した1行。 */
 export interface EstimateManagementRow {

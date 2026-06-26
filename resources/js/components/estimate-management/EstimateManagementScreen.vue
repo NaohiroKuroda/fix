@@ -9,7 +9,7 @@
 // いずれも成功時はサーバが back() → 一覧再読込 + flash メッセージ。
 // ※ 業者へのメール通知（felix_total のトークン発行＋送信）は本フェーズ未対応。
 import { computed, reactive, ref } from 'vue';
-import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { X } from 'lucide-vue-next';
 import type { RouteDefinition } from '@/wayfinder';
 import { send as sendQuoteRequestRoute } from '@/routes/estimate-management/quote-request';
@@ -142,8 +142,7 @@ const onRowToggle = (row: EstimateManagementRow): void => {
 const selectedCount = computed(() => (isToggleMode.value ? vendorSelectedKeys.value.size : checkedKeys.value.size));
 
 // 仮選定（業者選定画面）：FELIXが依頼したい業者の印。
-// 表示はサーバ値(row.provisional=is_drafted)＋ローカル上書き。新スキーマはチェック時に即時保存する。
-const page = usePage();
+// 表示はサーバ値(row.provisional=is_drafted)＋ローカル上書き。チェック時に即時保存する。
 const provisionalOverride = reactive<Record<string, boolean>>({});
 const provisionalKeys = computed(() => {
     const set = new Set<string>();
@@ -166,21 +165,19 @@ const toggleProvisional = (row: EstimateManagementRow): void => {
     const current = provisionalKeys.value.has(key);
     const next = !current;
     provisionalOverride[key] = next; // 楽観的に反映
-    // 新スキーマのみサーバ保存（is_drafted）。成功/失敗は flash で表示。失敗時は元に戻す。
-    if (page.props.quotationSource === 'new') {
-        router.post(
-            provisionalRoute().url,
-            { companyId: row.companyId, drafted: next },
-            {
-                preserveScroll: true,
-                preserveState: true,
-                only: ['flash'],
-                onError: () => {
-                    provisionalOverride[key] = current;
-                },
+    // is_drafted をサーバ保存。成功/失敗は flash で表示。失敗時は元に戻す。
+    router.post(
+        provisionalRoute().url,
+        { companyId: row.companyId, drafted: next },
+        {
+            preserveScroll: true,
+            preserveState: true,
+            only: ['flash'],
+            onError: () => {
+                provisionalOverride[key] = current;
             },
-        );
-    }
+        },
+    );
 };
 
 // 「仮選定のみ表示」：チェックした仮選定の行だけにクライアント側で絞り込む（仮選定はローカル状態）。

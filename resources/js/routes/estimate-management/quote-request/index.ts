@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::send
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
@@ -32,28 +32,6 @@ send.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: send.url(options),
     method: 'post',
 })
-
-/**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
-* @route '/estimate-management/quote-request'
-*/
-const sendForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: send.url(options),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
-* @route '/estimate-management/quote-request'
-*/
-sendForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: send.url(options),
-    method: 'post',
-})
-
-send.form = sendForm
 
 const quoteRequest = {
     send: Object.assign(send, send),

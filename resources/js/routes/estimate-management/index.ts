@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
 import quoteRequestF3c656 from './quote-request'
 import vendorSelection5181af from './vendor-selection'
 import managerApproval3ec22d from './manager-approval'
@@ -49,43 +49,6 @@ quoteRequest.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::quoteRequest
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:26
-* @route '/estimate-management/quote-request'
-*/
-const quoteRequestForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: quoteRequest.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::quoteRequest
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:26
-* @route '/estimate-management/quote-request'
-*/
-quoteRequestForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: quoteRequest.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::quoteRequest
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:26
-* @route '/estimate-management/quote-request'
-*/
-quoteRequestForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: quoteRequest.url({
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'HEAD',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'get',
-})
-
-quoteRequest.form = quoteRequestForm
-
-/**
 * @see \App\Http\Controllers\Quotation\VendorSelectionController::vendorSelection
 * @see app/Http/Controllers/Quotation/VendorSelectionController.php:27
 * @route '/estimate-management/vendor-selection'
@@ -128,43 +91,6 @@ vendorSelection.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     url: vendorSelection.url(options),
     method: 'head',
 })
-
-/**
-* @see \App\Http\Controllers\Quotation\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/VendorSelectionController.php:27
-* @route '/estimate-management/vendor-selection'
-*/
-const vendorSelectionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: vendorSelection.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/VendorSelectionController.php:27
-* @route '/estimate-management/vendor-selection'
-*/
-vendorSelectionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: vendorSelection.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/VendorSelectionController.php:27
-* @route '/estimate-management/vendor-selection'
-*/
-vendorSelectionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: vendorSelection.url({
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'HEAD',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'get',
-})
-
-vendorSelection.form = vendorSelectionForm
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
@@ -211,43 +137,6 @@ managerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
-* @route '/estimate-management/manager-approval'
-*/
-const managerApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: managerApproval.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
-* @route '/estimate-management/manager-approval'
-*/
-managerApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: managerApproval.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
-* @route '/estimate-management/manager-approval'
-*/
-managerApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: managerApproval.url({
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'HEAD',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'get',
-})
-
-managerApproval.form = managerApprovalForm
-
-/**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::cancelRequest
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:26
 * @route '/estimate-management/cancel-request'
@@ -292,43 +181,6 @@ cancelRequest.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\CancelRequestController::cancelRequest
-* @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
-*/
-const cancelRequestForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: cancelRequest.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\CancelRequestController::cancelRequest
-* @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
-*/
-cancelRequestForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: cancelRequest.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\CancelRequestController::cancelRequest
-* @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
-*/
-cancelRequestForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: cancelRequest.url({
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'HEAD',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'get',
-})
-
-cancelRequest.form = cancelRequestForm
-
-/**
 * @see \App\Http\Controllers\Quotation\CancelApprovalController::cancelApproval
 * @see app/Http/Controllers/Quotation/CancelApprovalController.php:26
 * @route '/estimate-management/cancel-approval'
@@ -371,43 +223,6 @@ cancelApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     url: cancelApproval.url(options),
     method: 'head',
 })
-
-/**
-* @see \App\Http\Controllers\Quotation\CancelApprovalController::cancelApproval
-* @see app/Http/Controllers/Quotation/CancelApprovalController.php:26
-* @route '/estimate-management/cancel-approval'
-*/
-const cancelApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: cancelApproval.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\CancelApprovalController::cancelApproval
-* @see app/Http/Controllers/Quotation/CancelApprovalController.php:26
-* @route '/estimate-management/cancel-approval'
-*/
-cancelApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: cancelApproval.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\CancelApprovalController::cancelApproval
-* @see app/Http/Controllers/Quotation/CancelApprovalController.php:26
-* @route '/estimate-management/cancel-approval'
-*/
-cancelApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: cancelApproval.url({
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'HEAD',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'get',
-})
-
-cancelApproval.form = cancelApprovalForm
 
 const estimateManagement = {
     quoteRequest: Object.assign(quoteRequest, quoteRequestF3c656),

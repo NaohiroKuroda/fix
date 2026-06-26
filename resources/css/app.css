@@ -9,32 +9,33 @@
 
 /*
  * shadcn-vue デザイントークン（Tailwind v4）
- * ブランド: FELIX ネイビー #001A60 をベースに調整
+ * ブランド: FELIX 黒（黒主体）＋ ゴールド #c4a35b アクセント。
+ * 旧ネイビーは廃し、グレー系も無彩色（chroma 0）に揃える。
  */
 :root {
     --radius: 0.625rem;
 
     --background: oklch(0.99 0 0);
-    --foreground: oklch(0.18 0.03 265);
+    --foreground: oklch(0.18 0 0);
 
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.18 0.03 265);
+    --card-foreground: oklch(0.18 0 0);
 
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.18 0.03 265);
+    --popover-foreground: oklch(0.18 0 0);
 
-    /* primary = FELIX navy */
-    --primary: oklch(0.32 0.13 268);
+    /* primary = FELIX black（黒主体） */
+    --primary: oklch(0.23 0 0);
     --primary-foreground: oklch(0.985 0 0);
 
-    --secondary: oklch(0.97 0.01 265);
-    --secondary-foreground: oklch(0.3 0.05 265);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.3 0 0);
 
-    --muted: oklch(0.97 0.005 265);
-    --muted-foreground: oklch(0.55 0.02 265);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.55 0 0);
 
-    --accent: oklch(0.96 0.02 265);
-    --accent-foreground: oklch(0.3 0.05 265);
+    --accent: oklch(0.96 0 0);
+    --accent-foreground: oklch(0.3 0 0);
 
     --destructive: oklch(0.58 0.22 25);
     --destructive-foreground: oklch(0.985 0 0);
@@ -45,9 +46,9 @@
     --warning: oklch(0.75 0.15 75);
     --warning-foreground: oklch(0.27 0.05 75);
 
-    --border: oklch(0.92 0.005 265);
-    --input: oklch(0.92 0.005 265);
-    --ring: oklch(0.32 0.13 268);
+    --border: oklch(0.92 0 0);
+    --input: oklch(0.92 0 0);
+    --ring: oklch(0.23 0 0);
 }
 
 .dark {

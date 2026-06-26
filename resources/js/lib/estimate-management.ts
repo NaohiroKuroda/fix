@@ -12,19 +12,21 @@ export const estimateRowKey = (row: EstimateManagementRow): string =>
  * - checkbox      : 見積依頼。未依頼行をチェックで選び、ヘッダー送信で確定（チェックボックス UI）。
  * - pick-button   : 部長承認 / 取消申請 / 取消承認。未処理行をボタンで選び、ヘッダー確定で送信。
  *                   処理済み行は静的バッジ（依頼済みと同様、再操作不可）。
- * - toggle-button : 発注業者選定。サーバ状態を初期値に押下でトグル（業者の選び替え）。
+ * - toggle-button : 業者選定。サーバ状態を初期値に押下でトグル（業者の選び替え）。
  */
 export type EstimateActionKind = 'checkbox' | 'pick-button' | 'toggle-button';
 
 /** 行の「処理済み」を表すサーバ側フラグ（boolean プロパティ名）。 */
-export type EstimateAppliedKey = 'requested' | 'selected' | 'designSelected' | 'approved' | 'cancelRequested' | 'cancelApproved';
+export type EstimateAppliedKey = 'requested' | 'selected' | 'approved' | 'cancelRequested' | 'cancelApproved';
 
 export interface EstimateModeConfig {
     kind: EstimateActionKind;
     /** 最終列のヘッダー名。 */
     columnLabel: string;
-    /** 相見積（税抜）列を表示するか（発注業者選定以降の画面で表示）。 */
+    /** 相見積（税抜）列を表示するか（業者選定以降の画面で表示）。 */
     showQuote: boolean;
+    /** 見積金額列（showQuote=true）の見出し。未指定は「相見積」。例: 部長取消申請=「確定見積」。 */
+    quoteColumnLabel?: string;
     /** 行が「処理済み」かを表すサーバ側フラグ名。 */
     appliedKey: EstimateAppliedKey;
     /** 操作対象（未処理）行の操作前ラベル。 */
@@ -63,7 +65,7 @@ export const ESTIMATE_MODE_CONFIG: Record<EstimateManagementMode, EstimateModeCo
     },
     'vendor-selection': {
         kind: 'toggle-button',
-        columnLabel: '発注業者選定',
+        columnLabel: '業者選定',
         showQuote: true,
         appliedKey: 'selected',
         idleLabel: '選定する',
@@ -74,23 +76,11 @@ export const ESTIMATE_MODE_CONFIG: Record<EstimateManagementMode, EstimateModeCo
         bulkSelectLabel: '全て選定',
         bulkClearLabel: '全ての選定を解除',
     },
-    'design-selection': {
-        kind: 'toggle-button',
-        columnLabel: '設計部選定',
-        showQuote: true,
-        appliedKey: 'designSelected',
-        idleLabel: '選定する',
-        activeLabel: '選定',
-        appliedLabel: '選定済',
-        processingLabel: '確定中…',
-        hint: '設計部選定する見積先を選定してください',
-        bulkSelectLabel: '全て選定',
-        bulkClearLabel: '全ての選定を解除',
-    },
     'manager-approval': {
         kind: 'pick-button',
         columnLabel: '部長承認',
         showQuote: true,
+        quoteColumnLabel: '確定見積',
         appliedKey: 'approved',
         idleLabel: '承認する',
         activeLabel: '承認',
@@ -104,6 +94,7 @@ export const ESTIMATE_MODE_CONFIG: Record<EstimateManagementMode, EstimateModeCo
         kind: 'pick-button',
         columnLabel: '取消申請',
         showQuote: true,
+        quoteColumnLabel: '確定見積',
         appliedKey: 'cancelRequested',
         idleLabel: '取消申請',
         activeLabel: '申請',
@@ -117,6 +108,7 @@ export const ESTIMATE_MODE_CONFIG: Record<EstimateManagementMode, EstimateModeCo
         kind: 'pick-button',
         columnLabel: '取消承認',
         showQuote: true,
+        quoteColumnLabel: '確定見積',
         appliedKey: 'cancelApproved',
         idleLabel: '取消承認',
         activeLabel: '承認',

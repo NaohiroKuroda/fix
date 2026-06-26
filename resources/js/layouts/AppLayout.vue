@@ -19,15 +19,16 @@ interface NavChild {
 const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
+// データソース（legacy=現行 felix_total スキーマ / new=新スキーマ）。サイドメニューのトグルで切替。
+const quotationSource = computed(() => page.props.quotationSource ?? 'legacy');
 
 // 見積管理（トグル）。配下はシート名（業務（状態））をそのままメニュー名にする。
 // href 付き＝実装済み（リンク）。href 無し＝未実装（プレースホルダ「準備中」）。
 // ※ badge は未対応件数の表示用（現状はダミー値。今後 Inertia 共有プロパティで実件数を配る）。
 const estimateChildren = computed<NavChild[]>(() => [
     { label: '見積依頼【FELIX→業者依頼前】', href: '/estimate-management/quote-request', active: path.value.startsWith('/estimate-management/quote-request'), badge: 5 },
-    { label: '発注業者選定【業者→FELIX返答済】', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: 7 },
+    { label: '業者選定【業者→FELIX返答済】', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: 7 },
     { label: '部長承認【業者選定済→FELIX(建設部)】', href: '/estimate-management/manager-approval', active: path.value.startsWith('/estimate-management/manager-approval'), badge: 3 },
-    { label: '設計部承認【FELIX(建設部)→FELIX(設計部)】', href: '/estimate-management/design-selection', active: path.value.startsWith('/estimate-management/design-selection') },
     { label: '部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/estimate-management/cancel-request', active: path.value.startsWith('/estimate-management/cancel-request') },
     { label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/estimate-management/cancel-approval', active: path.value.startsWith('/estimate-management/cancel-approval') },
 ]);
@@ -56,19 +57,15 @@ const logout = () => router.post('/logout');
 
         <!-- サイドバー -->
         <aside
-            class="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-primary to-[#0e1838] text-primary-foreground transition-transform"
+            class="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-zinc-900 to-black text-primary-foreground transition-transform"
             :class="[
                 mobileOpen ? 'translate-x-0' : '-translate-x-full',
                 collapsed ? 'md:-translate-x-full' : 'md:translate-x-0',
             ]"
         >
             <div class="flex items-center gap-2.5 px-4 h-14 border-b border-white/10">
-                <span class="flex size-9 items-center justify-center rounded-lg bg-white shrink-0 p-1 ring-1 ring-[#c4a35b]/40">
-                    <img src="/images/felix-logo.png" alt="FELIX" class="size-full object-contain" />
-                </span>
-                <div class="leading-tight min-w-0 flex-1">
-                    <div class="text-sm font-bold tracking-wide">FELIX</div>
-                    <div class="text-[10px] text-white/60">業務管理システム-FIX-</div>
+                <div class="flex min-w-0 flex-1 items-center">
+                    <img src="/images/header_rogo_pc.svg" alt="FELIX" class="h-8 w-auto" />
                 </div>
                 <button
                     class="flex size-8 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
@@ -149,6 +146,28 @@ const logout = () => router.post('/logout');
                     </template>
                 </div>
             </nav>
+
+            <!-- データソース切替（現行 felix_total スキーマ ⇔ 新スキーマ）。 -->
+            <div class="shrink-0 border-t border-white/10 px-3 py-3">
+                <p class="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c4a35b]/80">データソース</p>
+                <div class="flex items-center gap-0.5 rounded-lg bg-white/5 p-0.5">
+                    <Link
+                        href="/quotation-source/legacy"
+                        class="flex-1 rounded-md px-2 py-1.5 text-center text-[11px] font-semibold transition"
+                        :class="quotationSource === 'legacy' ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-white/60 hover:bg-white/10'"
+                    >現行</Link>
+                    <Link
+                        href="/quotation-source/new"
+                        class="flex-1 rounded-md px-2 py-1.5 text-center text-[11px] font-semibold transition"
+                        :class="quotationSource === 'new' ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-white/60 hover:bg-white/10'"
+                    >新スキーマ</Link>
+                </div>
+            </div>
+
+            <!-- フッター（コピーライト風）：サイドバー最下部にシステム名を控えめに表示。 -->
+            <div class="shrink-0 border-t border-white/10 px-4 py-3 text-center text-[10px] tracking-wide text-white/40">
+                © 業務管理システム-FIX-
+            </div>
         </aside>
 
         <!-- モバイル用オーバーレイ -->

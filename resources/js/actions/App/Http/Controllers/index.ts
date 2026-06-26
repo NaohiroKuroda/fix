@@ -1,9 +1,9 @@
 import AuthController from './AuthController'
-import EstimateManagementController from './EstimateManagementController'
+import Quotation from './Quotation'
 
 const Controllers = {
     AuthController: Object.assign(AuthController, AuthController),
-    EstimateManagementController: Object.assign(EstimateManagementController, EstimateManagementController),
+    Quotation: Object.assign(Quotation, Quotation),
 }
 
 export default Controllers

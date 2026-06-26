@@ -52,7 +52,7 @@ export function useEstimateTheme(isThemedInput: MaybeRefOrGetter<boolean>) {
     const cardHeadClass = computed(() =>
         themed.value ? 'border-l-4 border-l-[#c4a35b] bg-primary text-primary-foreground' : 'border-b bg-muted/40',
     );
-    const tableHeadClass = computed(() => (themed.value ? 'bg-[#f0f3f8] text-slate-700' : 'bg-muted/30 text-muted-foreground'));
+    const tableHeadClass = computed(() => (themed.value ? 'bg-zinc-100 text-zinc-700' : 'bg-muted/30 text-muted-foreground'));
     const rowBorderClass = computed(() => (themed.value ? 'border-slate-100' : ''));
     const cellTextClass = computed(() => (themed.value ? 'text-slate-800' : ''));
 

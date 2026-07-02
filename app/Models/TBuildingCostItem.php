@@ -40,4 +40,10 @@ class TBuildingCostItem extends Model
     {
         return $this->hasMany(TCostQuotation::class, 'building_cost_item_id');
     }
+
+    // コメント（やり取り）。項目（明細）単位で1スレッド。ポリモーフィック（commentable）。
+    public function comments()
+    {
+        return $this->morphMany(TComment::class, 'commentable');
+    }
 }

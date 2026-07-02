@@ -23,6 +23,7 @@ class TCostQuotation extends Model
         'counter_company_id',
         'is_drafted',
         'approval_status',
+        'deny_comment',
         'created_at',
         'updated_at',
         'source_id',
@@ -67,5 +68,11 @@ class TCostQuotation extends Model
     {
         return $this->hasOne(TCostQuotationHistory::class, 'cost_quotation_id')
             ->where('is_latest', true);
+    }
+
+    // 費用見積依頼（相見積依頼の送信履歴）。件数＝見積依頼送信回数（0=未依頼）。
+    public function requests()
+    {
+        return $this->hasMany(TCostQuotationRequest::class, 'cost_quotation_id');
     }
 }

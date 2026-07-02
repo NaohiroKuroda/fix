@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Quotation\CancelApprovalController;
 use App\Http\Controllers\Quotation\CancelRequestController;
 use App\Http\Controllers\Quotation\ManagerApprovalController;
+use App\Http\Controllers\Quotation\QuotationMessageController;
 use App\Http\Controllers\Quotation\QuoteRequestController;
 use App\Http\Controllers\Quotation\VendorSelectionController;
 use Illuminate\Support\Facades\Route;
@@ -39,17 +40,18 @@ Route::middleware('auth:admin')->group(function () {
         ->name('estimate-management.vendor-selection.provisional'); // 仮選定の即時保存（is_drafted）
     Route::post('/estimate-management/manager-approval', [ManagerApprovalController::class, 'confirm'])
         ->name('estimate-management.manager-approval.confirm'); // 部長承認（選定業者を承認）
+    Route::post('/estimate-management/manager-approval/reject', [ManagerApprovalController::class, 'reject'])
+        ->name('estimate-management.manager-approval.reject'); // 部長承認の否認（業者選定へ差し戻し）
     Route::post('/estimate-management/cancel-request', [CancelRequestController::class, 'confirm'])
         ->name('estimate-management.cancel-request.confirm');   // 部長取消申請（選定の取消を申請）
     Route::post('/estimate-management/cancel-approval', [CancelApprovalController::class, 'confirm'])
         ->name('estimate-management.cancel-approval.confirm');  // 部長取消承認（取消申請を承認）
 
-    // データソース切替（現行 felix_total スキーマ ⇔ 新スキーマ t_cost_quotations）。
-    Route::get('/quotation-source/{source}', function (string $source) {
-        session(['quotation_source' => $source === 'new' ? 'new' : 'legacy']);
-
-        return back();
-    })->where('source', 'legacy|new')->name('quotation-source.set');
+    // 見積先（t_cost_quotations）単位のやり取り（チャット）。業者選定（部下）⇔部長承認（部長）。
+    Route::get('/estimate-management/quotations/{quotation}/messages', [QuotationMessageController::class, 'index'])
+        ->name('estimate-management.quotation-messages.index');
+    Route::post('/estimate-management/quotations/{quotation}/messages', [QuotationMessageController::class, 'store'])
+        ->name('estimate-management.quotation-messages.store');
 
     // ログアウト（安全のために POST で処理）
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

@@ -7,12 +7,10 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * 見積管理画面（見積り依頼 / 業者選定 ほか）の絞り込み条件。
  */
-class EstimateManagementRequest extends FormRequest
+class QuotationManagementRequest extends FormRequest
 {
     /**
      * リクエストの認可可否を返す。
-     *
-     * @return bool
      */
     public function authorize(): bool
     {
@@ -33,6 +31,8 @@ class EstimateManagementRequest extends FormRequest
             'page' => ['nullable', 'integer', 'min:1'],
             // 業者選定画面の回答状態フィルタ（全て / 回答あり / 回答なし）。
             'answer' => ['nullable', 'in:all,answered,unanswered'],
+            // コメント有無フィルタ（全て / コメントあり / コメントなし）。全画面共通。
+            'comment' => ['nullable', 'in:all,has,none'],
         ];
     }
 
@@ -47,7 +47,8 @@ class EstimateManagementRequest extends FormRequest
             'keyword' => $this->nullIfEmpty($this->input('keyword')),
             'itemLabel' => $this->nullIfEmpty($this->input('itemLabel')),
             'vendor' => $this->nullIfEmpty($this->input('vendor')),
-            'answer' => (string) $this->input('answer', 'answered'),
+            'answer' => (string) $this->input('answer', 'all'),
+            'comment' => (string) $this->input('comment', 'all'),
         ];
     }
 
@@ -62,15 +63,13 @@ class EstimateManagementRequest extends FormRequest
             'keyword' => (string) $this->input('keyword', ''),
             'itemLabel' => (string) $this->input('itemLabel', ''),
             'vendor' => (string) $this->input('vendor', ''),
-            'answer' => (string) $this->input('answer', 'answered'),
+            'answer' => (string) $this->input('answer', 'all'),
+            'comment' => (string) $this->input('comment', 'all'),
         ];
     }
 
     /**
      * 値が「未指定（null/空文字/'all'）」なら null、それ以外は文字列で返す。
-     *
-     * @param  mixed  $value
-     * @return string|null
      */
     private function nullIfEmpty(mixed $value): ?string
     {

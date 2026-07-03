@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
@@ -45,6 +46,10 @@ class HandleInertiaRequests extends Middleware
                 'user' => $admin ? [
                     'id' => $admin->id,
                     'name' => $admin->name,
+                    // 付与ロールの slug 一覧（汎用。将来のメニュー出し分け用）。
+                    'roles' => $admin->roleSlugs(),
+                    // 建設部部長か（部長承認・部長取消承認メニュー、やり取りの発言ロール判定）。
+                    'isEstimateManager' => $admin->isEstimateManager(),
                 ] : null,
             ],
             // 現行 felix_total の URL（明細リンクの iframe 先）。
@@ -54,6 +59,10 @@ class HandleInertiaRequests extends Middleware
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
             ],
+            // サイドメニューの未処理件数バッヂ。Closure にして部分リロード（only指定）時は評価しない。
+            'menuBadges' => fn () => $admin
+                ? app(QuotationRepositoryInterface::class)->pendingCounts()
+                : null,
         ];
     }
 }

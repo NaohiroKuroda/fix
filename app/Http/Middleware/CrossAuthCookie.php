@@ -69,12 +69,25 @@ class CrossAuthCookie
         return (int) $userId;
     }
 
+    /**
+     * cross_auth クッキーの署名付き値（v1.{userId}.{exp}.{HMAC}）を生成する。
+     *
+     * クッキー本体の発行（{@see issue}）に加え、felix_total へのサーバ間 HTTP 連携で
+     * `Cookie` ヘッダへ載せる用途でも使う。署名仕様の二重定義を避けるため一本化する。
+     */
+    public static function mintValue(int $userId): string
+    {
+        $ttl = (int) config('cross_auth.ttl', 1800);
+        $exp = time() + $ttl;
+
+        return "v1.{$userId}.{$exp}.".hash_hmac('sha256', "v1.{$userId}.{$exp}", (string) config('cross_auth.secret'));
+    }
+
     /** cross_auth クッキーを生成（平文＋HMAC、属性付き）。 */
     private function issue(int $userId): Cookie
     {
         $ttl = (int) config('cross_auth.ttl', 1800);
-        $exp = time() + $ttl;
-        $value = "v1.{$userId}.{$exp}.".hash_hmac('sha256', "v1.{$userId}.{$exp}", (string) config('cross_auth.secret'));
+        $value = self::mintValue($userId);
 
         return cookie(
             name: 'cross_auth',

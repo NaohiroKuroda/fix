@@ -47,6 +47,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $itemLabel = $this->nonEmpty($filters['itemLabel'] ?? null); // 項目名（item_name）
         $vendor = $this->nonEmpty($filters['vendor'] ?? null);       // 見積先（company_name）
         $answer = (string) ($filters['answer'] ?? 'all');            // 業者選定の回答状態（既定=全て）
+        $comment = (string) ($filters['comment'] ?? 'all');          // コメント有無（all/has/none）
         $isQuoteRequest = $mode === 'quote-request';                 // 見積依頼は status 非依存
         $status = self::MODE_STATUS[$mode] ?? null;
         $empty = $status === null && ! $isQuoteRequest;              // 見積依頼以外で条件未定は空
@@ -65,8 +66,8 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             if ($vendor !== false) {
                 $q->whereHas('company', fn (Builder $c) => $c->where('company_name', 'like', "%{$vendor}%"));
             }
-            if ($mode === 'vendor-selection') {
-                // 回答あり＝最新の相見積履歴(is_latest)を持つ。
+            if ($mode === 'vendor-selection' || $mode === 'quote-request') {
+                // 回答あり＝相見積額（最新の相見積履歴 is_latest）を持つ。回答なし＝持たない。
                 $hasLatest = fn (Builder $h) => $h->whereNotNull('is_latest');
                 if ($answer === 'answered') {
                     $q->whereHas('histories', $hasLatest);
@@ -79,9 +80,9 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $paginator = TBuilding::query()
             ->when($empty, fn (Builder $q) => $q->whereRaw('1 = 0'))
             ->when($keyword, fn (Builder $q, string $kw) => $q->where('building_name', 'like', "%{$kw}%"))
-            ->whereHas('costItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $quotationFilter))
-            ->with(['costItems' => function (HasMany $i) use ($itemLabel, $quotationFilter, $isQuoteRequest): void {
-                $this->applyItemFilter($i->getQuery(), $itemLabel, $quotationFilter);
+            ->whereHas('costItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $quotationFilter))
+            ->with(['costItems' => function (HasMany $i) use ($itemLabel, $comment, $quotationFilter, $isQuoteRequest): void {
+                $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $quotationFilter);
                 $i->orderBy('sort')->orderBy('id')
                     ->with(['quotations' => function (HasMany $q) use ($quotationFilter, $isQuoteRequest): void {
                         $quotationFilter($q->getQuery());
@@ -185,11 +186,18 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         }
     }
 
-    /** 項目（明細）の絞り込み：項目名 ＋ mode に合う見積先を持つこと。 */
-    private function applyItemFilter(Builder $i, string|false $itemLabel, callable $quotationFilter): Builder
+    /** 項目（明細）の絞り込み：項目名 ＋ コメント有無 ＋ mode に合う見積先を持つこと。 */
+    private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, callable $quotationFilter): Builder
     {
         if ($itemLabel !== false) {
             $i->where('item_name', 'like', "%{$itemLabel}%");
+        }
+
+        // コメント有無（コメントは項目=t_building_cost_items 単位のポリモーフィック）。
+        if ($comment === 'has') {
+            $i->whereHas('comments');
+        } elseif ($comment === 'none') {
+            $i->whereDoesntHave('comments');
         }
 
         return $i->whereHas('quotations', fn (Builder $q) => $quotationFilter($q));

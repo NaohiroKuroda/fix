@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Quotation\CancelApprovalController;
 use App\Http\Controllers\Quotation\CancelRequestController;
+use App\Http\Controllers\Quotation\CommentAttachmentController;
 use App\Http\Controllers\Quotation\ManagerApprovalController;
 use App\Http\Controllers\Quotation\QuotationMessageController;
 use App\Http\Controllers\Quotation\QuoteRequestController;
@@ -52,6 +53,13 @@ Route::middleware('auth:admin')->group(function () {
         ->name('estimate-management.quotation-messages.index');
     Route::post('/estimate-management/quotations/{quotation}/messages', [QuotationMessageController::class, 'store'])
         ->name('estimate-management.quotation-messages.store');
+
+    // コメント添付ファイル（t_attachments）の配信。認証付きで Laravel から直接ストリームする
+    // （公開ストレージの静的配信は Web サーバ設定依存で 403 になり得るため）。
+    Route::get('/estimate-management/comment-attachments/{attachment}', [CommentAttachmentController::class, 'show'])
+        ->name('estimate-management.comment-attachments.show');
+    Route::get('/estimate-management/comment-attachments/{attachment}/download', [CommentAttachmentController::class, 'download'])
+        ->name('estimate-management.comment-attachments.download');
 
     // ログアウト（安全のために POST で処理）
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

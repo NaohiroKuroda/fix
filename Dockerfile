@@ -2,7 +2,7 @@
 # Stage 1: build （PHP + Node 同居。wayfinder の vite プラグインが
 #           ビルド時に `php artisan` を実行するため両方必要）
 # =========================================================
-FROM php:8.4-cli AS build
+FROM php:8.3-cli AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git unzip libzip-dev libicu-dev libonig-dev curl ca-certificates gnupg \
@@ -32,9 +32,9 @@ RUN composer dump-autoload --optimize \
     && rm -rf node_modules
 
 # =========================================================
-# Stage 2: 実行（Apache + PHP8.4）
+# Stage 2: 実行（Apache + PHP8.3）
 # =========================================================
-FROM php:8.4-apache AS app
+FROM php:8.3-apache AS app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libzip-dev libicu-dev libonig-dev \

@@ -29,3 +29,7 @@ Thumbs.db
 # server deploy secrets
 docker.env
 *.tar.gz
+
+/felix_total
+/.agents
+/.claude

@@ -27,8 +27,8 @@ export function useEstimateTheme(isThemedInput: MaybeRefOrGetter<boolean>) {
     );
     const inputClass = computed(() =>
         themed.value
-            ? 'h-9 w-48 rounded-xl border border-slate-300 bg-white/80 px-3 text-sm text-slate-800 shadow-inner backdrop-blur-md placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20'
-            : 'h-9 w-48 rounded-md border px-2 text-sm',
+            ? 'h-9 w-56 rounded-xl border border-slate-300 bg-white/80 px-3 text-sm text-slate-800 shadow-inner backdrop-blur-md placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20'
+            : 'h-9 w-56 rounded-md border px-2 text-sm',
     );
     const primaryBtnClass = computed(() =>
         themed.value

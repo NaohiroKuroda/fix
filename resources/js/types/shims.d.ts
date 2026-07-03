@@ -14,6 +14,10 @@ declare module '@inertiajs/core' {
             user: {
                 id: number;
                 name: string;
+                // 付与ロールの slug 一覧。
+                roles: string[];
+                // 建設部部長か（部長承認・部長取消承認メニューの表示判定）。
+                isEstimateManager: boolean;
             } | null;
         };
         // 現行 felix_total の URL（明細リンクの iframe 先）
@@ -27,6 +31,8 @@ declare module '@inertiajs/core' {
         menuBadges: {
             'quote-request': number;
             'vendor-selection': number;
+            // 業者選定（差し戻し）：部長承認で否認され業者選定へ戻った件数（2つ目のバッヂ）。
+            'vendor-selection-rejected': number;
             'manager-approval': number;
             'cancel-approval': number;
         } | null;

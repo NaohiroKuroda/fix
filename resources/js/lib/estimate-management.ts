@@ -29,6 +29,11 @@ export interface EstimateModeConfig {
     quoteColumnLabel?: string;
     /** 行が「処理済み」かを表すサーバ側フラグ名。 */
     appliedKey: EstimateAppliedKey;
+    /**
+     * 処理済みでも再操作を許す（ロックしない）か。
+     * 見積依頼は何度でも依頼できるよう true（依頼済みでもチェック可・静的バッジを出さない）。
+     */
+    reselectable?: boolean;
     /** 操作対象（未処理）行の操作前ラベル。 */
     idleLabel: string;
     /** 選択中（押下済み・送信待ち）／トグル ON のラベル。 */
@@ -52,9 +57,12 @@ export interface EstimateModeConfig {
 export const ESTIMATE_MODE_CONFIG: Record<EstimateManagementMode, EstimateModeConfig> = {
     'quote-request': {
         kind: 'checkbox',
-        columnLabel: '見積依頼状態',
-        showQuote: false,
+        columnLabel: '見積依頼',
+        // 予算単価の右隣に「相見積」列（業者から返ってきた見積提示額）を表示する。
+        showQuote: true,
         appliedKey: 'requested',
+        // 何度でも依頼できるよう、依頼済みでもチェック可（静的バッジは出さない）。
+        reselectable: true,
         idleLabel: '未依頼',
         activeLabel: '依頼',
         appliedLabel: '依頼済み',
@@ -78,7 +86,7 @@ export const ESTIMATE_MODE_CONFIG: Record<EstimateManagementMode, EstimateModeCo
     },
     'manager-approval': {
         kind: 'pick-button',
-        columnLabel: '部長承認',
+        columnLabel: '承認',
         showQuote: true,
         quoteColumnLabel: '確定見積',
         appliedKey: 'approved',

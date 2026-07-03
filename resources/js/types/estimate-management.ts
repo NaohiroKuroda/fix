@@ -5,8 +5,8 @@
 export interface EstimateManagementRow {
     unitId: number;
     companyId: number | null;
-    /** 同一項目の先頭行のみ値が入る（2行目以降は空文字）。 */
-    itemLabel: string;
+    /** 項目名（全行に入る）。表示は「表示中の同一項目の先頭行」にのみ出す（EstimateProjectCard 側で制御）。 */
+    itemName: string;
     vendorName: string;
     /** 見積先の詳細（iframe で開く felix_total の見積先編集フォーム）。会社名リンクに使う。 */
     vendorDetailUrl: string | null;
@@ -17,8 +17,16 @@ export interface EstimateManagementRow {
     masterPrice: number | null;
     budgetPrice: number | null;
     quotePrice: number | null;
-    /** 見積依頼済み（相見積送信履歴あり）。 */
+    /** 見積依頼済み（送信回数が1回以上）。 */
     requested: boolean;
+    /** 見積依頼の送信回数（t_cost_quotation_requests の件数）。0=未依頼。見積依頼画面のみ意味を持つ。 */
+    sendCount: number;
+    /** やり取り（コメント）の件数（費用項目単位）。業者選定・部長承認の「やり取り」列に表示。 */
+    messageCount: number;
+    /** やり取り（コメント）が1件以上あるか。コメントボタンを選定ボタンと同色にする判定に使う。 */
+    hasComments: boolean;
+    /** やり取りの未読数（自分の最終既読より新しい他者コメント）。0=未読なし。 */
+    unreadCount: number;
     /** 発注業者として選定済み（adoption_flg=1）。 */
     selected: boolean;
     /** 部長承認済み（fix_status=1）。 */
@@ -29,6 +37,35 @@ export interface EstimateManagementRow {
     cancelApproved: boolean;
     /** 仮選定（新スキーマ t_cost_quotations.is_drafted）。旧スキーマは常に false。 */
     provisional: boolean;
+    /** 部長承認で否認され業者選定へ差し戻された（deny_comment あり）。ボタンの赤色表示に使う。 */
+    denied: boolean;
+}
+
+/** やり取り（コメント履歴）の添付ファイル1件。 */
+export interface EstimateChatFile {
+    id: number;
+    name: string;
+    /** インライン表示（画像サムネイル）用の配信URL。 */
+    url: string;
+    /** クリック時の端末ダウンロード用URL（Content-Disposition: attachment）。 */
+    downloadUrl: string;
+    mime: string | null;
+    size: number;
+    isImage: boolean;
+}
+
+/** やり取り（チャット）の1発言。サーバの QuotationMessageController と一致させること。 */
+export interface EstimateChatMessage {
+    id: number;
+    /** 発言者の役割：manager=建設部部長 / staff=部下。 */
+    senderRole: 'manager' | 'staff';
+    /** 自分（ログイン中ユーザー）の投稿か。true=右寄せ、false=左寄せで表示する。 */
+    isMine: boolean;
+    senderName: string;
+    body: string;
+    createdAt: string | null;
+    /** 添付ファイル（無ければ空配列）。 */
+    files: EstimateChatFile[];
 }
 
 /** 案件（実行予算）1件。 */
@@ -55,6 +92,8 @@ export interface EstimateManagementFilters {
     vendor: string;
     /** 業者選定画面の回答状態フィルタ（全て / 回答あり / 回答なし）。サーバから常に渡る。 */
     answer?: 'all' | 'answered' | 'unanswered';
+    /** コメント有無フィルタ（全て / コメントあり / コメントなし）。全画面共通。サーバから常に渡る。 */
+    comment?: 'all' | 'has' | 'none';
 }
 
 /**

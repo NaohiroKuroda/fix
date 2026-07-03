@@ -4,6 +4,8 @@ import vendorSelection5181af from './vendor-selection'
 import managerApproval3ec22d from './manager-approval'
 import cancelRequestD640cf from './cancel-request'
 import cancelApprovalB7fa4c from './cancel-approval'
+import quotationMessages from './quotation-messages'
+import commentAttachments from './comment-attachments'
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::quoteRequest
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:26
@@ -168,7 +170,7 @@ vendorSelection.form = vendorSelectionForm
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
+* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
 * @route '/estimate-management/manager-approval'
 */
 export const managerApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -183,7 +185,7 @@ managerApproval.definition = {
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
+* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
 * @route '/estimate-management/manager-approval'
 */
 managerApproval.url = (options?: RouteQueryOptions) => {
@@ -192,7 +194,7 @@ managerApproval.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
+* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
 * @route '/estimate-management/manager-approval'
 */
 managerApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -202,7 +204,7 @@ managerApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
+* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
 * @route '/estimate-management/manager-approval'
 */
 managerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -212,7 +214,7 @@ managerApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
+* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
 * @route '/estimate-management/manager-approval'
 */
 const managerApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -222,7 +224,7 @@ const managerApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
+* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
 * @route '/estimate-management/manager-approval'
 */
 managerApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -232,7 +234,7 @@ managerApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::managerApproval
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:26
+* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
 * @route '/estimate-management/manager-approval'
 */
 managerApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -415,6 +417,8 @@ const estimateManagement = {
     managerApproval: Object.assign(managerApproval, managerApproval3ec22d),
     cancelRequest: Object.assign(cancelRequest, cancelRequestD640cf),
     cancelApproval: Object.assign(cancelApproval, cancelApprovalB7fa4c),
+    quotationMessages: Object.assign(quotationMessages, quotationMessages),
+    commentAttachments: Object.assign(commentAttachments, commentAttachments),
 }
 
 export default estimateManagement

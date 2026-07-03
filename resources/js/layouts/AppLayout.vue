@@ -2,7 +2,7 @@
 // アプリ共通レイアウト（サイドメニュー + コンテンツ）。
 // - グローバルヘッダーは撤去。アカウント名 + ログアウトはサイドバー上部（ロゴ直下）に配置。
 // - サイドバーは開閉可能（デスクトップ: collapsed / モバイル: オーバーレイ）
-import { computed, ref } from 'vue';
+import { computed, provide, ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { ClipboardList, ChevronDown, Menu, PanelLeftClose, PanelLeftOpen, User, LogOut } from 'lucide-vue-next';
 import FlashMessages from '@/components/feedback/FlashMessages.vue';
@@ -14,11 +14,15 @@ interface NavChild {
     active?: boolean;
     /** 未対応件数バッジ（LINE の未読数風）。0/未指定なら非表示。※現状はダミー値。 */
     badge?: number;
+    /** 2つ目のバッジ（赤以外）。例：業者選定の「差し戻し」件数。0/未指定なら非表示。 */
+    badge2?: number;
 }
 
 const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
+// 建設部部長のみ「部長承認」「部長取消承認」を表示する（判定はサーバ側 config/felix.php）。
+const isEstimateManager = computed(() => page.props.auth?.user?.isEstimateManager ?? false);
 
 // サイドメニューの未処理件数バッヂ（Inertia 共有プロパティ menuBadges）。
 const badges = computed(() => page.props.menuBadges ?? null);
@@ -28,10 +32,15 @@ const badges = computed(() => page.props.menuBadges ?? null);
 // badge は各画面の未処理件数（部長取消申請はバッヂ対象外）。
 const estimateChildren = computed<NavChild[]>(() => [
     { label: '見積依頼【FELIX→業者依頼前】', href: '/estimate-management/quote-request', active: path.value.startsWith('/estimate-management/quote-request'), badge: badges.value?.['quote-request'] },
-    { label: '業者選定【業者→FELIX返答済】', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: badges.value?.['vendor-selection'] },
-    { label: '部長承認【業者選定済→FELIX(建設部)】', href: '/estimate-management/manager-approval', active: path.value.startsWith('/estimate-management/manager-approval'), badge: badges.value?.['manager-approval'] },
+    { label: '業者選定【業者→FELIX返答済】', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: badges.value?.['vendor-selection'], badge2: badges.value?.['vendor-selection-rejected'] },
+    // 部長承認・部長取消承認は建設部部長のみ表示。
+    ...(isEstimateManager.value
+        ? [{ label: '部長承認【業者選定済→FELIX(建設部)】', href: '/estimate-management/manager-approval', active: path.value.startsWith('/estimate-management/manager-approval'), badge: badges.value?.['manager-approval'] }]
+        : []),
     { label: '部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/estimate-management/cancel-request', active: path.value.startsWith('/estimate-management/cancel-request') },
-    { label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/estimate-management/cancel-approval', active: path.value.startsWith('/estimate-management/cancel-approval'), badge: badges.value?.['cancel-approval'] },
+    ...(isEstimateManager.value
+        ? [{ label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/estimate-management/cancel-approval', active: path.value.startsWith('/estimate-management/cancel-approval'), badge: badges.value?.['cancel-approval'] }]
+        : []),
 ]);
 const estimateMenuOpen = ref(true);
 
@@ -45,7 +54,14 @@ const splitLabel = (label: string): { head: string; tail: string } => {
 };
 
 const mobileOpen = ref(false);  // モバイル: オーバーレイ表示
-const collapsed = ref(false);   // デスクトップ: 折りたたみ
+// felix_total から iframe 埋め込みされた場合は、サイドバーを畳んだ状態で開く
+// （単独タブ表示時は従来どおり開いた状態）。
+const isEmbedded = typeof window !== 'undefined' && window.self !== window.top;
+const collapsed = ref(isEmbedded);   // デスクトップ: 折りたたみ
+
+// 折りたたみ状態を子（各画面ヘッダー）へ共有。
+// 閉じた時は左上に再オープンボタンが浮くため、画面側でタイトルの左余白を空ける用途。
+provide('sidebarCollapsed', collapsed);
 
 // ログアウト（AuthController@logout へ POST）
 const logout = () => router.post('/logout');
@@ -104,7 +120,7 @@ const logout = () => router.post('/logout');
                     <span class="flex-1 text-left">見積管理</span>
                     <span
                         v-if="estimateBadgeTotal"
-                        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
                     >
                         <span class="block translate-y-[0.5px] leading-none">{{ estimateBadgeTotal > 99 ? '99+' : estimateBadgeTotal }}</span>
                     </span>
@@ -127,9 +143,17 @@ const logout = () => router.post('/logout');
                             </span>
                             <span
                                 v-if="child.badge"
-                                class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                                class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
                             >
                                 <span class="block translate-y-[0.5px] leading-none">{{ child.badge > 99 ? '99+' : child.badge }}</span>
+                            </span>
+                            <!-- 2つ目のバッジ（赤以外）：業者選定の差し戻し件数。現状の赤バッジの右隣。 -->
+                            <span
+                                v-if="child.badge2"
+                                class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                                title="部長承認で否認され業者選定へ差し戻された件数"
+                            >
+                                <span class="block translate-y-[0.5px] leading-none">{{ child.badge2 > 99 ? '99+' : child.badge2 }}</span>
                             </span>
                         </Link>
                         <!-- 未実装：準備中プレースホルダ -->

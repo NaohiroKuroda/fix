@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Quotation;
 
-use App\Http\Requests\EstimateCompanyActionRequest;
+use App\Http\Requests\CancelActionRequest;
 use App\Http\Requests\EstimateManagementRequest;
 use App\Services\Quotation\CancelApprovalService;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +21,7 @@ class CancelApprovalController extends AbstractQuotationScreenController
      * 一覧表示。
      *
      * @param  EstimateManagementRequest  $request  絞り込み条件（物件名 / 項目名 / 見積先）
-     * @return Response  Inertia ページ（projects / pagination / filters）
+     * @return Response Inertia ページ（projects / pagination / filters）
      */
     public function index(EstimateManagementRequest $request): Response
     {
@@ -33,14 +33,14 @@ class CancelApprovalController extends AbstractQuotationScreenController
     }
 
     /**
-     * 部長取消承認（取消申請を承認）。
+     * 部長取消承認（取消申請を承認）。理由を必須で受け取り、コメントに記録する。
      *
-     * @param  EstimateCompanyActionRequest  $request  対象の見積先（EstimateUnitCompany）ID 配列
-     * @return RedirectResponse  元画面へ戻し、成功 / エラーのフラッシュメッセージを表示
+     * @param  CancelActionRequest  $request  対象の見積先（t_cost_quotations）ID 配列 ＋ 理由
+     * @return RedirectResponse 元画面へ戻し、成功 / エラーのフラッシュメッセージを表示
      */
-    public function confirm(EstimateCompanyActionRequest $request): RedirectResponse
+    public function confirm(CancelActionRequest $request): RedirectResponse
     {
-        $count = $this->service->confirm($request->companyIds());
+        $count = $this->service->confirm($request->companyIds(), $request->reason());
 
         if ($count === 0) {
             return back()->with('error', '取消承認を実行できませんでした。対象の見積先をご確認ください。');

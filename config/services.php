@@ -35,9 +35,15 @@ return [
         ],
     ],
 
-    // 現行 felix_total（laravel-admin）の URL。明細リンクの iframe 先に使う。
+    // 現行 felix_total（laravel-admin）の URL。
     'felix_total' => [
+        // ブラウザ向け（明細リンクの iframe 先）。ユーザーのブラウザが到達できるホスト。
         'url' => env('FELIX_TOTAL_URL'),
+        // サーバ間 HTTP 向け（order_estimate をコンテナから叩く）。コンテナが到達できるホスト。
+        // 例: http://host.docker.internal:8070 。未設定なら url にフォールバック。
+        'internal_url' => env('FELIX_TOTAL_INTERNAL_URL', env('FELIX_TOTAL_URL')),
+        // 見積依頼処理（order_estimate）のパス。新スキーマ画面の見積依頼送信でサーバ間 HTTP で叩く。
+        'quote_request_path' => env('FELIX_TOTAL_QUOTE_REQUEST_PATH', '/admin/estimates-custom-detail/order_estimate'),
     ],
 
 ];

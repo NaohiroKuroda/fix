@@ -13,6 +13,7 @@ class CancelRequestService
 {
     public function __construct(
         private readonly QuotationRepositoryInterface $estimates,
+        private readonly QuotationCommentService $comments,
     ) {}
 
     /**
@@ -28,12 +29,29 @@ class CancelRequestService
 
     /**
      * 部長取消申請の実行（選択した見積先の取消を申請）。
+     * 併せて、取消申請の理由を項目のやり取り（コメント）へ残す。
      *
      * @param  list<int>  $companyIds
      * @return int 実際に申請した件数
      */
-    public function confirm(array $companyIds): int
+    public function confirm(array $companyIds, string $reason): int
     {
-        return $this->estimates->recordCancelRequests($companyIds);
+        $count = $this->estimates->recordCancelRequests($companyIds);
+
+        if ($count > 0) {
+            // 対象見積先が属する項目（重複排除）へ理由コメントを残す（投稿者＝操作者）。
+            $itemIds = [];
+            foreach ($companyIds as $companyId) {
+                $itemId = $this->estimates->itemIdForQuotation((int) $companyId);
+                if ($itemId !== null) {
+                    $itemIds[$itemId] = true;
+                }
+            }
+            foreach (array_keys($itemIds) as $itemId) {
+                $this->comments->post($itemId, '【取消申請】'.$reason, []);
+            }
+        }
+
+        return $count;
     }
 }

@@ -2,15 +2,18 @@
 
 namespace App\Providers;
 
-use App\Repositories\Contracts\EstimateRepositoryInterface;
-use App\Repositories\EstimateRepository;
+use App\Repositories\BuildingQuotationRepository;
+use App\Repositories\CommentRepository;
+use App\Repositories\Contracts\CommentRepositoryInterface;
+use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
-    /** interface ⇔ 実装のバインド。新しい Repository を追加したらここに追記する。 */
+    /** interface ⇔ 実装のバインド。見積管理は新スキーマ（t_cost_quotations 等）から取得する。 */
     public function register(): void
     {
-        $this->app->bind(EstimateRepositoryInterface::class, EstimateRepository::class);
+        $this->app->bind(QuotationRepositoryInterface::class, BuildingQuotationRepository::class);
+        $this->app->bind(CommentRepositoryInterface::class, CommentRepository::class);
     }
 }

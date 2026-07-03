@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Quotation;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\EstimateManagementRequest;
+use App\Http\Requests\QuotationManagementRequest;
 use App\Http\Resources\BuildingQuotationResource;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
@@ -23,12 +23,12 @@ abstract class AbstractQuotationScreenController extends Controller
     /**
      * 案件一覧を Inertia ページとして描画する。
      *
-     * @param  EstimateManagementRequest  $request  絞り込み条件（filtersForView 用）
+     * @param  QuotationManagementRequest  $request  絞り込み条件（filtersForView 用）
      * @param  string  $page  Inertia ページ名（例: EstimateManagement/QuoteRequest）
      * @param  LengthAwarePaginator<int, \App\Models\TBuilding>  $paginator  案件のページネーション
      * @return Response  projects / pagination / filters を渡した Inertia レスポンス
      */
-    protected function renderScreen(EstimateManagementRequest $request, string $page, LengthAwarePaginator $paginator): Response
+    protected function renderScreen(QuotationManagementRequest $request, string $page, LengthAwarePaginator $paginator): Response
     {
         return Inertia::render($page, [
             'projects' => BuildingQuotationResource::collection($paginator->items()),

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Quotation;
 
 use App\Http\Requests\EstimateCompanyActionRequest;
-use App\Http\Requests\EstimateManagementRequest;
+use App\Http\Requests\QuotationManagementRequest;
 use App\Http\Requests\RejectManagerApprovalRequest;
 use App\Services\Quotation\ManagerApprovalService;
 use Illuminate\Http\RedirectResponse;
@@ -21,10 +21,10 @@ class ManagerApprovalController extends AbstractQuotationScreenController
     /**
      * 一覧表示。
      *
-     * @param  EstimateManagementRequest  $request  絞り込み条件（物件名 / 項目名 / 見積先）
+     * @param  QuotationManagementRequest  $request  絞り込み条件（物件名 / 項目名 / 見積先）
      * @return Response Inertia ページ（projects / pagination / filters）
      */
-    public function index(EstimateManagementRequest $request): Response
+    public function index(QuotationManagementRequest $request): Response
     {
         return $this->renderScreen(
             $request,

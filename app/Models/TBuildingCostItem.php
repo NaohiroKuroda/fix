@@ -18,8 +18,8 @@ class TBuildingCostItem extends Model
 
     protected $fillable = [
         'building_id',
-        'item_kind',
         'sort',
+        'is_enabled',
         'item_name',
         'master_price',
         'budget_price',
@@ -27,6 +27,10 @@ class TBuildingCostItem extends Model
         'created_at',
         'updated_at',
         'source_id',
+    ];
+
+    protected $casts = [
+        'is_enabled' => 'boolean',
     ];
 
     // 建物

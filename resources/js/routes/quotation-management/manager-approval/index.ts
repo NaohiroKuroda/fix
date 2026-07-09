@@ -1,48 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::index
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
-* @route '/quotation-management/manager-approval'
-*/
-export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
-    method: 'get',
-})
-
-index.definition = {
-    methods: ["get","head"],
-    url: '/quotation-management/manager-approval',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::index
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
-* @route '/quotation-management/manager-approval'
-*/
-index.url = (options?: RouteQueryOptions) => {
-    return index.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::index
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
-* @route '/quotation-management/manager-approval'
-*/
-index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\ManagerApprovalController::index
-* @see app/Http/Controllers/Quotation/ManagerApprovalController.php:27
-* @route '/quotation-management/manager-approval'
-*/
-index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: index.url(options),
-    method: 'head',
-})
-
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:42
@@ -111,6 +67,9 @@ reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-const ManagerApprovalController = { index, confirm, reject }
+const managerApproval = {
+    confirm: Object.assign(confirm, confirm),
+    reject: Object.assign(reject, reject),
+}
 
-export default ManagerApprovalController
+export default managerApproval

@@ -39,9 +39,9 @@ class CommentResource extends JsonResource
                 'id' => (int) $attachment->id,
                 'name' => (string) $attachment->original_name,
                 // インライン表示（画像サムネイル）用。配信は認証付きの Laravel ルート経由。
-                'url' => route('estimate-management.comment-attachments.show', $attachment->id),
+                'url' => route('quotation-management.comment-attachments.show', $attachment->id),
                 // クリック時の端末ダウンロード用（Content-Disposition: attachment）。
-                'downloadUrl' => route('estimate-management.comment-attachments.download', $attachment->id),
+                'downloadUrl' => route('quotation-management.comment-attachments.download', $attachment->id),
                 'mime' => $attachment->mime_type,
                 'size' => (int) $attachment->size,
                 'isImage' => str_starts_with((string) $attachment->mime_type, 'image/'),

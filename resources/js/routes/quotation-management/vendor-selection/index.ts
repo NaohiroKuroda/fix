@@ -1,48 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
-/**
-* @see \App\Http\Controllers\Quotation\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/VendorSelectionController.php:27
-* @route '/quotation-management/vendor-selection'
-*/
-export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
-    method: 'get',
-})
-
-index.definition = {
-    methods: ["get","head"],
-    url: '/quotation-management/vendor-selection',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\Quotation\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/VendorSelectionController.php:27
-* @route '/quotation-management/vendor-selection'
-*/
-index.url = (options?: RouteQueryOptions) => {
-    return index.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\Quotation\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/VendorSelectionController.php:27
-* @route '/quotation-management/vendor-selection'
-*/
-index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Quotation\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/VendorSelectionController.php:27
-* @route '/quotation-management/vendor-selection'
-*/
-index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: index.url(options),
-    method: 'head',
-})
-
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\VendorSelectionController::confirm
 * @see app/Http/Controllers/Quotation/VendorSelectionController.php:42
@@ -111,6 +67,9 @@ provisional.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-const VendorSelectionController = { index, confirm, provisional }
+const vendorSelection = {
+    confirm: Object.assign(confirm, confirm),
+    provisional: Object.assign(provisional, provisional),
+}
 
-export default VendorSelectionController
+export default vendorSelection

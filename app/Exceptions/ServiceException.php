@@ -2,8 +2,8 @@
 
 namespace App\Exceptions;
 
+use Exception;
 use RuntimeException;
-use Throwable;
 
 /**
  * サービス層で発生した処理失敗を表すドメイン例外。
@@ -18,7 +18,7 @@ class ServiceException extends RuntimeException
 {
     public function __construct(
         string $message = 'サーバー処理でエラーが発生しました。時間をおいて再度お試しください。',
-        ?Throwable $previous = null,
+        ?Exception $previous = null,
     ) {
         parent::__construct($message, 0, $previous);
     }

@@ -63,6 +63,8 @@ class HandleInertiaRequests extends Middleware
             ],
             // サイドメニューの未処理件数バッヂ。Closure にして部分リロード（only指定）時は評価しない。
             'menuBadges' => fn () => $this->menuBadges($admin),
+            // サイドメニューの表示可否（ロール別）。メニューキー => 表示するか。未ログイン時は空。
+            'menuPermissions' => fn () => $admin === null ? [] : $admin->menuPermissions(),
         ];
     }
 

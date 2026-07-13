@@ -45,13 +45,14 @@ export interface EstimateManagementRow {
 export interface EstimateChatFile {
     id: number;
     name: string;
-    /** インライン表示（画像サムネイル）用の配信URL。 */
-    url: string;
-    /** クリック時の端末ダウンロード用URL（Content-Disposition: attachment）。 */
-    downloadUrl: string;
     mime: string | null;
     size: number;
+    /** 画像（サムネ生成対象）か。 */
     isImage: boolean;
+    /** 画像サムネイルのインライン配信URL。画像かつサムネ生成済みのみ。無ければ null。 */
+    thumbUrl: string | null;
+    /** クリック時の端末ダウンロード用URL（Content-Disposition: attachment）。全ファイル共通のクリック先。 */
+    downloadUrl: string;
 }
 
 /** やり取り（チャット）の1発言。サーバの QuotationMessageController と一致させること。 */

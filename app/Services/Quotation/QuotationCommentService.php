@@ -7,6 +7,7 @@ use App\Models\AdminUser;
 use App\Models\TBuildingCostItem;
 use App\Models\TComment;
 use App\Repositories\Contracts\CommentRepositoryInterface;
+use App\Services\Image\ImageCompressor;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -27,6 +28,7 @@ class QuotationCommentService
 
     public function __construct(
         private readonly CommentRepositoryInterface $comments,
+        private readonly ImageCompressor $imageCompressor,
     ) {}
 
     /**
@@ -49,8 +51,8 @@ class QuotationCommentService
             Log::error('コメントの取得に失敗しました', [
                 'message' => $e->getMessage(),
                 'itemId' => $itemId,
-                'file'  => $e->getFile(),
-                'line'  => $e->getLine(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
@@ -70,15 +72,16 @@ class QuotationCommentService
 
             $comment = $this->comments->create(self::COMMENTABLE_TYPE, $itemId, $userId, $body);
 
-            // 添付ファイルは public ディスクへ保存し、コメントにポリモーフィックで紐づける。
+            // 添付ファイルは ImageCompressor 経由で public ディスクへ保存する
+            // （画像は圧縮＋サムネ生成・UUID化。それ以外はそのまま保存）。
             foreach ($files as $file) {
-                $path = $file->store("comments/{$itemId}", 'public');
+                $stored = $this->imageCompressor->store($file, "comments/{$itemId}");
                 $this->comments->addAttachment(
                     $comment,
-                    $path,
+                    $stored->path,
                     $file->getClientOriginalName(),
-                    $file->getClientMimeType(),
-                    (int) $file->getSize(),
+                    $stored->mime,
+                    $stored->size,
                     $userId,
                 );
             }
@@ -89,8 +92,8 @@ class QuotationCommentService
                 'message' => $e->getMessage(),
                 'itemId' => $itemId,
                 'fileCount' => count($files),
-                'file'  => $e->getFile(),
-                'line'  => $e->getLine(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 

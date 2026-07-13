@@ -48,6 +48,23 @@ class TAttachment extends Model
         'size' => 'integer',
     ];
 
+    /**
+     * サムネイルの規約パス（画像のみ生成される）。
+     *
+     * 本体   : comments/{itemId}/{uuid}.{ext}      （= file_path）
+     * サムネ : comments/{itemId}/thumbs/{uuid}.jpg
+     *
+     * DB列は増やさず、file_path から規約的に導出する（06_添付ファイル_詳細設計 §6）。
+     * 実際にファイルが存在するかは呼び出し側で `Storage::exists()` により判定する。
+     */
+    public function thumbnailPath(): string
+    {
+        $directory = dirname((string) $this->file_path);
+        $basename = pathinfo((string) $this->file_path, PATHINFO_FILENAME);
+
+        return "{$directory}/thumbs/{$basename}.jpg";
+    }
+
     /** 添付対象（ポリモーフィック）。 */
     public function attachable(): MorphTo
     {

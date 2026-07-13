@@ -36,14 +36,20 @@ RUN composer dump-autoload --optimize \
 # =========================================================
 FROM php:8.3-apache AS app
 
+# gd / exif は添付画像の圧縮・サムネ生成（06_添付ファイル_詳細設計 §5）に必要。
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libzip-dev libicu-dev libonig-dev \
-    && docker-php-ext-install pdo_mysql zip intl \
+        libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
+    && docker-php-ext-install pdo_mysql zip intl gd exif \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
 # Apache: DocumentRoot を public/ に
 COPY .docker/apache/vhost.conf /etc/apache2/sites-available/000-default.conf
+
+# アップロード上限等（06_添付ファイル_詳細設計 §11）。
+COPY .docker/php/uploads.ini /usr/local/etc/php/conf.d/zz-uploads.ini
 
 WORKDIR /var/www/html
 

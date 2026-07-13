@@ -56,8 +56,8 @@ Route::middleware('auth:admin')->group(function () {
 
     // コメント添付ファイル（t_attachments）の配信。認証付きで Laravel から直接ストリームする
     // （公開ストレージの静的配信は Web サーバ設定依存で 403 になり得るため）。
-    Route::get('/quotation-management/comment-attachments/{attachment}', [CommentAttachmentController::class, 'show'])
-        ->name('quotation-management.comment-attachments.show');
+    Route::get('/quotation-management/comment-attachments/{attachment}/thumb', [CommentAttachmentController::class, 'thumb'])
+        ->name('quotation-management.comment-attachments.thumb');
     Route::get('/quotation-management/comment-attachments/{attachment}/download', [CommentAttachmentController::class, 'download'])
         ->name('quotation-management.comment-attachments.download');
 

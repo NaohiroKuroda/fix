@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::index
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
@@ -68,6 +68,43 @@ index.head = (args: { quotation: number | { id: number } } | [quotation: number 
 })
 
 /**
+* @see \App\Http\Controllers\Quotation\QuotationMessageController::index
+* @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
+* @route '/quotation-management/quotations/{quotation}/messages'
+*/
+const indexForm = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(args, options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Quotation\QuotationMessageController::index
+* @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
+* @route '/quotation-management/quotations/{quotation}/messages'
+*/
+indexForm.get = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(args, options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Quotation\QuotationMessageController::index
+* @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
+* @route '/quotation-management/quotations/{quotation}/messages'
+*/
+indexForm.head = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+index.form = indexForm
+
+/**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::store
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:40
 * @route '/quotation-management/quotations/{quotation}/messages'
@@ -124,6 +161,28 @@ store.post = (args: { quotation: number | { id: number } } | [quotation: number 
     url: store.url(args, options),
     method: 'post',
 })
+
+/**
+* @see \App\Http\Controllers\Quotation\QuotationMessageController::store
+* @see app/Http/Controllers/Quotation/QuotationMessageController.php:40
+* @route '/quotation-management/quotations/{quotation}/messages'
+*/
+const storeForm = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Quotation\QuotationMessageController::store
+* @see app/Http/Controllers/Quotation/QuotationMessageController.php:40
+* @route '/quotation-management/quotations/{quotation}/messages'
+*/
+storeForm.post = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(args, options),
+    method: 'post',
+})
+
+store.form = storeForm
 
 const QuotationMessageController = { index, store }
 

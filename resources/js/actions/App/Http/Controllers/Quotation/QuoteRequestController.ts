@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::index
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:26
@@ -44,6 +44,43 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
+* @see \App\Http\Controllers\Quotation\QuoteRequestController::index
+* @see app/Http/Controllers/Quotation/QuoteRequestController.php:26
+* @route '/quotation-management/quote-request'
+*/
+const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Quotation\QuoteRequestController::index
+* @see app/Http/Controllers/Quotation/QuoteRequestController.php:26
+* @route '/quotation-management/quote-request'
+*/
+indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Quotation\QuoteRequestController::index
+* @see app/Http/Controllers/Quotation/QuoteRequestController.php:26
+* @route '/quotation-management/quote-request'
+*/
+indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+index.form = indexForm
+
+/**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::send
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
 * @route '/quotation-management/quote-request'
@@ -76,6 +113,28 @@ send.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: send.url(options),
     method: 'post',
 })
+
+/**
+* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
+* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
+* @route '/quotation-management/quote-request'
+*/
+const sendForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: send.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
+* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
+* @route '/quotation-management/quote-request'
+*/
+sendForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: send.url(options),
+    method: 'post',
+})
+
+send.form = sendForm
 
 const QuoteRequestController = { index, send }
 

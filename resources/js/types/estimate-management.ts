@@ -72,7 +72,7 @@ export interface EstimateChatMessage {
 /** 案件（実行予算）1件。 */
 export interface EstimateManagementProject {
     id: number;
-    no: number;
+    no: number | null;
     name: string;
     rows: EstimateManagementRow[];
 }

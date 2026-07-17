@@ -40,14 +40,9 @@ class QuoteRequestController extends AbstractQuotationScreenController
      */
     public function send(SendQuoteRequestRequest $request): RedirectResponse
     {
-        try {
-            $count = $this->service->send($request->companyIds());
-        } catch (\RuntimeException $e) {
-            // 新スキーマは felix_total へサーバ間 HTTP で依頼する。連携失敗はエラーとして表示する。
-            report($e);
-
-            return back()->with('error', '見積依頼の送信に失敗しました。時間をおいて再度お試しください。');
-        }
+        // 例外時は Service がログ記録のうえ ServiceException を投げ、bootstrap/app.php が
+        // 画面右上のトースト（flash.error）へ変換する。
+        $count = $this->service->send($request->companyIds());
 
         if ($count === 0) {
             return back()->with('error', '見積依頼を送信できませんでした。選択した見積先は既に依頼済みの可能性があります。');

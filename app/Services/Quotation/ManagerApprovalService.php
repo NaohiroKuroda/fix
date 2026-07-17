@@ -2,9 +2,11 @@
 
 namespace App\Services\Quotation;
 
+use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 
 /**
  * 部長承認（manager-approval）画面のユースケース。
@@ -24,7 +26,19 @@ class ManagerApprovalService
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
-        return $this->estimates->forEstimateManagement($filters, $perPage, 'manager-approval');
+        try {
+            return $this->estimates->forEstimateManagement($filters, $perPage, 'manager-approval');
+        } catch (\Exception $e) {
+            Log::error('部長承認の一覧取得に失敗しました', [
+                'message' => $e->getMessage(),
+                'filters' => $filters,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 
     /**
@@ -35,7 +49,19 @@ class ManagerApprovalService
      */
     public function confirm(array $companyIds): int
     {
-        return $this->estimates->recordManagerApprovals($companyIds);
+        try {
+            return $this->estimates->recordManagerApprovals($companyIds);
+        } catch (\Exception $e) {
+            Log::error('部長承認の実行に失敗しました', [
+                'message' => $e->getMessage(),
+                'companyIds' => $companyIds,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 
     /**
@@ -46,16 +72,28 @@ class ManagerApprovalService
      */
     public function reject(int $companyId, string $reason): int
     {
-        $count = $this->estimates->rejectManagerApproval($companyId, $reason);
+        try {
+            $count = $this->estimates->rejectManagerApproval($companyId, $reason);
 
-        if ($count > 0) {
-            // 否認理由を項目（t_building_cost_items）単位のコメントスレッドへ残す（投稿者＝操作した部長）。
-            $itemId = $this->estimates->itemIdForQuotation($companyId);
-            if ($itemId !== null) {
-                $this->comments->post($itemId, '【否認】'.$reason, []);
+            if ($count > 0) {
+                // 否認理由を項目（t_building_cost_items）単位のコメントスレッドへ残す（投稿者＝操作した部長）。
+                $itemId = $this->estimates->itemIdForQuotation($companyId);
+                if ($itemId !== null) {
+                    $this->comments->post($itemId, '【否認】'.$reason, []);
+                }
             }
-        }
 
-        return $count;
+            return $count;
+        } catch (\Exception $e) {
+            Log::error('部長承認の否認（差し戻し）に失敗しました', [
+                'message' => $e->getMessage(),
+                'companyId' => $companyId,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 }

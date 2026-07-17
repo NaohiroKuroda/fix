@@ -1,16 +1,55 @@
 <?php
 
+/** カンマ区切りの env をトリム済み slug 配列へ。空要素は除去する。 */
+$slugList = static fn (string $key, string $default): array => array_values(array_filter(array_map(
+    'trim',
+    explode(',', (string) env($key, $default))
+)));
+
+/*
+ * サイドメニューの表示ロール（admin_roles.slug）。ロール → 表示できるメニューの対応は
+ * 下の menu_roles を唯一の正（Single Source of Truth）とする。新メニュー（例: 発注管理）は
+ * menu_roles に1行足すだけで表示制御できるようにしてある。
+ */
+// 「部長」ロール：部長承認 / 部長取消承認、やり取りの発言ロール（manager）、承認判定に使う。
+// 建設部部長（engineer_manager）と建設承認（tmp）の両方を部長として扱う。
+$managerRoleSlugs = $slugList('FELIX_MANAGER_ROLE_SLUGS', 'engineer_manager,tmp');
+// 「担当」ロール：見積依頼 / 業者選定 / 部長取消申請。建設部（engineer）とシステム開発（system）。
+$staffRoleSlugs = $slugList('FELIX_STAFF_ROLE_SLUGS', 'engineer,system');
+// 「管理者」ロール：全メニューを表示するスーパーユーザー。admin_roles に実在する slug を設定すること
+// （現行データには administrator slug が無いため、実運用の slug に合わせて env で上書きする）。
+$adminRoleSlugs = $slugList('FELIX_ADMIN_ROLE_SLUGS', 'administrator');
+
 return [
     /*
-     * 部長承認（manager-approval）／部長取消承認（cancel-approval）メニューを表示する
-     * 「建設部部長」ロールの slug（admin_roles.slug）。
-     * felix_total の建設選定承認権限（建設承認 = slug:tmp）に対応する。
-     * これらの slug を1つでも持つアカウントだけがサイドメニューに上記2画面を出す。
+     * 部長承認（manager-approval）／部長取消承認（cancel-approval）の権限・発言ロール判定に使う
+     * 「部長」ロールの slug。建設部部長（engineer_manager）＋建設承認（tmp）。
      */
-    'manager_role_slugs' => array_values(array_filter(array_map(
-        'trim',
-        explode(',', (string) env('FELIX_MANAGER_ROLE_SLUGS', 'tmp'))
-    ))),
+    'manager_role_slugs' => $managerRoleSlugs,
+
+    /*
+     * 見積依頼 / 業者選定 / 部長取消申請を表示する「担当」ロールの slug（建設部・システム開発）。
+     */
+    'staff_role_slugs' => $staffRoleSlugs,
+
+    /*
+     * 全メニューを表示する「管理者」ロールの slug。
+     */
+    'admin_role_slugs' => $adminRoleSlugs,
+
+    /*
+     * メニューキー → 表示を許可するロール slug の一覧。administrator（admin_role_slugs）は
+     * 別途すべてのメニューを表示するスーパーユーザー扱いとする（ここには列挙しない）。
+     * 発注管理（order-management）は今後実装予定。表示ロールが決まったら slug を設定する。
+     */
+    'menu_roles' => [
+        'quote-request'    => $staffRoleSlugs,
+        'vendor-selection' => $staffRoleSlugs,
+        'cancel-request'   => $staffRoleSlugs,
+        'manager-approval' => $managerRoleSlugs,
+        'cancel-approval'  => $managerRoleSlugs,
+        'order-management' => [],
+    ],
 
     /*
      * felix_total（現行）実行予算画面の「請求先（業者マイページ）」リンク先の URL テンプレート。

@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::index
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(options),
@@ -11,13 +11,13 @@ export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 index.definition = {
     methods: ["get","head"],
-    url: '/estimate-management/cancel-request',
+    url: '/quotation-management/cancel-request',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::index
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 index.url = (options?: RouteQueryOptions) => {
     return index.definition.url + queryParams(options)
@@ -26,7 +26,7 @@ index.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::index
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(options),
@@ -36,7 +36,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::index
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: index.url(options),
@@ -46,7 +46,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::index
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: index.url(options),
@@ -56,7 +56,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::index
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: index.url(options),
@@ -66,7 +66,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::index
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:26
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: index.url({
@@ -83,7 +83,7 @@ index.form = indexForm
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: confirm.url(options),
@@ -92,13 +92,13 @@ export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
 confirm.definition = {
     methods: ["post"],
-    url: '/estimate-management/cancel-request',
+    url: '/quotation-management/cancel-request',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 confirm.url = (options?: RouteQueryOptions) => {
     return confirm.definition.url + queryParams(options)
@@ -107,7 +107,7 @@ confirm.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: confirm.url(options),
@@ -117,7 +117,7 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: confirm.url(options),
@@ -127,7 +127,7 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: confirm.url(options),

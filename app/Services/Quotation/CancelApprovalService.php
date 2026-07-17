@@ -2,9 +2,11 @@
 
 namespace App\Services\Quotation;
 
+use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 
 /**
  * 部長取消承認（cancel-approval）画面のユースケース。
@@ -24,7 +26,19 @@ class CancelApprovalService
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
-        return $this->estimates->forEstimateManagement($filters, $perPage, 'cancel-approval');
+        try {
+            return $this->estimates->forEstimateManagement($filters, $perPage, 'cancel-approval');
+        } catch (\Exception $e) {
+            Log::error('部長取消承認の一覧取得に失敗しました', [
+                'message' => $e->getMessage(),
+                'filters' => $filters,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 
     /**
@@ -36,22 +50,34 @@ class CancelApprovalService
      */
     public function confirm(array $companyIds, string $reason): int
     {
-        $count = $this->estimates->recordCancelApprovals($companyIds);
+        try {
+            $count = $this->estimates->recordCancelApprovals($companyIds);
 
-        if ($count > 0) {
-            // 対象見積先が属する項目（重複排除）へ理由コメントを残す（投稿者＝操作者）。
-            $itemIds = [];
-            foreach ($companyIds as $companyId) {
-                $itemId = $this->estimates->itemIdForQuotation((int) $companyId);
-                if ($itemId !== null) {
-                    $itemIds[$itemId] = true;
+            if ($count > 0) {
+                // 対象見積先が属する項目（重複排除）へ理由コメントを残す（投稿者＝操作者）。
+                $itemIds = [];
+                foreach ($companyIds as $companyId) {
+                    $itemId = $this->estimates->itemIdForQuotation((int) $companyId);
+                    if ($itemId !== null) {
+                        $itemIds[$itemId] = true;
+                    }
+                }
+                foreach (array_keys($itemIds) as $itemId) {
+                    $this->comments->post($itemId, '【取消承認】'.$reason, []);
                 }
             }
-            foreach (array_keys($itemIds) as $itemId) {
-                $this->comments->post($itemId, '【取消承認】'.$reason, []);
-            }
-        }
 
-        return $count;
+            return $count;
+        } catch (\Exception $e) {
+            Log::error('部長取消承認の実行に失敗しました', [
+                'message' => $e->getMessage(),
+                'companyIds' => $companyIds,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 }

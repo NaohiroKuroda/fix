@@ -2,9 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AdminUser;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -60,9 +62,37 @@ class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('error'),
             ],
             // サイドメニューの未処理件数バッヂ。Closure にして部分リロード（only指定）時は評価しない。
-            'menuBadges' => fn () => $admin
-                ? app(QuotationRepositoryInterface::class)->pendingCounts()
-                : null,
+            'menuBadges' => fn () => $this->menuBadges($admin),
+            // サイドメニューの表示可否（ロール別）。メニューキー => 表示するか。未ログイン時は空。
+            'menuPermissions' => fn () => $admin === null ? [] : $admin->menuPermissions(),
         ];
+    }
+
+    /**
+     * サイドメニューの未処理件数バッヂ。全画面のレンダリング時に評価される共有プロパティのため、
+     * 集計クエリが失敗しても画面全体を落とさないよう、ここで握って記録し null を返す
+     * （トーストは出さず、ログにのみ残す）。
+     *
+     * @return array<string, int>|null 未認証時、または集計失敗時は null
+     */
+    private function menuBadges(?AdminUser $admin): ?array
+    {
+        if ($admin === null) {
+            return null;
+        }
+
+        try {
+            return app(QuotationRepositoryInterface::class)->pendingCounts();
+        } catch (\Exception $e) {
+            Log::error('メニューバッヂの集計に失敗しました', [
+                'message' => $e->getMessage(),
+                'adminId' => $admin->id,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return null;
+        }
     }
 }

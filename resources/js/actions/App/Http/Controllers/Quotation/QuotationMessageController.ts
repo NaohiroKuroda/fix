@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::index
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 export const index = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(args, options),
@@ -11,13 +11,13 @@ export const index = (args: { quotation: number | { id: number } } | [quotation:
 
 index.definition = {
     methods: ["get","head"],
-    url: '/estimate-management/quotations/{quotation}/messages',
+    url: '/quotation-management/quotations/{quotation}/messages',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::index
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 index.url = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -50,7 +50,7 @@ index.url = (args: { quotation: number | { id: number } } | [quotation: number |
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::index
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 index.get = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(args, options),
@@ -60,7 +60,7 @@ index.get = (args: { quotation: number | { id: number } } | [quotation: number |
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::index
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 index.head = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: index.url(args, options),
@@ -70,7 +70,7 @@ index.head = (args: { quotation: number | { id: number } } | [quotation: number 
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::index
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 const indexForm = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: index.url(args, options),
@@ -80,7 +80,7 @@ const indexForm = (args: { quotation: number | { id: number } } | [quotation: nu
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::index
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 indexForm.get = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: index.url(args, options),
@@ -90,7 +90,7 @@ indexForm.get = (args: { quotation: number | { id: number } } | [quotation: numb
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::index
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:30
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 indexForm.head = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: index.url(args, {
@@ -107,7 +107,7 @@ index.form = indexForm
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::store
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:40
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 export const store = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(args, options),
@@ -116,13 +116,13 @@ export const store = (args: { quotation: number | { id: number } } | [quotation:
 
 store.definition = {
     methods: ["post"],
-    url: '/estimate-management/quotations/{quotation}/messages',
+    url: '/quotation-management/quotations/{quotation}/messages',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::store
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:40
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 store.url = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -155,7 +155,7 @@ store.url = (args: { quotation: number | { id: number } } | [quotation: number |
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::store
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:40
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 store.post = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(args, options),
@@ -165,7 +165,7 @@ store.post = (args: { quotation: number | { id: number } } | [quotation: number 
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::store
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:40
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 const storeForm = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: store.url(args, options),
@@ -175,7 +175,7 @@ const storeForm = (args: { quotation: number | { id: number } } | [quotation: nu
 /**
 * @see \App\Http\Controllers\Quotation\QuotationMessageController::store
 * @see app/Http/Controllers/Quotation/QuotationMessageController.php:40
-* @route '/estimate-management/quotations/{quotation}/messages'
+* @route '/quotation-management/quotations/{quotation}/messages'
 */
 storeForm.post = (args: { quotation: number | { id: number } } | [quotation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: store.url(args, options),

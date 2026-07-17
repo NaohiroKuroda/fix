@@ -2,9 +2,11 @@
 
 namespace App\Services\Quotation;
 
+use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 
 /**
  * 業者選定（vendor-selection）画面のユースケース。
@@ -23,7 +25,19 @@ class VendorSelectionService
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
-        return $this->estimates->forEstimateManagement($filters, $perPage, 'vendor-selection');
+        try {
+            return $this->estimates->forEstimateManagement($filters, $perPage, 'vendor-selection');
+        } catch (\Exception $e) {
+            Log::error('業者選定の一覧取得に失敗しました', [
+                'message' => $e->getMessage(),
+                'filters' => $filters,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 
     /**
@@ -34,7 +48,19 @@ class VendorSelectionService
      */
     public function confirm(array $companyIds): int
     {
-        return $this->estimates->recordVendorSelections($companyIds);
+        try {
+            return $this->estimates->recordVendorSelections($companyIds);
+        } catch (\Exception $e) {
+            Log::error('業者選定の確定に失敗しました', [
+                'message' => $e->getMessage(),
+                'companyIds' => $companyIds,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 
     /**
@@ -47,6 +73,19 @@ class VendorSelectionService
      */
     public function setProvisional(int $companyId, bool $drafted): int
     {
-        return $this->estimates->setProvisional($companyId, $drafted);
+        try {
+            return $this->estimates->setProvisional($companyId, $drafted);
+        } catch (\Exception $e) {
+            Log::error('仮選定の保存に失敗しました', [
+                'message' => $e->getMessage(),
+                'companyId' => $companyId,
+                'drafted' => $drafted,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 }

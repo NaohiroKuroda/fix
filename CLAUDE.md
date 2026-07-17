@@ -3,10 +3,11 @@
 ## 🛑 実装前の必須確認事項
 
 **このリポジトリでコードを実装・変更する前に、必ず以下のアーキテクチャドキュメントを読み、準拠すること。**
-
-1. [`docs/architecture/README.md`](docs/architecture/README.md) — 全体アーキテクチャ / 技術スタック
-2. [`docs/architecture/frontend.md`](docs/architecture/frontend.md) — フロントエンド（Vue 3 / Inertia.js / TypeScript）
-3. [`docs/architecture/backend.md`](docs/architecture/backend.md) — バックエンド（Laravel 13 / PHP 8.3）
+1から順に適応していくこと。
+1. [`docs/architecture/ai-architecture-instructions.md`](docs/architecture/ai-architecture-instructions.md) — 全体アーキテクチャ / 北川さん作成
+2. [`docs/architecture/README.md`](docs/architecture/README.md) — 全体アーキテクチャ / 技術スタック
+3. [`docs/architecture/frontend.md`](docs/architecture/frontend.md) — フロントエンド（Vue 3 / Inertia.js / TypeScript）
+4. [`docs/architecture/backend.md`](docs/architecture/backend.md) — バックエンド（Laravel 13 / PHP 8.3）
 
 ドキュメントとコードに差異がある場合、または新しい設計判断が必要な場合は、**先にドキュメントを更新してから実装すること**。ドキュメントを唯一の正（Single Source of Truth）として扱う。
 

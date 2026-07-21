@@ -13,6 +13,15 @@ return [
     ))),
 
     /*
+     * 入金仮締め（invoice-closing）メニューを表示する「社長」ロールの slug（admin_roles.slug）。
+     * これらの slug を1つでも持つアカウントだけがサイドメニューに入金仮締め画面を出す。
+     */
+    'president_role_slugs' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('FELIX_PRESIDENT_ROLE_SLUGS', 'president'))
+    ))),
+
+    /*
      * felix_total（現行）実行予算画面の「請求先（業者マイページ）」リンク先の URL テンプレート。
      * `{id}` を見積先ID（estimate_unit_companies.id）に置換する。
      *
@@ -60,5 +69,32 @@ return [
         'FELIX_VENDOR_DETAIL_URL',
         rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
             . '/admin/estimate-unit-companies/{id}/edit/?iframe=on'
+    ),
+
+    /*
+     * 発注書（発注実行 / 発注承認画面の「発注書」ボタン）で iframe 表示する
+     * felix_total の発注書確認画面（check_company_list）の URL テンプレート。
+     * `{id}` を物件ID（t_buildings.source_id = 旧 estimates.id）に置換する。
+     *
+     * felix_total の check_company_list は keyword に estimates.id を渡すと
+     * その物件の発注書一覧に絞り込む（NewEstimateCustomEditController@check_company_list）。
+     * iframe=on で管理画面のヘッダー・サイドメニューを隠す。
+     */
+    'order_document_url' => env(
+        'FELIX_ORDER_DOCUMENT_URL',
+        rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
+            . '/admin/new-estimates-custom-edit/check_company_list?keyword={id}&iframe=on'
+    ),
+
+    /*
+     * 完了確認・部長完了承認画面の「報告書提出日」リンクで iframe 表示する
+     * felix_total の実行予算編集画面（必須ファイルタブ）の URL テンプレート。
+     * `{id}` を物件ID（t_buildings.source_id = 旧 estimates.id）に置換する。
+     * active=2 で「必須ファイル」タブを開いた状態にする。
+     */
+    'completion_report_url' => env(
+        'FELIX_COMPLETION_REPORT_URL',
+        rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
+            . '/admin/new-estimates-custom-edit?id={id}&active=2&iframe=on#'
     ),
 ];

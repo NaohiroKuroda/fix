@@ -2,9 +2,9 @@
 // アプリ共通レイアウト（サイドメニュー + コンテンツ）。
 // - グローバルヘッダーは撤去。アカウント名 + ログアウトはサイドバー上部（ロゴ直下）に配置。
 // - サイドバーは開閉可能（デスクトップ: collapsed / モバイル: オーバーレイ）
-import { computed, provide, ref } from 'vue';
+import { computed, provide, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { ClipboardList, ChevronDown, Menu, PanelLeftClose, PanelLeftOpen, User, LogOut } from 'lucide-vue-next';
+import { ClipboardList, ChevronDown, Menu, PanelLeftClose, PanelLeftOpen, PackageCheck, Receipt, User, LogOut } from 'lucide-vue-next';
 import FlashMessages from '@/components/feedback/FlashMessages.vue';
 
 interface NavChild {
@@ -46,6 +46,91 @@ const estimateMenuOpen = ref(true);
 
 // 親「見積管理」に出す合計バッジ。
 const estimateBadgeTotal = computed(() => estimateChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
+
+// 発注管理（トグル）。業者承諾確認・発注取消承認の2画面のみ（取消申請は業者承諾確認画面内のボタンで行うため独立画面はメニューに出さない）。
+// 発注取消承認は見積管理の部長取消承認と同じ方針で建設部部長のみ表示。
+const orderChildren = computed<NavChild[]>(() => [
+    { label: '業者承諾確認【発注承認済み→承諾待ち】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance'), badge: badges.value?.['order-acceptance'] },
+    ...(isEstimateManager.value
+        ? [{ label: '発注取消承認【取消申請中→部長取消承認待ち】', href: '/order-delivery/order-cancel-approval', active: path.value.startsWith('/order-delivery/order-cancel-approval'), badge: badges.value?.['order-cancel-approval'] }]
+        : []),
+]);
+// 完了・納品管理（トグル）。完了確認（提出日・確認日・請求日）と部長完了承認。
+const deliveryChildren = computed<NavChild[]>(() => [
+    { label: '完了確認【業者承諾済み→提出・確認・請求】', href: '/order-delivery/delivery-report', active: path.value.startsWith('/order-delivery/delivery-report'), badge: badges.value?.['delivery-report-submission'] },
+    // 部長完了承認は建設部部長のみ表示。
+    ...(isEstimateManager.value
+        ? [{ label: '部長完了承認【報告書受領済み→部長承認待ち】', href: '/order-delivery/delivery-approval', active: path.value.startsWith('/order-delivery/delivery-approval'), badge: badges.value?.['delivery-approval'] }]
+        : []),
+]);
+
+// 請求管理（トグル）。請求取消承認は建設部部長のみ表示のため、メニュー自体を部長限定にする。
+const billingChildren = computed<NavChild[]>(() => [
+    { label: '請求取消承認【請求書作成済み→取消確認】', href: '/order-delivery/invoice-approval', active: path.value.startsWith('/order-delivery/invoice-approval') },
+]);
+const showBillingMenu = computed(() => isEstimateManager.value);
+
+// 現在地の判定（発注管理＝業者承諾確認・発注取消承認、完了・納品管理＝納品系、請求管理＝請求系）。
+const isOrderPath = (p: string): boolean => p.startsWith('/order-delivery/order-acceptance') || p.startsWith('/order-delivery/order-cancel-approval');
+const isDeliveryPath = (p: string): boolean => p.startsWith('/order-delivery/delivery-');
+const isBillingPath = (p: string): boolean => p.startsWith('/order-delivery/invoice-');
+
+// 該当画面にいる間はメニューを開いたままにする（初期値も現在地で判定）。
+// 発注／納品／請求メニューを開いたときは他のメニューを閉じる（アコーディオンは排他）。
+const orderMenuOpen = ref(isOrderPath(path.value));
+const deliveryMenuOpen = ref(isDeliveryPath(path.value));
+const billingMenuOpen = ref(isBillingPath(path.value));
+if (orderMenuOpen.value || deliveryMenuOpen.value || billingMenuOpen.value) {
+    estimateMenuOpen.value = false;
+}
+watch(() => path.value, (p) => {
+    if (isOrderPath(p)) {
+        orderMenuOpen.value = true;
+        deliveryMenuOpen.value = false;
+        billingMenuOpen.value = false;
+        estimateMenuOpen.value = false;
+    } else if (isDeliveryPath(p)) {
+        deliveryMenuOpen.value = true;
+        orderMenuOpen.value = false;
+        billingMenuOpen.value = false;
+        estimateMenuOpen.value = false;
+    } else if (isBillingPath(p)) {
+        billingMenuOpen.value = true;
+        orderMenuOpen.value = false;
+        deliveryMenuOpen.value = false;
+        estimateMenuOpen.value = false;
+    }
+});
+// 発注管理メニューのトグル。開くときは他のメニューを閉じる。
+const toggleOrderMenu = (): void => {
+    orderMenuOpen.value = !orderMenuOpen.value;
+    if (orderMenuOpen.value) {
+        estimateMenuOpen.value = false;
+        deliveryMenuOpen.value = false;
+        billingMenuOpen.value = false;
+    }
+};
+// 完了・納品管理メニューのトグル。開くときは他のメニューを閉じる。
+const toggleDeliveryMenu = (): void => {
+    deliveryMenuOpen.value = !deliveryMenuOpen.value;
+    if (deliveryMenuOpen.value) {
+        estimateMenuOpen.value = false;
+        orderMenuOpen.value = false;
+        billingMenuOpen.value = false;
+    }
+};
+// 請求管理メニューのトグル。開くときは他のメニューを閉じる。
+const toggleBillingMenu = (): void => {
+    billingMenuOpen.value = !billingMenuOpen.value;
+    if (billingMenuOpen.value) {
+        estimateMenuOpen.value = false;
+        orderMenuOpen.value = false;
+        deliveryMenuOpen.value = false;
+    }
+};
+const orderBadgeTotal = computed(() => orderChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
+const deliveryBadgeTotal = computed(() => deliveryChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
+const billingBadgeTotal = computed(() => billingChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 
 // ラベルを最初の「【」の前で2行に分割する（業務名 / 【状態】）。
 const splitLabel = (label: string): { head: string; tail: string } => {
@@ -170,6 +255,125 @@ const logout = () => router.post('/logout');
                         </div>
                     </template>
                 </div>
+
+                <!-- 発注管理（トグル）。業者承諾確認のみ。 -->
+                <button
+                    type="button"
+                    class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-base font-medium text-white/80 transition-colors hover:bg-white/10"
+                    @click="toggleOrderMenu"
+                >
+                    <ClipboardList class="size-4.5 shrink-0" />
+                    <span class="flex-1 text-left">発注管理</span>
+                    <span
+                        v-if="orderBadgeTotal"
+                        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                    >
+                        <span class="block translate-y-[0.5px] leading-none">{{ orderBadgeTotal > 99 ? '99+' : orderBadgeTotal }}</span>
+                    </span>
+                    <ChevronDown class="size-4 shrink-0 transition-transform" :class="orderMenuOpen ? '' : '-rotate-90'" />
+                </button>
+                <div v-show="orderMenuOpen" class="mt-1 space-y-1 pl-4">
+                    <Link
+                        v-for="child in orderChildren"
+                        :key="child.label"
+                        :href="child.href!"
+                        class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-snug transition"
+                        :class="child.active
+                            ? 'bg-white/12 font-semibold text-white shadow-[inset_3px_0_0_#c4a35b,inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm'
+                            : 'text-white/75 hover:bg-white/10'"
+                    >
+                        <span class="flex-1">
+                            <span class="block">{{ splitLabel(child.label).head }}</span>
+                            <span v-if="splitLabel(child.label).tail" class="block text-[11px] leading-tight opacity-70">{{ splitLabel(child.label).tail }}</span>
+                        </span>
+                        <span
+                            v-if="child.badge"
+                            class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                        >
+                            <span class="block translate-y-[0.5px] leading-none">{{ child.badge > 99 ? '99+' : child.badge }}</span>
+                        </span>
+                    </Link>
+                </div>
+
+                <!-- 完了・納品管理（トグル）。完了確認と部長完了承認。 -->
+                <button
+                    type="button"
+                    class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-base font-medium text-white/80 transition-colors hover:bg-white/10"
+                    @click="toggleDeliveryMenu"
+                >
+                    <PackageCheck class="size-4.5 shrink-0" />
+                    <span class="flex-1 text-left">完了・納品管理</span>
+                    <span
+                        v-if="deliveryBadgeTotal"
+                        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                    >
+                        <span class="block translate-y-[0.5px] leading-none">{{ deliveryBadgeTotal > 99 ? '99+' : deliveryBadgeTotal }}</span>
+                    </span>
+                    <ChevronDown class="size-4 shrink-0 transition-transform" :class="deliveryMenuOpen ? '' : '-rotate-90'" />
+                </button>
+                <div v-show="deliveryMenuOpen" class="mt-1 space-y-1 pl-4">
+                    <Link
+                        v-for="child in deliveryChildren"
+                        :key="child.label"
+                        :href="child.href!"
+                        class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-snug transition"
+                        :class="child.active
+                            ? 'bg-white/12 font-semibold text-white shadow-[inset_3px_0_0_#c4a35b,inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm'
+                            : 'text-white/75 hover:bg-white/10'"
+                    >
+                        <span class="flex-1">
+                            <span class="block">{{ splitLabel(child.label).head }}</span>
+                            <span v-if="splitLabel(child.label).tail" class="block text-[11px] leading-tight opacity-70">{{ splitLabel(child.label).tail }}</span>
+                        </span>
+                        <span
+                            v-if="child.badge"
+                            class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                        >
+                            <span class="block translate-y-[0.5px] leading-none">{{ child.badge > 99 ? '99+' : child.badge }}</span>
+                        </span>
+                    </Link>
+                </div>
+
+                <!-- 請求管理（トグル）。請求承認と部長請求取消確認。建設部部長のみ表示。 -->
+                <template v-if="showBillingMenu">
+                    <button
+                        type="button"
+                        class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-base font-medium text-white/80 transition-colors hover:bg-white/10"
+                        @click="toggleBillingMenu"
+                    >
+                        <Receipt class="size-4.5 shrink-0" />
+                        <span class="flex-1 text-left">請求管理</span>
+                        <span
+                            v-if="billingBadgeTotal"
+                            class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                        >
+                            <span class="block translate-y-[0.5px] leading-none">{{ billingBadgeTotal > 99 ? '99+' : billingBadgeTotal }}</span>
+                        </span>
+                        <ChevronDown class="size-4 shrink-0 transition-transform" :class="billingMenuOpen ? '' : '-rotate-90'" />
+                    </button>
+                    <div v-show="billingMenuOpen" class="mt-1 space-y-1 pl-4">
+                        <Link
+                            v-for="child in billingChildren"
+                            :key="child.label"
+                            :href="child.href!"
+                            class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-snug transition"
+                            :class="child.active
+                                ? 'bg-white/12 font-semibold text-white shadow-[inset_3px_0_0_#c4a35b,inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm'
+                                : 'text-white/75 hover:bg-white/10'"
+                        >
+                            <span class="flex-1">
+                                <span class="block">{{ splitLabel(child.label).head }}</span>
+                                <span v-if="splitLabel(child.label).tail" class="block text-[11px] leading-tight opacity-70">{{ splitLabel(child.label).tail }}</span>
+                            </span>
+                            <span
+                                v-if="child.badge"
+                                class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
+                            >
+                                <span class="block translate-y-[0.5px] leading-none">{{ child.badge > 99 ? '99+' : child.badge }}</span>
+                            </span>
+                        </Link>
+                    </div>
+                </template>
             </nav>
 
             <!-- フッター（コピーライト風）：サイドバー最下部にシステム名を控えめに表示。 -->

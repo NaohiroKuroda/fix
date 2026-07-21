@@ -75,4 +75,10 @@ class TCostQuotation extends Model
     {
         return $this->hasMany(TCostQuotationRequest::class, 'cost_quotation_id');
     }
+
+    // 発注（発注〜納品〜請求フロー）
+    public function order()
+    {
+        return $this->hasOne(TOrder::class, 'cost_quotation_id');
+    }
 }

@@ -243,58 +243,135 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
-     * 発注業者選定の確定：felix_total の採用（update_adoption_flg）をサーバ間 HTTP で呼ぶ。
-     *
-     * 見積依頼送信（{@see recordQuoteRequests}）と同様、felix_total の処理を唯一の正として実行するだけで、
-     * 新スキーマ（t_cost_quotations.approval_status）への反映は新テーブルのトリガーに委ねる（直接 UPDATE しない）。
+     * 発注業者選定の確定：新テーブルの承認状態を UNSELECTED → STAFF_APPROVED へ進めたうえで、
+     * felix_total の採用（update_adoption_flg）をサーバ間 HTTP で呼ぶ。
      *
      * @param  list<int>  $companyIds  見積先（t_cost_quotations.id）
-     * @return int 採用を呼んだ見積先の件数
+     * @return int UNSELECTED → STAFF_APPROVED へ実際に遷移した見積先の件数
      */
     public function recordVendorSelections(array $companyIds): int
     {
-        $rows = $this->mapSourceIds($companyIds);
-        foreach ($rows as $row) {
+        return $this->syncWithFelixTotal(
+            $companyIds,
+            'UNSELECTED',
+            'STAFF_APPROVED',
             // no_competitive_flg は現行 estimate_units に列が無いため 0（相見積あり＝単一採用）で渡す。
-            $this->felix->adoptCompany($row['unit'], $row['company']);
-        }
-
-        return count($rows);
+            fn (int $unit, int $company) => $this->felix->adoptCompany($unit, $company),
+        );
     }
 
     /**
-     * 部長承認：felix_total の建設部選定（update_tmp_company_select_flg）をサーバ間 HTTP で呼ぶ。
-     *
-     * 選定確定と同様、felix_total を呼ぶだけで approval_status はトリガー同期に委ねる。
+     * 部長承認：新テーブルの承認状態を STAFF_APPROVED → MANAGER_APPROVED へ進めたうえで、
+     * felix_total の建設部選定（update_tmp_company_select_flg）をサーバ間 HTTP で呼ぶ。
      *
      * @param  list<int>  $companyIds  見積先（t_cost_quotations.id）
-     * @return int 承認を呼んだ見積先の件数
+     * @return int STAFF_APPROVED → MANAGER_APPROVED へ実際に遷移した見積先の件数
      */
     public function recordManagerApprovals(array $companyIds): int
     {
+        return $this->syncWithFelixTotal(
+            $companyIds,
+            'STAFF_APPROVED',
+            'MANAGER_APPROVED',
+            fn (int $unit, int $company) => $this->felix->tmpSelectCompany($unit, $company),
+        );
+    }
+
+    /**
+     * 「新テーブルを先に更新 → 現行 felix_total の処理を呼ぶ」を1トランザクションで行う共通処理。
+     *
+     * 承認状態が from の見積先だけを to へ進め、実際に遷移した行に対してのみ felix_total を呼ぶ。
+     * felix_total 側が失敗（接続不可・非 2xx・権限エラー）した場合は例外が送出され、
+     * 新テーブルの更新はロールバックされる（＝両方書けたときだけ成功として扱う）。
+     *
+     * @param  list<int>  $companyIds  見積先（t_cost_quotations.id）
+     * @param  string  $from  遷移元の承認状態
+     * @param  string  $to  遷移先の承認状態
+     * @param  callable(int, int): void  $callFelixTotal  旧 ID（unit, company）を受け取り現行処理を呼ぶ
+     * @return int 実際に遷移した見積先の件数
+     */
+    private function syncWithFelixTotal(array $companyIds, string $from, string $to, callable $callFelixTotal): int
+    {
+        // 移行元（source_id）を持つ見積先だけが felix_total 連携の対象。
         $rows = $this->mapSourceIds($companyIds);
-        foreach ($rows as $row) {
-            $this->felix->tmpSelectCompany($row['unit'], $row['company']);
+        if ($rows === []) {
+            return 0;
         }
 
-        return count($rows);
+        // 遷移元の状態にある行だけを対象にする（二重送信・状態不整合の防止）。
+        $targets = $this->filterByStatus($rows, $from);
+        if ($targets === []) {
+            return 0;
+        }
+
+        return DB::transaction(function () use ($targets, $from, $to, $callFelixTotal): int {
+            $count = $this->advanceStatus(array_column($targets, 'id'), $from, $to);
+            if ($count === 0) {
+                return 0;
+            }
+
+            // 現行処理の呼び出しで例外が出た場合はトランザクションごとロールバックされる。
+            foreach ($targets as $target) {
+                $callFelixTotal($target['unit'], $target['company']);
+            }
+
+            return $count;
+        });
+    }
+
+    /**
+     * 見積先のうち、承認状態が $status のものだけに絞り込む。
+     *
+     * @param  list<array{id:int, unit:int, company:int}>  $rows
+     * @return list<array{id:int, unit:int, company:int}>
+     */
+    private function filterByStatus(array $rows, string $status): array
+    {
+        $matched = TCostQuotation::query()
+            ->whereIn('id', array_column($rows, 'id'))
+            ->where('approval_status', $status)
+            ->pluck('id')
+            ->all();
+
+        $allowed = array_flip(array_map('intval', $matched));
+
+        return array_values(array_filter($rows, fn (array $row) => isset($allowed[$row['id']])));
     }
 
     /**
      * 部長承認の否認（業者選定へ差し戻し）：担当承認済（STAFF_APPROVED）→ 未選定（UNSELECTED）。
-     * 否認理由（deny_comment）を記録する。STAFF_APPROVED 以外は更新しない。
+     * 否認理由（deny_comment）を記録したうえで、felix_total の採用取消（update_adoption_flg / mode=false）
+     * をサーバ間 HTTP で呼び、現行側も業者選定前の状態（adoption_flg=0）へ戻す。
+     *
+     * 選定・承認（{@see syncWithFelixTotal}）と同様、felix_total 側が失敗した場合は
+     * 新テーブルの更新をロールバックする。STAFF_APPROVED 以外は更新しない。
      *
      * @return int 実際に差し戻した件数
      */
     public function rejectManagerApproval(int $companyId, string $reason): int
     {
-        return TCostQuotation::query()
-            ->where('id', $companyId)
-            ->where('approval_status', 'STAFF_APPROVED')
-            ->update([
-                'approval_status' => 'UNSELECTED',
-                'deny_comment' => $reason,
-            ]);
+        // 移行元（source_id）が無い見積先は felix_total を呼べないため、新テーブルのみ差し戻す。
+        $targets = $this->filterByStatus($this->mapSourceIds([$companyId]), 'STAFF_APPROVED');
+
+        return DB::transaction(function () use ($companyId, $reason, $targets): int {
+            $count = TCostQuotation::query()
+                ->where('id', $companyId)
+                ->where('approval_status', 'STAFF_APPROVED')
+                ->update([
+                    'approval_status' => 'UNSELECTED',
+                    'deny_comment' => $reason,
+                ]);
+
+            if ($count === 0) {
+                return 0;
+            }
+
+            foreach ($targets as $target) {
+                $this->felix->cancelAdoption($target['unit'], $target['company']);
+            }
+
+            return $count;
+        });
     }
 
     /**
@@ -333,7 +410,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
      * 見積先（t_cost_quotations.id）を旧 ID（source_id）へ写像する。移行元の無い行は除外。
      *
      * @param  list<int>  $companyIds
-     * @return list<array{unit:int, company:int}> unit=旧 estimate_units.id / company=旧 estimate_unit_companies.id
+     * @return list<array{id:int, unit:int, company:int}> id=t_cost_quotations.id / unit=旧 estimate_units.id / company=旧 estimate_unit_companies.id
      */
     private function mapSourceIds(array $companyIds): array
     {
@@ -353,7 +430,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             if ($unitSourceId === null || $quotation->source_id === null) {
                 continue;
             }
-            $rows[] = ['unit' => (int) $unitSourceId, 'company' => (int) $quotation->source_id];
+            $rows[] = ['id' => (int) $quotation->id, 'unit' => (int) $unitSourceId, 'company' => (int) $quotation->source_id];
         }
 
         return $rows;

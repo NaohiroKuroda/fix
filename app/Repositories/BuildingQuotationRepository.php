@@ -399,11 +399,31 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     /**
      * 部長取消承認：取消申請中 → 設計部承認済（取消承認＝完了扱い）。
      *
+     * 選定・承認（{@see syncWithFelixTotal}）と同じく「新テーブルを更新 → 現行 API」の順で行い、
+     * 現行 felix_total 側の業者選定状態を外す：
+     *   1. 建設部選定の取消（update_tmp_company_select_flg / mode=false）
+     *      … estimate_units.tmp_company_id=NULL / company_select_status=1 / tmp_status=NULL
+     *   2. 採用の取消（update_adoption_flg / mode=false）
+     *      … adoption_flg=0 / company_select_flg=NULL / estimate_units.vendor_id=NULL・price 再計算
+     * 取消承認は部長承認済み（tmp 選定済み）からの遷移のため、採用だけでなく建設部選定も外さないと
+     * estimate_units.tmp_company_id が採用外の業者を指したまま残る。
+     *
+     * felix_total 側が失敗した場合は新テーブルの更新をロールバックする。
+     *
      * @param  list<int>  $companyIds
      */
     public function recordCancelApprovals(array $companyIds): int
     {
-        return $this->advanceStatus($companyIds, 'CANCEL_REQUESTED', 'APPROVED');
+        return $this->syncWithFelixTotal(
+            $companyIds,
+            'CANCEL_REQUESTED',
+            'APPROVED',
+            function (int $unit, int $company): void {
+                // 承認の段を逆順に戻す（建設部選定 → 採用の順で解除）。
+                $this->felix->cancelTmpSelection($unit, $company);
+                $this->felix->cancelAdoption($unit, $company);
+            },
+        );
     }
 
     /**

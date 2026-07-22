@@ -133,6 +133,26 @@ class FelixTotalQuoteRequestGateway
     }
 
     /**
+     * 建設部選定の取消（部長取消承認）：felix_total の update_tmp_company_select_flg を mode='false' で呼ぶ。
+     *
+     * felix_total 側は estimate_units の tmp_company_id を NULL・company_select_status を 1（選定中）に戻し、
+     * estimate_unit_companies.tmp_status を NULL にする。
+     *
+     * @param  int  $estimateUnitId  旧 estimate_units.id
+     * @param  int  $companyId  旧 estimate_unit_companies.id
+     *
+     * @throws RuntimeException
+     */
+    public function cancelTmpSelection(int $estimateUnitId, int $companyId): void
+    {
+        $this->callEdit('update_tmp_company_select_flg', [
+            'estimate_unit_id' => $estimateUnitId,
+            'id' => $companyId,
+            'mode' => 'false',
+        ]);
+    }
+
+    /**
      * felix_total の new-estimates-custom-edit 配下の更新系を cross_auth 付きサーバ間 HTTP（GET）で叩く。
      *
      * @param  array<string, int|string>  $params

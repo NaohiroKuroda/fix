@@ -82,6 +82,10 @@ class QuoteRequestMockSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
+            // この物件で作った見積先（払い）を集めておき、後で1〜2件だけ「もらい（請求先）」に転換する。
+            // 実際の発生率（1物件につき1件、多くて2件）に合わせるため、項目ごとではなく物件単位で選ぶ。
+            $buildingQuotations = [];
+
             foreach ($units as $sort => $unit) {
                 $master = (int) ($unit->master_price > 0 ? $unit->master_price : ($unit->price > 0 ? $unit->price : rand(500, 5000) * 10000));
 
@@ -117,6 +121,7 @@ class QuoteRequestMockSeeder extends Seeder
                         'branch_company_id' => null,
                         'counter_company_id' => null,
                         'is_drafted' => true,
+                        'is_billing_target' => false,
                         'approval_status' => 'UNSELECTED',
                         'deny_comment' => null,
                         'source_id' => (int) $euc->id,
@@ -124,30 +129,49 @@ class QuoteRequestMockSeeder extends Seeder
                         'updated_at' => now(),
                     ]);
                     $made++;
+                    $buildingQuotations[] = ['quotation' => $quotation, 'master' => $master];
+                }
+            }
 
-                    // 約6割は業者回答あり（最新の相見積履歴を持つ＝回答済み）。
-                    if (rand(1, 10) <= 6) {
-                        TCostQuotationHistory::create([
-                            'cost_quotation_id' => $quotation->id,
-                            'is_latest' => true,
-                            'file_url' => null,
-                            'quotation_date' => now()->subDays(rand(1, 30))->toDateString(),
-                            'amount_excluding_tax' => (int) ($master > 0 ? $master * (rand(80, 110) / 100) : rand(100, 3000) * 10000),
-                            'tax_adjust' => 0,
-                            'withholding_income_tax' => null,
-                            'comment' => '御見積を提出いたします。',
-                            'created_at' => now()->subDays(rand(1, 30)),
-                            'updated_at' => now(),
-                        ]);
-                    }
+            // 物件単位で1件（多くて2件）だけ「もらい（請求先）」に転換する
+            // （業者追加時の invoice_flg 相当。金額3列・仮選定は画面側で「ー」表示になる）。
+            $billingCount = min(count($buildingQuotations), rand(1, 10) <= 7 ? 1 : 2);
+            $billingQuotationIds = $billingCount > 0
+                ? collect($buildingQuotations)->random($billingCount)->pluck('quotation.id')->all()
+                : [];
 
-                    // 約3割は依頼済み（残りは未依頼）。画面のトグルで切替確認できるよう混在させる。
-                    if (rand(1, 10) <= 3) {
-                        TCostQuotationRequest::create([
-                            'cost_quotation_id' => $quotation->id,
-                            'requested_at' => now()->subDays(rand(1, 20)),
-                        ]);
-                    }
+            foreach ($buildingQuotations as $bq) {
+                $quotation = $bq['quotation'];
+                $master = $bq['master'];
+
+                if (in_array($quotation->id, $billingQuotationIds, true)) {
+                    $quotation->update(['is_drafted' => false, 'is_billing_target' => true]);
+
+                    continue;
+                }
+
+                // 約6割は業者回答あり（最新の相見積履歴を持つ＝回答済み）。
+                if (rand(1, 10) <= 6) {
+                    TCostQuotationHistory::create([
+                        'cost_quotation_id' => $quotation->id,
+                        'is_latest' => true,
+                        'file_url' => null,
+                        'quotation_date' => now()->subDays(rand(1, 30))->toDateString(),
+                        'amount_excluding_tax' => (int) ($master > 0 ? $master * (rand(80, 110) / 100) : rand(100, 3000) * 10000),
+                        'tax_adjust' => 0,
+                        'withholding_income_tax' => null,
+                        'comment' => '御見積を提出いたします。',
+                        'created_at' => now()->subDays(rand(1, 30)),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                // 約3割は依頼済み（残りは未依頼）。画面のトグルで切替確認できるよう混在させる。
+                if (rand(1, 10) <= 3) {
+                    TCostQuotationRequest::create([
+                        'cost_quotation_id' => $quotation->id,
+                        'requested_at' => now()->subDays(rand(1, 20)),
+                    ]);
                 }
             }
         }

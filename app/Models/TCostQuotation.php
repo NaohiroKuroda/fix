@@ -22,6 +22,7 @@ class TCostQuotation extends Model
         'branch_company_id',
         'counter_company_id',
         'is_drafted',
+        'is_billing_target',
         'approval_status',
         'deny_comment',
         'created_at',
@@ -31,6 +32,7 @@ class TCostQuotation extends Model
 
     protected $casts = [
         'is_drafted' => 'boolean',
+        'is_billing_target' => 'boolean',
     ];
 
     // 費用

@@ -104,6 +104,8 @@ class BuildingQuotationResource extends JsonResource
             'cancelApproved' => $status === 'APPROVED',
             // 仮選定（t_cost_quotations.is_drafted）。
             'provisional' => $quotation !== null && (int) $quotation->is_drafted === 1,
+            // 請求先（t_cost_quotations.is_billing_target）。業者追加時に「請求先とする」をONにした業者。
+            'billingTarget' => $quotation !== null && (int) $quotation->is_billing_target === 1,
             // 部長承認で否認され業者選定へ差し戻された（deny_comment あり）。ボタンの赤色表示に使う。
             'denied' => $quotation !== null && $quotation->deny_comment !== null,
         ];

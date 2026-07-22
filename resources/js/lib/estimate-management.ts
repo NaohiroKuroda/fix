@@ -57,7 +57,7 @@ export interface EstimateModeConfig {
 export const ESTIMATE_MODE_CONFIG: Record<EstimateManagementMode, EstimateModeConfig> = {
     'quote-request': {
         kind: 'checkbox',
-        columnLabel: '見積依頼',
+        columnLabel: '見積依頼／送信',
         // 予算単価の右隣に「相見積」列（業者から返ってきた見積提示額）を表示する。
         showQuote: true,
         appliedKey: 'requested',

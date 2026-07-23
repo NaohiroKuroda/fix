@@ -1,0 +1,119 @@
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @route '/order-delivery/delivery-approval'
+*/
+export const approve = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: approve.url(options),
+    method: 'post',
+})
+
+approve.definition = {
+    methods: ["post"],
+    url: '/order-delivery/delivery-approval',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @route '/order-delivery/delivery-approval'
+*/
+approve.url = (options?: RouteQueryOptions) => {
+    return approve.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @route '/order-delivery/delivery-approval'
+*/
+approve.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: approve.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @route '/order-delivery/delivery-approval'
+*/
+const approveForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: approve.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @route '/order-delivery/delivery-approval'
+*/
+approveForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: approve.url(options),
+    method: 'post',
+})
+
+approve.form = approveForm
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @route '/order-delivery/delivery-approval/reject'
+*/
+export const reject = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: reject.url(options),
+    method: 'post',
+})
+
+reject.definition = {
+    methods: ["post"],
+    url: '/order-delivery/delivery-approval/reject',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @route '/order-delivery/delivery-approval/reject'
+*/
+reject.url = (options?: RouteQueryOptions) => {
+    return reject.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @route '/order-delivery/delivery-approval/reject'
+*/
+reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: reject.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @route '/order-delivery/delivery-approval/reject'
+*/
+const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: reject.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
+* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @route '/order-delivery/delivery-approval/reject'
+*/
+rejectForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: reject.url(options),
+    method: 'post',
+})
+
+reject.form = rejectForm
+
+const deliveryApproval = {
+    approve: Object.assign(approve, approve),
+    reject: Object.assign(reject, reject),
+}
+
+export default deliveryApproval

@@ -230,6 +230,16 @@ const closeIframe = (): void => {
     router.reload({ only: ['projects', 'pagination'] });
 };
 
+// 請求先行（billingTarget・見積依頼画面のみ）：チェック不要、押下で即座に単体で見積送信する。
+const billingSendForm = useForm<{ companyIds: number[] }>({ companyIds: [] });
+const submitBillingSend = (row: EstimateManagementRow): void => {
+    if (row.companyId == null || billingSendForm.processing) {
+        return;
+    }
+    billingSendForm.companyIds = [row.companyId];
+    billingSendForm.submit(sendQuoteRequestRoute(), { preserveScroll: true });
+};
+
 // 一括「全て選択」（全モード共通）。
 // toggle（業者選定）= 見積回答ありの業者行、pick（見積依頼 / 部長承認 / 取消申請 / 取消承認）= 未処理の業者行が対象。
 const bulkSelectableRows = computed<EstimateManagementRow[]>(() =>
@@ -767,6 +777,7 @@ const setComment = (value: CommentFilter): void => {
                         @reject="openReject"
                         @open-chat="openChat"
                         @open-iframe="openIframe"
+                        @billing-send="submitBillingSend"
                     />
 
                     <div v-if="!displayProjects.length" class="p-8 text-center" :class="[glassPanelClass, onGlassTextClass]">

@@ -37,6 +37,12 @@ export interface EstimateManagementRow {
     cancelApproved: boolean;
     /** 仮選定（新スキーマ t_cost_quotations.is_drafted）。旧スキーマは常に false。 */
     provisional: boolean;
+    /**
+     * 請求先（新スキーマ t_cost_quotations.is_billing_target）。
+     * 業者追加時に「請求先とする」をONにした業者。見積依頼画面では金額3列・仮選定を「ー」表示にし、
+     * 操作列はチェック不要で即時送信する「見積送信」ボタンにする。
+     */
+    billingTarget: boolean;
     /** 部長承認で否認され業者選定へ差し戻された（deny_comment あり）。ボタンの赤色表示に使う。 */
     denied: boolean;
 }

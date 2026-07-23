@@ -73,6 +73,15 @@ class AdminUser extends Authenticatable
     }
 
     /**
+     * 社長か（入金仮締めの権限判定）。
+     * 判定基準の slug は config/felix.php（president_role_slugs）を唯一の正とする。
+     */
+    public function isPresident(): bool
+    {
+        return (bool) array_intersect($this->roleSlugs(), config('felix.president_role_slugs', []));
+    }
+  
+    /**
      * 全メニューを表示する管理者ロールか。
      * 判定基準の slug は config/felix.php（admin_role_slugs）を唯一の正とする。
      */

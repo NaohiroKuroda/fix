@@ -24,6 +24,8 @@ const emit = defineEmits<{
     (e: 'reject', row: EstimateManagementRow): void;
     (e: 'open-chat', row: EstimateManagementRow, buildingName: string): void;
     (e: 'open-iframe', payload: { url: string | null; title: string }): void;
+    /** 請求先行（billingTarget）：チェック不要で押下即座に見積を送信する。見積依頼画面のみ。 */
+    (e: 'billing-send', row: EstimateManagementRow): void;
 }>();
 
 const isThemed = computed(() => props.glass === true);
@@ -43,10 +45,11 @@ const showReject = computed(() => props.mode === 'manager-approval');
 // 列は設けず、項目名の右隣に吹き出しボタンとして表示する。
 const showChat = computed(() => true);
 const isToggleButton = computed(() => config.value.kind === 'toggle-button');
-// 最終列＋相見積列＋仮選定列＋送信回数列＋否認列。空行の colspan に使う。
+// 区分列（請求/支払バッジ）＋相見積列＋仮選定列＋送信回数列＋否認列。空行の colspan に使う。
 const columnCount = computed(
     () =>
         5 +
+        (isQuoteRequest.value ? 1 : 0) +
         (config.value.showQuote ? 1 : 0) +
         (showProvisional.value ? 1 : 0) +
         (showSendCount.value ? 1 : 0) +
@@ -101,20 +104,51 @@ const toggleBtnClass = (color: ToggleColor, active: boolean): string => {
     return `${btnShapeBase} rounded-xl border ${active ? c.themedActive : c.themedIdle}`;
 };
 
-// 項目（unitId）ごとに、いま表示中の行のうち先頭の行キー。
-// props.project.rows は親でフィルタ済み（表示中の行）なので、ここでの先頭＝画面上の先頭。
-const firstRowKeyByUnit = computed<Record<number, string>>(() => {
-    const map: Record<number, string> = {};
+/** 表示用に組み立てた1行（払い/もらいの並び替え・境界線・項目の rowspan 情報を持つ）。 */
+interface DisplayRow {
+    row: EstimateManagementRow;
+    /** もらい（請求先）→払い（通常）の境界の先頭行か。両方揃う項目にだけ線を引く。 */
+    isBillingGroupStart: boolean;
+    /** この項目（unitId）の表示上の先頭行か。項目名セルはここにだけ rowspan で出す。 */
+    isUnitFirstRow: boolean;
+    /** 項目名セルの rowspan 数（isUnitFirstRow の行でのみ使う＝同一項目の行数）。 */
+    unitRowSpan: number;
+    /** 直前の項目との境界（＝2つ目以降の項目の先頭行）か。項目間の区切り線に使う。 */
+    isUnitBoundary: boolean;
+}
+// 見積依頼画面：項目（unitId）内で「もらい（請求先）」を先、「払い（通常）」を後にまとめ、
+// 境界に線を引けるようにする（billingTarget 行の並び替えは quote-request のみ意味を持つが、
+// 他画面には billingTarget 行が現れないため実質的に元の並びのままになる）。
+// 項目名は「項目１つに複数の払い/もらいがある」ため、同一項目の行をまたいで rowspan で1回だけ出す
+// （felix_total の実行予算編集画面と同じ考え方）。
+const displayRows = computed<DisplayRow[]>(() => {
+    const unitOrder: number[] = [];
+    const byUnit = new Map<number, EstimateManagementRow[]>();
     for (const row of props.project.rows) {
-        if (!(row.unitId in map)) {
-            map[row.unitId] = estimateRowKey(row);
+        if (!byUnit.has(row.unitId)) {
+            byUnit.set(row.unitId, []);
+            unitOrder.push(row.unitId);
         }
+        byUnit.get(row.unitId)!.push(row);
     }
-    return map;
+    const result: DisplayRow[] = [];
+    unitOrder.forEach((unitId, unitIndex) => {
+        const rows = byUnit.get(unitId) ?? [];
+        const payments = rows.filter((r) => !r.billingTarget);
+        const billings = rows.filter((r) => r.billingTarget);
+        const ordered = [...billings, ...payments];
+        ordered.forEach((row, i) => {
+            result.push({
+                row,
+                isBillingGroupStart: payments.length > 0 && billings.length > 0 && i === billings.length,
+                isUnitFirstRow: i === 0,
+                unitRowSpan: ordered.length,
+                isUnitBoundary: i === 0 && unitIndex > 0,
+            });
+        });
+    });
+    return result;
 });
-// この行が「表示中の同一項目の先頭行」か（項目名・チャット・業者追加はここにだけ出す）。
-const isItemFirstRow = (row: EstimateManagementRow): boolean =>
-    firstRowKeyByUnit.value[row.unitId] === estimateRowKey(row);
 
 // 否認差し戻し（deny_comment あり）の見積先か。
 const isDenied = (row: EstimateManagementRow): boolean => row.denied === true;
@@ -172,6 +206,7 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                 <!-- 全案件カードで列位置を揃えるため、固定レイアウト＋共通の列幅を指定する。 -->
                 <colgroup>
                     <col style="width: 22%" />
+                    <col v-if="isQuoteRequest" style="width: 7%" />
                     <col style="width: 23%" />
                     <col style="width: 13%" />
                     <col style="width: 13%" />
@@ -184,27 +219,38 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                 <thead class="text-center" :class="tableHeadClass">
                     <tr class="border-b-2 border-slate-300 text-[15px] font-bold uppercase tracking-wider">
                         <th class="px-3 py-2.5">項目</th>
-                        <th class="px-3 py-2.5">見積先</th>
+                        <th v-if="isQuoteRequest" class="px-3 py-2.5">区分</th>
+                        <th class="px-3 py-2.5">パートナー</th>
                         <th class="px-3 py-2.5">標準単価<br />(税抜)</th>
                         <th class="px-3 py-2.5">予算単価<br />(税抜)</th>
                         <th v-if="config.showQuote" class="px-3 py-2.5">{{ config.quoteColumnLabel ?? '相見積' }}<br />(税抜)</th>
                         <th v-if="showProvisional" class="px-3 py-2.5">仮選定</th>
                         <th class="px-3 py-2.5">{{ config.columnLabel }}</th>
-                        <th v-if="showSendCount" class="px-3 py-2.5">見積依頼<br />送信回数</th>
+                        <th v-if="showSendCount" class="px-3 py-2.5">送信回数</th>
                         <th v-if="showReject" class="px-3 py-2.5">否認</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="row in project.rows" :key="estimateRowKey(row)" class="border-t" :class="rowBorderClass">
-                        <td class="px-3 py-2 font-medium">
+                    <tr
+                        v-for="{ row, isBillingGroupStart, isUnitFirstRow, unitRowSpan, isUnitBoundary } in displayRows"
+                        :key="estimateRowKey(row)"
+                        :class="[
+                            rowBorderClass,
+                            isUnitBoundary
+                                ? 'border-t-4 border-slate-300'
+                                : (isBillingGroupStart ? 'border-t-2 border-dashed border-slate-400' : 'border-t'),
+                        ]"
+                    >
+                        <!-- 項目名：同一項目の行数ぶん rowspan で1回だけ出す（1項目に複数の払い/もらいがあるため）。 -->
+                        <td v-if="isUnitFirstRow" :rowspan="unitRowSpan" class="px-3 py-2 font-medium">
                             <div class="flex items-center justify-between gap-2">
-                                <span>{{ isItemFirstRow(row) ? row.itemName : '' }}</span>
+                                <span>{{ row.itemName }}</span>
                                 <!-- 項目名の右隣（右寄せ）：やり取り（吹き出し）＋業者追加（見積依頼のみ・吹き出しの右隣）。 -->
                                 <div class="flex shrink-0 items-center gap-1.5">
                                     <!-- やり取り（チャット）（全画面）。押下でチャットモーダル。 -->
                                     <!-- 項目に見積先が複数あっても、表示中の項目の先頭行に1つだけ出す。 -->
                                     <button
-                                        v-if="showChat && isItemFirstRow(row) && row.companyId != null"
+                                        v-if="showChat && row.companyId != null"
                                         type="button"
                                         :class="chatBtnClass(row)"
                                         title="この見積についてやり取りする"
@@ -219,7 +265,7 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                     </button>
                                     <!-- この項目に業者を追加（見積依頼画面のみ・押すと iframe を起動）。 -->
                                     <button
-                                        v-if="isQuoteRequest && isItemFirstRow(row)"
+                                        v-if="isQuoteRequest"
                                         type="button"
                                         class="group inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-teal-600/50 px-3 py-0.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-600 hover:bg-teal-600 hover:text-white"
                                         title="この項目に業者を追加"
@@ -229,6 +275,14 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                     </button>
                                 </div>
                             </div>
+                        </td>
+                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみバッジ。見積依頼画面のみ。色は付けず文言のみで区別する。 -->
+                        <td v-if="isQuoteRequest" class="px-3 py-2 text-center">
+                            <span
+                                v-if="row.companyId != null"
+                                class="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-slate-400/60 bg-slate-50 px-3 py-0.5 text-sm font-medium text-slate-600"
+                            >{{ row.billingTarget ? '請求' : '支払' }}</span>
+                            <span v-else :class="mutedTextClass">—</span>
                         </td>
                         <td class="px-3 py-2">
                             <div class="flex items-center justify-between gap-2">
@@ -253,13 +307,14 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                 </a>
                             </div>
                         </td>
-                        <td class="px-3 py-2 text-right tabular-nums">{{ yen(row.masterPrice) }}</td>
-                        <td class="px-3 py-2 text-right tabular-nums">{{ yen(row.budgetPrice) }}</td>
-                        <td v-if="config.showQuote" class="px-3 py-2 text-right tabular-nums">{{ yen(row.quotePrice) }}</td>
+                        <!-- 請求先行（billingTarget）：金額3列は常に「ー」表示（見積の対象ではないため）。 -->
+                        <td class="px-3 py-2 text-right tabular-nums">{{ row.billingTarget ? '—' : yen(row.masterPrice) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ row.billingTarget ? '—' : yen(row.budgetPrice) }}</td>
+                        <td v-if="config.showQuote" class="px-3 py-2 text-right tabular-nums">{{ row.billingTarget ? '—' : yen(row.quotePrice) }}</td>
                         <!-- 仮選定（FELIXが依頼したい業者の印。現状はローカル状態、DB保存は将来）。 -->
                         <td v-if="showProvisional" class="px-3 py-2 text-center">
                             <label
-                                v-if="row.companyId != null"
+                                v-if="row.companyId != null && !row.billingTarget"
                                 class="inline-flex cursor-pointer items-center justify-center"
                                 title="仮選定（依頼したい業者にマーク）"
                             >
@@ -297,9 +352,19 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                     <CheckCircle2 class="size-4" />{{ config.appliedLabel }}
                                 </span>
                                 <template v-else-if="row.companyId != null">
+                                    <!-- 請求先行（billingTarget・見積依頼画面のみ）：チェック不要、押下で即座に見積送信。 -->
+                                    <button
+                                        v-if="row.billingTarget"
+                                        type="button"
+                                        class="mx-auto flex h-9 w-28 items-center justify-center whitespace-nowrap rounded-xl border border-[#c4a35b] bg-[#c4a35b] px-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b3923f]"
+                                        title="請求先へ見積を送信する"
+                                        @click="emit('billing-send', row)"
+                                    >
+                                        見積送信
+                                    </button>
                                     <!-- 見積依頼：選択チップ（枠付き）。中身はネイティブ checkbox のままで多重選択を維持。 -->
                                     <label
-                                        v-if="isCheckbox"
+                                        v-else-if="isCheckbox"
                                         class="mx-auto inline-flex h-9 w-28 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-2 text-sm font-semibold shadow-sm backdrop-blur-md transition focus-within:ring-2 focus-within:ring-[#c4a35b]/40"
                                         :class="isActive(row)
                                             ? (isThemed ? 'border-[#c4a35b] bg-[#c4a35b] text-white' : 'border-primary bg-primary text-primary-foreground')

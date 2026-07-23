@@ -184,6 +184,8 @@ app/
 ├── Helpers/                # ヘルパークラス（コンテキスト依存・状態あり・インスタンス化）
 │   └── SampleHelper.php
 ├── Models/                 # Eloquent モデル
+│   └── Concerns/           # モデル横断の振る舞い（トレイト）
+│       └── HasBlameColumns.php   # created_by / updated_by の自動記録
 └── Providers/
     ├── AppServiceProvider.php
     └── RepositoryServiceProvider.php   # interface ⇔ 実装のバインド
@@ -346,6 +348,49 @@ class StatusManagementController extends Controller
   Controller がエラーのフラッシュメッセージへ変換する。
 - 連携先パスは `config('services.felix_total.quote_request_path')`（既定
   `/admin/estimates-custom-detail/order_estimate`、`FELIX_TOTAL_QUOTE_REQUEST_PATH` で上書き可）。
+
+### 3.6 作成者 / 更新者（`created_by` / `updated_by`）の自動記録
+
+新見積管理系のテーブルは、`created_at` / `updated_at` と対になる形で
+**`created_by`（作成者 ID）/ `updated_by`（更新者 ID）** を持つ（値は `admin_users.id`・いずれも nullable）。
+マイグレーションは felix_total 側に存在する（fix は同一 MySQL を default 接続で参照する）。
+
+対象テーブル: `t_buildings` / `t_building_cost_items` / `t_building_cost_item_groups` /
+`t_building_group_statuses` / `t_cost_quotations` / `t_cost_quotation_histories` /
+`t_cost_quotation_details` / `t_cost_quotation_requests` / `t_approval_requests` /
+`t_approval_actions` / `t_comments` / `t_comment_read_timestamps` / `t_attachments`
+
+- **押印は Eloquent のモデルイベントで自動化する。** 各層（Service / Repository）で個別に
+  `created_by` を組み立てない。`app/Models/Concerns/HasBlameColumns` を対象モデルに `use` すると、
+  `creating` で `created_by` / `updated_by`、`updating` で `updated_by` を操作者で埋める。
+  呼び出し側が明示的に値を入れている場合は上書きしない。
+- **操作者の解決は `App\Utils\Blame` に一本化する**（`Auth::guard('admin')->id()`）。
+  未ログイン（バッチ・コンソール実行）では `null` のままとし、押印しない。
+- **一括更新はモデルイベントが発火しない。** `Model::query()->update([...])` を使う Repository は
+  `Blame::stampUpdate()` で `updated_by` を明示的に差し込む。
+- `created_by` / `updated_by` は **`$fillable` に含めない**（外部入力による詐称を防ぐため。
+  押印はモデルイベント側の責務とする）。
+- **新しいモデルを追加したら本トレイトの `use` を忘れないこと**（列を持つテーブルであれば必須）。
+
+```php
+// app/Models/TCostQuotation.php
+class TCostQuotation extends Model
+{
+    use HasBlameColumns, HasFactory;
+}
+```
+
+```php
+// Repository：一括更新は明示的に押印する
+return TCostQuotation::query()
+    ->whereIn('id', $ids)
+    ->where('approval_status', $from)
+    ->update(Blame::stampUpdate(['approval_status' => $to]));
+```
+
+> **felix_total 側**（現行システム）も同じ新テーブルへ同期書き込みを行う
+> （`NewQuotationRegisterService` 等）。そちらは laravel-admin の `Admin::user()` を用いる
+> `App\Traits\BlameableTrait`（felix_total リポジトリ）で同等の押印を行う。仕様は本節と揃える。
 
 ## 4. レスポンス整形（JsonResource）
 

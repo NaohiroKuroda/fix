@@ -8,6 +8,7 @@ use App\Models\TBuildingCostItem;
 use App\Models\TCostQuotation;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use App\Services\FelixTotal\FelixTotalQuoteRequestGateway;
+use App\Utils\Blame;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -357,10 +358,11 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             $count = TCostQuotation::query()
                 ->where('id', $companyId)
                 ->where('approval_status', 'STAFF_APPROVED')
-                ->update([
+                // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
+                ->update(Blame::stampUpdate([
                     'approval_status' => 'UNSELECTED',
                     'deny_comment' => $reason,
-                ]);
+                ]));
 
             if ($count === 0) {
                 return 0;
@@ -470,7 +472,8 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         return TCostQuotation::query()
             ->whereIn('id', $ids)
             ->where('approval_status', $from)
-            ->update(['approval_status' => $to]);
+            // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
+            ->update(Blame::stampUpdate(['approval_status' => $to]));
     }
 
     /**
@@ -482,7 +485,8 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     {
         return TCostQuotation::query()
             ->where('id', $companyId)
-            ->update(['is_drafted' => $drafted ? 1 : 0]);
+            // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
+            ->update(Blame::stampUpdate(['is_drafted' => $drafted ? 1 : 0]));
     }
 
     public function pendingCounts(): array

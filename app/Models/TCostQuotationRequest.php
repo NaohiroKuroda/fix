@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasBlameColumns;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * 費用見積依頼（相見積依頼の送信履歴）。1 行＝見積先（t_cost_quotations）への 1 回の依頼送信。
@@ -11,12 +13,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property int $cost_quotation_id
- * @property \Illuminate\Support\Carbon $requested_at
+ * @property Carbon $requested_at
  *
  * @mixin \Eloquent
  */
 class TCostQuotationRequest extends Model
 {
+    use HasBlameColumns;
+
     protected $table = 't_cost_quotation_requests';
 
     protected $fillable = [

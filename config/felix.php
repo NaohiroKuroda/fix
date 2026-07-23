@@ -100,14 +100,18 @@ return [
      * `{id}` を見積先ID（estimate_unit_companies.id）に置換する。
      *
      * felix_total 実行予算明細の見積先名リンクと同じ URL を使う：
-     *   /admin/estimate-unit-companies/{見積先ID}/edit/?iframe=on
+     *   /admin/estimate-unit-companies/{見積先ID}/edit/?iframe=on&from=fix
      * laravel-admin の編集フォームを iframe モードで開く（admin ログインで動作）。
      * 空にすると会社名はリンクにせずプレーン表示にする。
+     *
+     * `from=fix` は「fix から開いた」ことを示す目印。felix_total 自身も同じ編集画面を
+     * `?iframe=on` で開くため、fix 経由のときだけ会社名の編集をロックする判定に使う
+     * （felix_total 側 `app/Admin/bootstrap.php` が `request('from') === 'fix'` を参照）。
      */
     'vendor_detail_url' => env(
         'FELIX_VENDOR_DETAIL_URL',
         rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
-            . '/admin/estimate-unit-companies/{id}/edit/?iframe=on'
+            . '/admin/estimate-unit-companies/{id}/edit/?iframe=on&from=fix'
     ),
 
     /*

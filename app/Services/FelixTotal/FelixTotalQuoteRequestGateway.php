@@ -76,6 +76,9 @@ class FelixTotalQuoteRequestGateway
     /**
      * 採用（業者選定）：felix_total の update_adoption_flg を呼ぶ。
      *
+     * felix_total 側は mode=='false' のときだけ採用取消として扱うため、採用は mode='true' を明示する
+     * （未指定でも採用側へ分岐するが、意図しない取消を防ぐため送信値を明示する）。
+     *
      * @param  int  $estimateUnitId  旧 estimate_units.id
      * @param  int  $companyId  旧 estimate_unit_companies.id
      * @param  int  $noCompetitiveFlg  相見積なしフラグ（estimate_units.no_competitive_flg）
@@ -88,6 +91,28 @@ class FelixTotalQuoteRequestGateway
             'estimate_unit_id' => $estimateUnitId,
             'id' => $companyId,
             'no_competitive_flg' => $noCompetitiveFlg,
+            'mode' => 'true',
+        ]);
+    }
+
+    /**
+     * 採用取消（部長承認の否認＝業者選定へ差し戻し）：felix_total の update_adoption_flg を mode='false' で呼ぶ。
+     *
+     * felix_total 側は adoption_flg=0 / company_select_flg=NULL とし、estimate_units の
+     * vendor_id を NULL・price を再計算する（＝業者選定前の状態へ戻す）。
+     *
+     * @param  int  $estimateUnitId  旧 estimate_units.id
+     * @param  int  $companyId  旧 estimate_unit_companies.id
+     *
+     * @throws RuntimeException
+     */
+    public function cancelAdoption(int $estimateUnitId, int $companyId): void
+    {
+        $this->callEdit('update_adoption_flg', [
+            'estimate_unit_id' => $estimateUnitId,
+            'id' => $companyId,
+            'no_competitive_flg' => 0,
+            'mode' => 'false',
         ]);
     }
 
@@ -104,6 +129,26 @@ class FelixTotalQuoteRequestGateway
         $this->callEdit('update_tmp_company_select_flg', [
             'estimate_unit_id' => $estimateUnitId,
             'id' => $companyId,
+        ]);
+    }
+
+    /**
+     * 建設部選定の取消（部長取消承認）：felix_total の update_tmp_company_select_flg を mode='false' で呼ぶ。
+     *
+     * felix_total 側は estimate_units の tmp_company_id を NULL・company_select_status を 1（選定中）に戻し、
+     * estimate_unit_companies.tmp_status を NULL にする。
+     *
+     * @param  int  $estimateUnitId  旧 estimate_units.id
+     * @param  int  $companyId  旧 estimate_unit_companies.id
+     *
+     * @throws RuntimeException
+     */
+    public function cancelTmpSelection(int $estimateUnitId, int $companyId): void
+    {
+        $this->callEdit('update_tmp_company_select_flg', [
+            'estimate_unit_id' => $estimateUnitId,
+            'id' => $companyId,
+            'mode' => 'false',
         ]);
     }
 

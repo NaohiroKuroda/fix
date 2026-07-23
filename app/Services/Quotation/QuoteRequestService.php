@@ -2,9 +2,11 @@
 
 namespace App\Services\Quotation;
 
+use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 
 /**
  * 見積依頼（quote-request）画面のユースケース。
@@ -23,7 +25,19 @@ class QuoteRequestService
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
-        return $this->estimates->forEstimateManagement($filters, $perPage, 'quote-request');
+        try {
+            return $this->estimates->forEstimateManagement($filters, $perPage, 'quote-request');
+        } catch (\Exception $e) {
+            Log::error('見積依頼の一覧取得に失敗しました', [
+                'message' => $e->getMessage(),
+                'filters' => $filters,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 
     /**
@@ -34,6 +48,18 @@ class QuoteRequestService
      */
     public function send(array $companyIds): int
     {
-        return $this->estimates->recordQuoteRequests($companyIds);
+        try {
+            return $this->estimates->recordQuoteRequests($companyIds);
+        } catch (\Exception $e) {
+            Log::error('見積依頼の送信に失敗しました', [
+                'message' => $e->getMessage(),
+                'companyIds' => $companyIds,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
     }
 }

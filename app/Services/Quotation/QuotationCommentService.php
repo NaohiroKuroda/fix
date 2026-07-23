@@ -2,14 +2,17 @@
 
 namespace App\Services\Quotation;
 
+use App\Exceptions\ServiceException;
 use App\Models\AdminUser;
 use App\Models\TBuildingCostItem;
 use App\Models\TComment;
 use App\Repositories\Contracts\CommentRepositoryInterface;
+use App\Services\Image\ImageCompressor;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 /**
  * やり取り（コメント）のユースケース入口。
@@ -25,6 +28,7 @@ class QuotationCommentService
 
     public function __construct(
         private readonly CommentRepositoryInterface $comments,
+        private readonly ImageCompressor $imageCompressor,
     ) {}
 
     /**
@@ -34,14 +38,26 @@ class QuotationCommentService
      */
     public function thread(int $itemId): Collection
     {
-        $comments = $this->comments->forCommentable(self::COMMENTABLE_TYPE, $itemId);
+        try {
+            $comments = $this->comments->forCommentable(self::COMMENTABLE_TYPE, $itemId);
 
-        $userId = $this->currentUserId();
-        if ($userId !== null) {
-            $this->comments->markRead(self::COMMENTABLE_TYPE, $itemId, $userId, Carbon::now());
+            $userId = $this->currentUserId();
+            if ($userId !== null) {
+                $this->comments->markRead(self::COMMENTABLE_TYPE, $itemId, $userId, Carbon::now());
+            }
+
+            return $comments;
+        } catch (\Exception $e) {
+            Log::error('コメントの取得に失敗しました', [
+                'message' => $e->getMessage(),
+                'itemId' => $itemId,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
         }
-
-        return $comments;
     }
 
     /**
@@ -51,24 +67,38 @@ class QuotationCommentService
      */
     public function post(int $itemId, string $body, array $files): TComment
     {
-        $userId = $this->currentUserId() ?? 0;
+        try {
+            $userId = $this->currentUserId() ?? 0;
 
-        $comment = $this->comments->create(self::COMMENTABLE_TYPE, $itemId, $userId, $body);
+            $comment = $this->comments->create(self::COMMENTABLE_TYPE, $itemId, $userId, $body);
 
-        // 添付ファイルは public ディスクへ保存し、コメントにポリモーフィックで紐づける。
-        foreach ($files as $file) {
-            $path = $file->store("comments/{$itemId}", 'public');
-            $this->comments->addAttachment(
-                $comment,
-                $path,
-                $file->getClientOriginalName(),
-                $file->getClientMimeType(),
-                (int) $file->getSize(),
-                $userId,
-            );
+            // 添付ファイルは ImageCompressor 経由で public ディスクへ保存する
+            // （画像は圧縮＋サムネ生成・UUID化。それ以外はそのまま保存）。
+            foreach ($files as $file) {
+                $stored = $this->imageCompressor->store($file, "comments/{$itemId}");
+                $this->comments->addAttachment(
+                    $comment,
+                    $stored->path,
+                    $file->getClientOriginalName(),
+                    $stored->mime,
+                    $stored->size,
+                    $userId,
+                );
+            }
+
+            return $comment->load(['attachments', 'user.roles']);
+        } catch (\Exception $e) {
+            Log::error('コメントの投稿に失敗しました', [
+                'message' => $e->getMessage(),
+                'itemId' => $itemId,
+                'fileCount' => count($files),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
         }
-
-        return $comment->load(['attachments', 'user.roles']);
     }
 
     /** ログイン中の admin_users.id（未認証なら null）。 */

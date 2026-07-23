@@ -5,14 +5,20 @@
 # =========================================================
 FROM php:8.3-cli
 
+# gd / exif は添付画像の圧縮・サムネ生成（06_添付ファイル_詳細設計 §5）に必要。
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git unzip libzip-dev libicu-dev libonig-dev curl ca-certificates gnupg \
-    && docker-php-ext-install pdo_mysql zip intl \
+        libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
+    && docker-php-ext-install pdo_mysql zip intl gd exif \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# アップロード上限等（06_添付ファイル_詳細設計 §11）。conf.d に置き php ビルトインサーバにも効かせる。
+COPY .docker/php/uploads.ini /usr/local/etc/php/conf.d/zz-uploads.ini
 
 WORKDIR /var/www/html
 

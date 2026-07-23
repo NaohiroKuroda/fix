@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::send
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
-* @route '/estimate-management/quote-request'
+* @route '/quotation-management/quote-request'
 */
 export const send = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: send.url(options),
@@ -11,13 +11,13 @@ export const send = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 send.definition = {
     methods: ["post"],
-    url: '/estimate-management/quote-request',
+    url: '/quotation-management/quote-request',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::send
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
-* @route '/estimate-management/quote-request'
+* @route '/quotation-management/quote-request'
 */
 send.url = (options?: RouteQueryOptions) => {
     return send.definition.url + queryParams(options)
@@ -26,7 +26,7 @@ send.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::send
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
-* @route '/estimate-management/quote-request'
+* @route '/quotation-management/quote-request'
 */
 send.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: send.url(options),
@@ -36,7 +36,7 @@ send.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::send
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
-* @route '/estimate-management/quote-request'
+* @route '/quotation-management/quote-request'
 */
 const sendForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: send.url(options),
@@ -46,7 +46,7 @@ const sendForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => (
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::send
 * @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
-* @route '/estimate-management/quote-request'
+* @route '/quotation-management/quote-request'
 */
 sendForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: send.url(options),

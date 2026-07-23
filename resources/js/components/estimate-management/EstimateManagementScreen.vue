@@ -12,12 +12,12 @@ import { computed, inject, nextTick, reactive, ref, type Ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { X, Ban, MessageSquare, Send, Paperclip, FileText } from 'lucide-vue-next';
 import type { RouteDefinition } from '@/wayfinder';
-import { send as sendQuoteRequestRoute } from '@/routes/estimate-management/quote-request';
-import { confirm as confirmVendorSelectionRoute, provisional as provisionalRoute } from '@/routes/estimate-management/vendor-selection';
-import { confirm as confirmManagerApprovalRoute, reject as rejectManagerApprovalRoute } from '@/routes/estimate-management/manager-approval';
-import { confirm as confirmCancelRequestRoute } from '@/routes/estimate-management/cancel-request';
-import { confirm as confirmCancelApprovalRoute } from '@/routes/estimate-management/cancel-approval';
-import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/routes/estimate-management/quotation-messages';
+import { send as sendQuoteRequestRoute } from '@/routes/quotation-management/quote-request';
+import { confirm as confirmVendorSelectionRoute, provisional as provisionalRoute } from '@/routes/quotation-management/vendor-selection';
+import { confirm as confirmManagerApprovalRoute, reject as rejectManagerApprovalRoute } from '@/routes/quotation-management/manager-approval';
+import { confirm as confirmCancelRequestRoute } from '@/routes/quotation-management/cancel-request';
+import { confirm as confirmCancelApprovalRoute } from '@/routes/quotation-management/cancel-approval';
+import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/routes/quotation-management/quotation-messages';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EstimateFilterBar from '@/components/estimate-management/EstimateFilterBar.vue';
 import EstimatePager from '@/components/estimate-management/EstimatePager.vue';
@@ -396,11 +396,54 @@ const chatFiles = ref<File[]>([]);
 const chatDragOver = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const openFilePicker = (): void => fileInput.value?.click();
+// 添付の制約（06_添付ファイル_詳細設計 §1・§2）。サーバ側 StoreQuotationMessageRequest と一致させる。
+const ALLOWED_EXTENSIONS = [
+    'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif',
+    'pdf', 'txt',
+    'xlsx', 'xls', 'docx', 'doc', 'pptx', 'ppt', 'csv',
+    'dwg', 'dxf', 'jww', 'jwc', 'sfc', 'p21',
+    'zip',
+];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILES = 5;
+
+// アップロード前チェック：拡張子ホワイトリスト外・10MB超・5件超をこの場で弾いてメッセージ表示する。
 const addFiles = (list: FileList | null): void => {
     if (!list || list.length === 0) {
         return;
     }
-    chatFiles.value = [...chatFiles.value, ...Array.from(list)];
+
+    const rejected: string[] = [];
+    const accepted: File[] = [];
+    for (const file of Array.from(list)) {
+        const ext = file.name.includes('.') ? (file.name.split('.').pop() ?? '').toLowerCase() : '';
+        if (!ALLOWED_EXTENSIONS.includes(ext)) {
+            rejected.push(`${file.name}（非対応の形式）`);
+            continue;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            rejected.push(`${file.name}（10MB超）`);
+            continue;
+        }
+        accepted.push(file);
+    }
+
+    const room = Math.max(0, MAX_FILES - chatFiles.value.length);
+    const toAdd = accepted.slice(0, room);
+    if (toAdd.length > 0) {
+        chatFiles.value = [...chatFiles.value, ...toAdd];
+    }
+
+    const errors: string[] = [];
+    if (rejected.length > 0) {
+        errors.push(`次のファイルは添付できません: ${rejected.join('、')}`);
+    }
+    if (accepted.length > toAdd.length) {
+        errors.push(`添付は${MAX_FILES}件までです。`);
+    }
+    if (errors.length > 0) {
+        chatError.value = errors.join(' ');
+    }
 };
 const onFileInputChange = (event: Event): void => {
     const input = event.target as HTMLInputElement;
@@ -801,15 +844,11 @@ const setComment = (value: CommentFilter): void => {
                         </p>
                         <div v-for="m in chatMessages" :key="m.id" class="flex" :class="m.isMine ? 'justify-end' : 'justify-start'">
                             <div class="flex max-w-[80%] flex-col" :class="m.isMine ? 'items-end' : 'items-start'">
-                                <!-- 送信者情報（役割バッジ＋名前）。自分は右寄せに並べる。 -->
+                                <!-- 送信者情報（名前）。自分は右寄せに並べる。 -->
                                 <div
                                     class="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500"
                                     :class="m.isMine ? 'flex-row-reverse' : ''"
                                 >
-                                    <span
-                                        class="rounded px-1 py-0.5 font-bold leading-none"
-                                        :class="m.senderRole === 'manager' ? 'bg-[#c4a35b]/15 text-[#8a6a25]' : 'bg-slate-200 text-slate-600'"
-                                    >{{ m.senderRole === 'manager' ? '部長' : '部下' }}</span>
                                     <span class="font-semibold text-slate-700">{{ m.senderName }}</span>
                                     <span v-if="m.isMine" class="rounded bg-slate-100 px-1 py-0.5 leading-none text-slate-400">自分</span>
                                 </div>
@@ -821,17 +860,17 @@ const setComment = (value: CommentFilter): void => {
                                         : 'rounded-bl-sm border border-slate-200 bg-white text-slate-800'"
                                 >
                                     <div v-if="m.body" class="whitespace-pre-wrap break-words text-sm">{{ m.body }}</div>
-                                    <!-- 添付ファイル：画像はサムネイル、その他はファイル名リンク（別タブで開く）。 -->
+                                    <!-- 添付ファイル：サムネのある画像はサムネ表示、その他（HEIC・文書等）はファイル名リンク。クリックは常にダウンロード。 -->
                                     <div v-if="m.files.length" class="mt-2 flex flex-wrap gap-2" :class="m.isMine ? 'justify-end' : ''">
                                         <template v-for="f in m.files" :key="f.id">
                                             <a
-                                                v-if="f.isImage"
+                                                v-if="f.thumbUrl"
                                                 :href="f.downloadUrl"
                                                 :download="f.name"
                                                 :title="`${f.name} をダウンロード`"
                                                 class="block overflow-hidden rounded-lg border border-slate-200 transition hover:border-[#c4a35b]"
                                             >
-                                                <img :src="f.url" :alt="f.name" class="size-24 object-cover" />
+                                                <img :src="f.thumbUrl" :alt="f.name" class="size-24 object-cover" />
                                             </a>
                                             <a
                                                 v-else
@@ -878,7 +917,7 @@ const setComment = (value: CommentFilter): void => {
                         </div>
                         <div class="flex items-end gap-2">
                             <!-- ファイル選択（端末内のファイルを開く）。実体は隠し input。 -->
-                            <input ref="fileInput" type="file" multiple class="hidden" @change="onFileInputChange" />
+                            <input ref="fileInput" type="file" multiple class="hidden" accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.pdf,.txt,.xlsx,.xls,.docx,.doc,.pptx,.ppt,.csv,.dwg,.dxf,.jww,.jwc,.sfc,.p21,.zip" @change="onFileInputChange" />
                             <button
                                 type="button"
                                 class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-500 transition hover:border-[#c4a35b] hover:bg-[#c4a35b]/10 hover:text-[#8a6a25]"

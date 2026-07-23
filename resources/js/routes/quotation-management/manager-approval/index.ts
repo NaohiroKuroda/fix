@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:42
-* @route '/estimate-management/manager-approval'
+* @route '/quotation-management/manager-approval'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: confirm.url(options),
@@ -11,13 +11,13 @@ export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
 confirm.definition = {
     methods: ["post"],
-    url: '/estimate-management/manager-approval',
+    url: '/quotation-management/manager-approval',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:42
-* @route '/estimate-management/manager-approval'
+* @route '/quotation-management/manager-approval'
 */
 confirm.url = (options?: RouteQueryOptions) => {
     return confirm.definition.url + queryParams(options)
@@ -26,7 +26,7 @@ confirm.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:42
-* @route '/estimate-management/manager-approval'
+* @route '/quotation-management/manager-approval'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: confirm.url(options),
@@ -36,7 +36,7 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:42
-* @route '/estimate-management/manager-approval'
+* @route '/quotation-management/manager-approval'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: confirm.url(options),
@@ -46,7 +46,7 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::confirm
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:42
-* @route '/estimate-management/manager-approval'
+* @route '/quotation-management/manager-approval'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: confirm.url(options),
@@ -58,7 +58,7 @@ confirm.form = confirmForm
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::reject
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:59
-* @route '/estimate-management/manager-approval/reject'
+* @route '/quotation-management/manager-approval/reject'
 */
 export const reject = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: reject.url(options),
@@ -67,13 +67,13 @@ export const reject = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
 reject.definition = {
     methods: ["post"],
-    url: '/estimate-management/manager-approval/reject',
+    url: '/quotation-management/manager-approval/reject',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::reject
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:59
-* @route '/estimate-management/manager-approval/reject'
+* @route '/quotation-management/manager-approval/reject'
 */
 reject.url = (options?: RouteQueryOptions) => {
     return reject.definition.url + queryParams(options)
@@ -82,7 +82,7 @@ reject.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::reject
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:59
-* @route '/estimate-management/manager-approval/reject'
+* @route '/quotation-management/manager-approval/reject'
 */
 reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: reject.url(options),
@@ -92,7 +92,7 @@ reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::reject
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:59
-* @route '/estimate-management/manager-approval/reject'
+* @route '/quotation-management/manager-approval/reject'
 */
 const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: reject.url(options),
@@ -102,7 +102,7 @@ const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 /**
 * @see \App\Http\Controllers\Quotation\ManagerApprovalController::reject
 * @see app/Http/Controllers/Quotation/ManagerApprovalController.php:59
-* @route '/estimate-management/manager-approval/reject'
+* @route '/quotation-management/manager-approval/reject'
 */
 rejectForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: reject.url(options),

@@ -1,25 +1,25 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\Quotation\CommentAttachmentController::show
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:21
-* @route '/estimate-management/comment-attachments/{attachment}'
+* @see \App\Http\Controllers\Quotation\CommentAttachmentController::thumb
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:24
+* @route '/quotation-management/comment-attachments/{attachment}/thumb'
 */
-export const show = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: show.url(args, options),
+export const thumb = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: thumb.url(args, options),
     method: 'get',
 })
 
-show.definition = {
+thumb.definition = {
     methods: ["get","head"],
-    url: '/estimate-management/comment-attachments/{attachment}',
+    url: '/quotation-management/comment-attachments/{attachment}/thumb',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Quotation\CommentAttachmentController::show
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:21
-* @route '/estimate-management/comment-attachments/{attachment}'
+* @see \App\Http\Controllers\Quotation\CommentAttachmentController::thumb
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:24
+* @route '/quotation-management/comment-attachments/{attachment}/thumb'
 */
-show.url = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+thumb.url = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { attachment: args }
     }
@@ -42,58 +42,58 @@ show.url = (args: { attachment: number | { id: number } } | [attachment: number 
         : args.attachment,
     }
 
-    return show.definition.url
+    return thumb.definition.url
             .replace('{attachment}', parsedArgs.attachment.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
-* @see \App\Http\Controllers\Quotation\CommentAttachmentController::show
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:21
-* @route '/estimate-management/comment-attachments/{attachment}'
+* @see \App\Http\Controllers\Quotation\CommentAttachmentController::thumb
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:24
+* @route '/quotation-management/comment-attachments/{attachment}/thumb'
 */
-show.get = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: show.url(args, options),
+thumb.get = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: thumb.url(args, options),
     method: 'get',
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\CommentAttachmentController::show
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:21
-* @route '/estimate-management/comment-attachments/{attachment}'
+* @see \App\Http\Controllers\Quotation\CommentAttachmentController::thumb
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:24
+* @route '/quotation-management/comment-attachments/{attachment}/thumb'
 */
-show.head = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: show.url(args, options),
+thumb.head = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: thumb.url(args, options),
     method: 'head',
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\CommentAttachmentController::show
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:21
-* @route '/estimate-management/comment-attachments/{attachment}'
+* @see \App\Http\Controllers\Quotation\CommentAttachmentController::thumb
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:24
+* @route '/quotation-management/comment-attachments/{attachment}/thumb'
 */
-const showForm = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: show.url(args, options),
+const thumbForm = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: thumb.url(args, options),
     method: 'get',
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\CommentAttachmentController::show
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:21
-* @route '/estimate-management/comment-attachments/{attachment}'
+* @see \App\Http\Controllers\Quotation\CommentAttachmentController::thumb
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:24
+* @route '/quotation-management/comment-attachments/{attachment}/thumb'
 */
-showForm.get = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: show.url(args, options),
+thumbForm.get = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: thumb.url(args, options),
     method: 'get',
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\CommentAttachmentController::show
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:21
-* @route '/estimate-management/comment-attachments/{attachment}'
+* @see \App\Http\Controllers\Quotation\CommentAttachmentController::thumb
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:24
+* @route '/quotation-management/comment-attachments/{attachment}/thumb'
 */
-showForm.head = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: show.url(args, {
+thumbForm.head = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: thumb.url(args, {
         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
             _method: 'HEAD',
             ...(options?.query ?? options?.mergeQuery ?? {}),
@@ -102,12 +102,12 @@ showForm.head = (args: { attachment: number | { id: number } } | [attachment: nu
     method: 'get',
 })
 
-show.form = showForm
+thumb.form = thumbForm
 
 /**
 * @see \App\Http\Controllers\Quotation\CommentAttachmentController::download
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:32
-* @route '/estimate-management/comment-attachments/{attachment}/download'
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:37
+* @route '/quotation-management/comment-attachments/{attachment}/download'
 */
 export const download = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: download.url(args, options),
@@ -116,13 +116,13 @@ export const download = (args: { attachment: number | { id: number } } | [attach
 
 download.definition = {
     methods: ["get","head"],
-    url: '/estimate-management/comment-attachments/{attachment}/download',
+    url: '/quotation-management/comment-attachments/{attachment}/download',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\CommentAttachmentController::download
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:32
-* @route '/estimate-management/comment-attachments/{attachment}/download'
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:37
+* @route '/quotation-management/comment-attachments/{attachment}/download'
 */
 download.url = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -154,8 +154,8 @@ download.url = (args: { attachment: number | { id: number } } | [attachment: num
 
 /**
 * @see \App\Http\Controllers\Quotation\CommentAttachmentController::download
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:32
-* @route '/estimate-management/comment-attachments/{attachment}/download'
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:37
+* @route '/quotation-management/comment-attachments/{attachment}/download'
 */
 download.get = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: download.url(args, options),
@@ -164,8 +164,8 @@ download.get = (args: { attachment: number | { id: number } } | [attachment: num
 
 /**
 * @see \App\Http\Controllers\Quotation\CommentAttachmentController::download
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:32
-* @route '/estimate-management/comment-attachments/{attachment}/download'
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:37
+* @route '/quotation-management/comment-attachments/{attachment}/download'
 */
 download.head = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: download.url(args, options),
@@ -174,8 +174,8 @@ download.head = (args: { attachment: number | { id: number } } | [attachment: nu
 
 /**
 * @see \App\Http\Controllers\Quotation\CommentAttachmentController::download
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:32
-* @route '/estimate-management/comment-attachments/{attachment}/download'
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:37
+* @route '/quotation-management/comment-attachments/{attachment}/download'
 */
 const downloadForm = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: download.url(args, options),
@@ -184,8 +184,8 @@ const downloadForm = (args: { attachment: number | { id: number } } | [attachmen
 
 /**
 * @see \App\Http\Controllers\Quotation\CommentAttachmentController::download
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:32
-* @route '/estimate-management/comment-attachments/{attachment}/download'
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:37
+* @route '/quotation-management/comment-attachments/{attachment}/download'
 */
 downloadForm.get = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: download.url(args, options),
@@ -194,8 +194,8 @@ downloadForm.get = (args: { attachment: number | { id: number } } | [attachment:
 
 /**
 * @see \App\Http\Controllers\Quotation\CommentAttachmentController::download
-* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:32
-* @route '/estimate-management/comment-attachments/{attachment}/download'
+* @see app/Http/Controllers/Quotation/CommentAttachmentController.php:37
+* @route '/quotation-management/comment-attachments/{attachment}/download'
 */
 downloadForm.head = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
     action: download.url(args, {
@@ -210,7 +210,7 @@ downloadForm.head = (args: { attachment: number | { id: number } } | [attachment
 download.form = downloadForm
 
 const commentAttachments = {
-    show: Object.assign(show, show),
+    thumb: Object.assign(thumb, thumb),
     download: Object.assign(download, download),
 }
 

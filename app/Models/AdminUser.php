@@ -80,4 +80,33 @@ class AdminUser extends Authenticatable
     {
         return (bool) array_intersect($this->roleSlugs(), config('felix.president_role_slugs', []));
     }
+  
+    /**
+     * 全メニューを表示する管理者ロールか。
+     * 判定基準の slug は config/felix.php（admin_role_slugs）を唯一の正とする。
+     */
+    public function isAdministrator(): bool
+    {
+        return (bool) array_intersect($this->roleSlugs(), config('felix.admin_role_slugs', []));
+    }
+
+    /**
+     * サイドメニューの表示可否（メニューキー => 表示するか）。
+     * config/felix.php（menu_roles）を唯一の正とし、administrator は全メニューを表示する。
+     * 発注管理などメニューが増えても menu_roles に追記すれば自動的に反映される。
+     *
+     * @return array<string, bool>
+     */
+    public function menuPermissions(): array
+    {
+        $slugs = $this->roleSlugs();
+        $isAdmin = (bool) array_intersect($slugs, config('felix.admin_role_slugs', []));
+
+        $permissions = [];
+        foreach ((array) config('felix.menu_roles', []) as $menuKey => $allowedSlugs) {
+            $permissions[$menuKey] = $isAdmin || (bool) array_intersect($slugs, (array) $allowedSlugs);
+        }
+
+        return $permissions;
+    }
 }

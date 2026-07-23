@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ServiceException;
 use App\Http\Middleware\CrossAuthCookie;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
@@ -37,4 +38,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
+        // ServiceException は Service 層で既にログ済み。フレームワーク側の二重記録を止める。
+        $exceptions->dontReport(ServiceException::class);
+
+        // ServiceException を「画面右上のトースト（flash.error）」へ変換する。
+        // web の更新系リクエスト（非 GET・非 api）のみ back()->with('error') で元画面へ戻す。
+        // GET（ページ読込・戻り先が同一で無限リダイレクトになり得る）と api は既定レンダリングへ委ねる。
+        $exceptions->render(function (ServiceException $e, Request $request) {
+            if ($request->isMethod('GET') || $request->is('api/*')) {
+                return null;
+            }
+
+            return back()->with('error', $e->getMessage());
+        });
     })->create();

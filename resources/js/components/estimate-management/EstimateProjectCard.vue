@@ -198,7 +198,7 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
             :class="cardHeadClass"
             @click="emit('toggle')"
         >
-            <span class="flex-1">No.{{ project.no }}　{{ project.name }}</span>
+            <span class="flex-1">No.{{ project.no ?? '—' }}　{{ project.name }}</span>
             <ChevronDown class="size-4 shrink-0 transition-transform" :class="open ? '' : '-rotate-90'" />
         </button>
         <div v-show="open" class="overflow-x-auto">

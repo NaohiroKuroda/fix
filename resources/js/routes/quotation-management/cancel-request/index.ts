@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: confirm.url(options),
@@ -11,13 +11,13 @@ export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
 confirm.definition = {
     methods: ["post"],
-    url: '/estimate-management/cancel-request',
+    url: '/quotation-management/cancel-request',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 confirm.url = (options?: RouteQueryOptions) => {
     return confirm.definition.url + queryParams(options)
@@ -26,7 +26,7 @@ confirm.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: confirm.url(options),
@@ -36,7 +36,7 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: confirm.url(options),
@@ -46,7 +46,7 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 /**
 * @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
 * @see app/Http/Controllers/Quotation/CancelRequestController.php:41
-* @route '/estimate-management/cancel-request'
+* @route '/quotation-management/cancel-request'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: confirm.url(options),

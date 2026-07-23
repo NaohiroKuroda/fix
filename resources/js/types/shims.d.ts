@@ -44,5 +44,8 @@ declare module '@inertiajs/core' {
             'delivery-report-submission': number;
             'delivery-approval': number;
         } | null;
+        // サイドメニューの表示可否（ロール別）。メニューキー => 表示するか。
+        // config/felix.php（menu_roles）が唯一の正。発注管理など追加時はキーが増える。
+        menuPermissions: Record<string, boolean>;
     }
 }

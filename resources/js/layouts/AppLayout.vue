@@ -8,6 +8,8 @@ import { ClipboardList, ChevronDown, Menu, PanelLeftClose, PanelLeftOpen, Packag
 import FlashMessages from '@/components/feedback/FlashMessages.vue';
 
 interface NavChild {
+    /** メニューキー（menuPermissions / menuBadges のキーと一致させる）。 */
+    key: string;
     label: string;
     /** 未実装（プレースホルダ）の場合は href を持たない。 */
     href?: string;
@@ -21,8 +23,11 @@ interface NavChild {
 const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
-// 建設部部長のみ「部長承認」「部長取消承認」を表示する（判定はサーバ側 config/felix.php）。
-const isEstimateManager = computed(() => page.props.auth?.user?.isEstimateManager ?? false);
+
+// サイドメニューの表示可否（ロール別）。config/felix.php（menu_roles）が唯一の正。
+// メニューキー => 表示するか。administrator は全メニュー true になる。
+const perms = computed(() => page.props.menuPermissions ?? {});
+const canSee = (key: string): boolean => perms.value[key] === true;
 
 // サイドメニューの未処理件数バッヂ（Inertia 共有プロパティ menuBadges）。
 const badges = computed(() => page.props.menuBadges ?? null);
@@ -30,19 +35,22 @@ const badges = computed(() => page.props.menuBadges ?? null);
 // 見積管理（トグル）。配下はシート名（業務（状態））をそのままメニュー名にする。
 // href 付き＝実装済み（リンク）。href 無し＝未実装（プレースホルダ「準備中」）。
 // badge は各画面の未処理件数（部長取消申請はバッヂ対象外）。
-const estimateChildren = computed<NavChild[]>(() => [
-    { label: '見積依頼【FELIX→業者依頼前】', href: '/estimate-management/quote-request', active: path.value.startsWith('/estimate-management/quote-request'), badge: badges.value?.['quote-request'] },
-    { label: '業者選定【業者→FELIX返答済】', href: '/estimate-management/vendor-selection', active: path.value.startsWith('/estimate-management/vendor-selection'), badge: badges.value?.['vendor-selection'], badge2: badges.value?.['vendor-selection-rejected'] },
-    // 部長承認・部長取消承認は建設部部長のみ表示。
-    ...(isEstimateManager.value
-        ? [{ label: '部長承認【業者選定済→FELIX(建設部)】', href: '/estimate-management/manager-approval', active: path.value.startsWith('/estimate-management/manager-approval'), badge: badges.value?.['manager-approval'] }]
-        : []),
-    { label: '部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/estimate-management/cancel-request', active: path.value.startsWith('/estimate-management/cancel-request') },
-    ...(isEstimateManager.value
-        ? [{ label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/estimate-management/cancel-approval', active: path.value.startsWith('/estimate-management/cancel-approval'), badge: badges.value?.['cancel-approval'] }]
-        : []),
-]);
+// ロールごとの表示可否（perms）で最終的に絞り込む。
+const estimateChildren = computed<NavChild[]>(() =>
+    [
+        { key: 'quote-request', label: '見積依頼【FELIX→業者依頼前】', href: '/quotation-management/quote-request', active: path.value.startsWith('/quotation-management/quote-request'), badge: badges.value?.['quote-request'] },
+        { key: 'vendor-selection', label: '業者選定【業者→FELIX返答済】', href: '/quotation-management/vendor-selection', active: path.value.startsWith('/quotation-management/vendor-selection'), badge: badges.value?.['vendor-selection'], badge2: badges.value?.['vendor-selection-rejected'] },
+        { key: 'manager-approval', label: '部長承認【業者選定済→FELIX(建設部)】', href: '/quotation-management/manager-approval', active: path.value.startsWith('/quotation-management/manager-approval'), badge: badges.value?.['manager-approval'] },
+        { key: 'cancel-request', label: '部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/quotation-management/cancel-request', active: path.value.startsWith('/quotation-management/cancel-request') },
+        { key: 'cancel-approval', label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/quotation-management/cancel-approval', active: path.value.startsWith('/quotation-management/cancel-approval'), badge: badges.value?.['cancel-approval'] },
+    ].filter((child) => canSee(child.key)),
+);
+// 配下メニューが1つも無いロールでは「見積管理」グループごと非表示にする。
+const hasEstimateMenu = computed(() => estimateChildren.value.length > 0);
 const estimateMenuOpen = ref(true);
+
+// 発注管理（今後実装予定）は menu_roles に 'order-management' を追加し、
+// perms.value['order-management'] で同様に表示制御する（下の見積管理グループと同じ作り）。
 
 // 親「見積管理」に出す合計バッジ。
 const estimateBadgeTotal = computed(() => estimateChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
@@ -195,8 +203,10 @@ const logout = () => router.post('/logout');
 
             <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
                 <p class="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c4a35b]/80">メニュー</p>
-                <!-- 見積管理（トグル）。クリックで配下の画面リンクを開閉する。 -->
+                <!-- 見積管理（トグル）。クリックで配下の画面リンクを開閉する。
+                     配下メニューが1つも表示されないロールではグループごと非表示にする。 -->
                 <button
+                    v-if="hasEstimateMenu"
                     type="button"
                     class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-base font-medium text-white/80 transition-colors hover:bg-white/10"
                     @click="estimateMenuOpen = !estimateMenuOpen"
@@ -211,7 +221,7 @@ const logout = () => router.post('/logout');
                     </span>
                     <ChevronDown class="size-4 shrink-0 transition-transform" :class="estimateMenuOpen ? '' : '-rotate-90'" />
                 </button>
-                <div v-show="estimateMenuOpen" class="mt-1 space-y-1 pl-4">
+                <div v-if="hasEstimateMenu" v-show="estimateMenuOpen" class="mt-1 space-y-1 pl-4">
                     <template v-for="child in estimateChildren" :key="child.label">
                         <!-- 実装済み：リンク -->
                         <Link

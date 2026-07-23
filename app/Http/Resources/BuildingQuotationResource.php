@@ -22,7 +22,8 @@ class BuildingQuotationResource extends JsonResource
     {
         return [
             'id' => (int) $this->id,
-            'no' => (int) $this->id,
+            // 見出しの「No.」は felix_total（旧）実行予算 ID（t_buildings.source_id = estimates.id）を表示する。
+            'no' => $this->source_id !== null ? (int) $this->source_id : null,
             'name' => (string) $this->building_name,
             'rows' => $this->buildRows(),
         ];

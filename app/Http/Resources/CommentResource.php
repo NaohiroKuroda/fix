@@ -8,6 +8,7 @@ use App\Models\TComment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * やり取り（コメント）1件をチャットUI向けの形に整形する。
@@ -35,17 +36,25 @@ class CommentResource extends JsonResource
             'senderName' => (string) ($author?->name ?? ''),
             'body' => (string) $this->body,
             'createdAt' => optional($this->created_at)->format('Y-m-d H:i'),
-            'files' => $this->attachments->map(fn (TAttachment $attachment): array => [
-                'id' => (int) $attachment->id,
-                'name' => (string) $attachment->original_name,
-                // インライン表示（画像サムネイル）用。配信は認証付きの Laravel ルート経由。
-                'url' => route('estimate-management.comment-attachments.show', $attachment->id),
-                // クリック時の端末ダウンロード用（Content-Disposition: attachment）。
-                'downloadUrl' => route('estimate-management.comment-attachments.download', $attachment->id),
-                'mime' => $attachment->mime_type,
-                'size' => (int) $attachment->size,
-                'isImage' => str_starts_with((string) $attachment->mime_type, 'image/'),
-            ])->all(),
+            'files' => $this->attachments->map(function (TAttachment $attachment): array {
+                $isImage = str_starts_with((string) $attachment->mime_type, 'image/');
+                // サムネは画像かつ実際に生成できた場合のみ。無ければ null（UIはアイコン表示）。
+                $hasThumb = $isImage && Storage::disk('public')->exists($attachment->thumbnailPath());
+
+                return [
+                    'id' => (int) $attachment->id,
+                    'name' => (string) $attachment->original_name,
+                    'mime' => $attachment->mime_type,
+                    'size' => (int) $attachment->size,
+                    'isImage' => $isImage,
+                    // 画像サムネイルのインライン配信URL（画像かつサムネ生成済みのみ）。
+                    'thumbUrl' => $hasThumb
+                        ? route('quotation-management.comment-attachments.thumb', $attachment->id)
+                        : null,
+                    // クリック時の端末ダウンロード用URL（全ファイル共通のクリック先）。
+                    'downloadUrl' => route('quotation-management.comment-attachments.download', $attachment->id),
+                ];
+            })->all(),
         ];
     }
 }

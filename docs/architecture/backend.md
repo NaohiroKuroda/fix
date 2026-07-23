@@ -94,6 +94,74 @@ class EstimateService
 }
 ```
 
+## 1.6 例外処理・ログ・エラー表示
+
+サーバー処理で発生した例外は、**Service 層で記録（ログ）してからドメイン例外へ変換して投げ直し**、
+**中央（`bootstrap/app.php`）でユーザー向けメッセージ（画面右上のトースト）へ変換する**。
+これにより「記録は Service 層」「画面表示は中央集約」と責務を分ける。
+
+### 方針
+
+- **Service 層で try-catch**: Service の各公開メソッドは処理を `try` で囲み、`catch (\Exception $e)` で
+  失敗時に `Log::error()` へ**統一フォーマット**で記録する。第一引数は失敗内容の和文、第二引数の配列は
+  `message`（`$e->getMessage()`）→ 主要な業務コンテキスト（`companyId` 等）→ `file` / `line` / `trace`
+  （`$e->getFile()` / `getLine()` / `getTraceAsString()`）の順とする。
+  記録後は `App\Exceptions\ServiceException` を**メッセージ無し**で投げ直す（`previous` に元例外を保持）。
+  ユーザー向け文言は `ServiceException` の既定メッセージを用いる。
+- **中央でトースト変換**: `bootstrap/app.php` の `withExceptions()` で `ServiceException` を捕捉し、
+  **web の更新系リクエスト（非 GET・非 api）**では `back()->with('error', $e->getMessage())` へ変換する。
+  `flash.error` は `HandleInertiaRequests` の共有プロパティ経由で `FlashMessages` → `AppToast`
+  （画面右上のトースト）に表示される。GET（ページ読込）・api は既定のレンダリングへ委ねる。
+- **二重ログの禁止**: `ServiceException` は Service で既に記録済みのため、
+  `withExceptions()` で `dontReport(ServiceException::class)` を指定し、フレームワーク側の再記録を止める。
+- **共有プロパティ内の防御**: `menuBadges` のように**全画面のレンダリング時に評価される共有プロパティ**は、
+  失敗しても画面全体を落とさないよう、その場で `try-catch` して `Log::error()` の上で安全な既定値
+  （`null` 等）を返す（トーストは出さない）。
+
+```php
+// Service：記録してドメイン例外へ変換
+public function reject(int $companyId, string $reason): int
+{
+    try {
+        // ...ユースケース本体...
+        return $count;
+    } catch (\Exception $e) {
+        Log::error('部長承認の否認に失敗しました', [
+            'message'   => $e->getMessage(),
+            'companyId' => $companyId,
+            'file'      => $e->getFile(),
+            'line'      => $e->getLine(),
+            'trace'     => $e->getTraceAsString(),
+        ]);
+        throw new ServiceException(previous: $e);
+    }
+}
+```
+
+### ログ出力先（日次ローテーション・2 週間保持）
+
+- ログチャネルは **`daily`**（`config/logging.php`）を用いる。日毎に
+  `storage/logs/laravel-YYYY-MM-DD.log` を生成し、`LOG_DAILY_DAYS`（既定 **14 日 = 2 週間**）で自動削除する。
+- `.env` で `LOG_STACK=daily`（`stack` の内訳を `daily` に）・`LOG_DAILY_DAYS=14` を指定する。
+
+## 1.7 サイドメニューの表示制御（ロール別）
+
+サイドメニューの各ボタンは、ログインユーザーのロール（`admin_roles.slug`）に応じて出し分ける。
+**対応表は `config/felix.php` の `menu_roles` を唯一の正（Single Source of Truth）とする。**
+
+- **ロール定義（`config/felix.php`）**
+  - `staff_role_slugs`（既定 `engineer,system` = 建設部 / システム開発）: 見積依頼・業者選定・部長取消申請。
+  - `manager_role_slugs`（既定 `engineer_manager,tmp` = 建設部部長 / 建設承認）: 部長承認・部長取消承認。
+    やり取り（コメント）の発言ロール（manager/staff）・承認判定にも同じ slug を用いる（`isEstimateManager`）。
+  - `admin_role_slugs`（既定 `administrator`）: **全メニューを表示するスーパーユーザー**。
+    現行データに `administrator` slug が無い環境では、実運用の slug に合わせ `FELIX_ADMIN_ROLE_SLUGS` で上書きする。
+- **判定（`AdminUser`）**: `menuPermissions(): array<string,bool>` が「メニューキー => 表示可否」を返す。
+  administrator は全 true。それ以外は `menu_roles[キー]` と付与 slug の積集合で判定する。
+- **受け渡し**: `HandleInertiaRequests` が共有プロパティ `menuPermissions`（Closure）で渡し、
+  フロント（`AppLayout.vue`）は `perms[キー]` が true の項目だけ描画する。配下が 0 件のメニューグループは丸ごと隠す。
+- **拡張（発注管理など）**: 新メニューは `menu_roles` に1行（`'order-management' => [...slugs]`）足し、
+  フロントの項目に同じキーを付けて `perms['order-management']` で出し分ける。バックエンド／フロント両方の1箇所ずつで完結する。
+
 ## 2. ディレクトリ構成
 
 ```
@@ -109,6 +177,7 @@ app/
 │   └── EstimateRepository.php
 ├── Actions/                # 単一目的のドメイン処理（任意）
 ├── Services/               # ドメインロジック（Controller の単一の入口・必須経路）
+│   └── FelixTotal/         # 現行 felix_total への外部連携ゲートウェイ（HTTP + cross_auth）
 ├── Utils/                  # ユーティリティクラス（ステートレス・static のみ）
 │   ├── Format.php
 │   └── StatusLabel.php
@@ -248,6 +317,35 @@ class StatusManagementController extends Controller
 
 > Service は concrete クラスのためコンテナが自動解決する（バインド不要）。
 > 新しい Repository を追加したら `RepositoryServiceProvider` に bind を追記し、`bootstrap/providers.php` への登録を確認すること。
+
+### 3.5 外部システム連携（felix_total の見積依頼）
+
+新スキーマ（`BuildingQuotationRepository`）には、見積依頼の履歴を保存するテーブルが存在しない
+（旧スキーマの `estimate_order_histories` 相当が無い）。また見積依頼は **トークン発行・依頼履歴作成・
+業者へのメール送信** を伴う複合処理であり、その実体は現行 felix_total（laravel-admin）の
+`EstimateCustomDetailController@order_estimate` が唯一の正である。
+
+したがって新スキーマ画面の「見積依頼送信」は、**felix_total の `order_estimate` を再実装せず、
+サーバ間 HTTP でそのまま実行する**。窓口は外部連携ゲートウェイ
+`app/Services/FelixTotal/FelixTotalQuoteRequestGateway.php`（concrete・自動解決）に集約する。
+
+- **永続化境界としての位置づけ**: 新スキーマでは「見積依頼を記録する」＝「felix_total を呼ぶ」である。
+  そのため Repository（`BuildingQuotationRepository::recordQuoteRequests`）からゲートウェイを呼ぶ。
+  ゲートウェイ自身は Eloquent に触れず、HTTP と認証のみを担う（モデルアクセスは Repository に限る方針を維持）。
+- **ID 写像**: チェックされた `t_cost_quotations.id` を、`source_id`（旧 `estimate_unit_companies.id`）と
+  その費用 `t_building_cost_items.source_id`（旧 `estimate_units.id`）へ写像し、
+  `estimate_unit_ids = "{estimate_units.id}:{estimate_unit_companies.id}"` 形式で渡す
+  （`estimate_id=""` を渡すと felix_total 側がユニットの案件で自動グルーピングする）。
+  `source_id` を持たない（移行されていない）見積先は依頼対象外として除外する。
+- **認証**: cross_auth クッキー（`v1.{adminId}.{exp}.{HMAC}` 平文＋署名）をサーバ側で発行して
+  `Cookie` ヘッダに付与する。felix_total 側の `CrossAuthCookie` ミドルウェアが admin セッションを復元する。
+  クッキー値の生成は `CrossAuthCookie::mintValue()` に一本化する（署名仕様の二重定義を避ける）。
+- **一覧表示**: 見積依頼画面の対象行は「`source_id` があり、かつ旧 `estimate_order_histories` に
+  依頼履歴が無い見積先」。履歴の有無で「未依頼」を判定する（felix_total と同じ依拠）。
+- **失敗時**: ゲートウェイは URL 未設定・未ログイン・HTTP 失敗で `RuntimeException` を投げ、
+  Controller がエラーのフラッシュメッセージへ変換する。
+- 連携先パスは `config('services.felix_total.quote_request_path')`（既定
+  `/admin/estimates-custom-detail/order_estimate`、`FELIX_TOTAL_QUOTE_REQUEST_PATH` で上書き可）。
 
 ## 4. レスポンス整形（JsonResource）
 

@@ -2,11 +2,11 @@
 // 発注〜納品〜請求フローの共通画面コンテナ。7画面（mode）で共用する。
 // 見積管理（EstimateManagementScreen）とほぼ同じUI：物件カード＋右端ボタン＋項目横チャット。
 // 業者はシステムに登録しないため、ファイル添付は持たず、全画面「選択→ヘッダー確定／否認」だけ。
-// チャットは見積管理と同じ項目単位コメント（estimate-management の quotation-messages ルート）を流用する。
+// チャットは見積管理と同じ項目単位コメント（quotation-management の quotation-messages ルート）を流用する。
 import { computed, inject, nextTick, reactive, ref, type Ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { X, Ban, MessageSquare, Send, Paperclip, FileText, XCircle, CheckCircle2, ReceiptText } from 'lucide-vue-next';
-import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/routes/estimate-management/quotation-messages';
+import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/routes/quotation-management/quotation-messages';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EstimateFilterBar from '@/components/estimate-management/EstimateFilterBar.vue';
 import EstimatePager from '@/components/estimate-management/EstimatePager.vue';

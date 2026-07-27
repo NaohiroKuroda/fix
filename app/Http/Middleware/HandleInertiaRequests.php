@@ -65,12 +65,6 @@ class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('error'),
             ],
             // サイドメニューの未処理件数バッヂ。Closure にして部分リロード（only指定）時は評価しない。
-            'menuBadges' => fn () => $admin
-                ? [
-                    ...app(QuotationRepositoryInterface::class)->pendingCounts(),
-                    ...app(OrderDeliveryRepositoryInterface::class)->pendingCounts(),
-                ]
-                : null,
             'menuBadges' => fn () => $this->menuBadges($admin),
             // サイドメニューの表示可否（ロール別）。メニューキー => 表示するか。未ログイン時は空。
             'menuPermissions' => fn () => $admin === null ? [] : $admin->menuPermissions(),
@@ -91,7 +85,11 @@ class HandleInertiaRequests extends Middleware
         }
 
         try {
-            return app(QuotationRepositoryInterface::class)->pendingCounts();
+            // 見積管理（QuotationRepository）＋発注〜納品〜請求（OrderDeliveryRepository）の両方を統合する。
+            return [
+                ...app(QuotationRepositoryInterface::class)->pendingCounts(),
+                ...app(OrderDeliveryRepositoryInterface::class)->pendingCounts(),
+            ];
         } catch (\Exception $e) {
             Log::error('メニューバッヂの集計に失敗しました', [
                 'message' => $e->getMessage(),

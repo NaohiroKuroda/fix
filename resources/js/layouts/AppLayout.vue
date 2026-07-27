@@ -23,6 +23,9 @@ interface NavChild {
 const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
+// 建設部部長か（発注取消承認・部長完了承認・請求管理メニューの表示判定）。
+// 判定は HandleInertiaRequests::share の auth.user.isEstimateManager（config/felix.php の manager_role_slugs）が唯一の正。
+const isEstimateManager = computed(() => page.props.auth?.user?.isEstimateManager ?? false);
 
 // サイドメニューの表示可否（ロール別）。config/felix.php（menu_roles）が唯一の正。
 // メニューキー => 表示するか。administrator は全メニュー true になる。

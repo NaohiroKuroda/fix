@@ -39,6 +39,10 @@ const isCheckbox = computed(() => config.value.kind === 'checkbox');
 const isPerRowAction = computed(() => props.mode === 'cancel-request' || props.mode === 'cancel-approval');
 // 見積依頼画面のみ、見積先名を業者マイページへのリンクにする。
 const isQuoteRequest = computed(() => props.mode === 'quote-request');
+// 「区分」列（請求／支払）は見積管理の全画面（見積依頼・業者選定・部長承認・部長取消申請・部長取消承認）で出す。
+// 元データ（billingTarget）は BuildingQuotationResource が全モードで返しているため、画面ごとの出し分けは不要。
+// 発注フロー側（OrderProjectCard）は画面ごとに出し分けるため config.showBillingKind で制御している。
+const showBillingKind = computed(() => true);
 // 「仮選定」列は見積依頼画面のみ出す。
 const showProvisional = computed(() => props.mode === 'quote-request');
 // 「見積依頼送信回数」列も見積依頼画面のみ（右端）。
@@ -53,7 +57,7 @@ const isToggleButton = computed(() => config.value.kind === 'toggle-button');
 const columnCount = computed(
     () =>
         5 +
-        (isQuoteRequest.value ? 1 : 0) +
+        (showBillingKind.value ? 1 : 0) +
         (config.value.showQuote ? 1 : 0) +
         (showProvisional.value ? 1 : 0) +
         (showSendCount.value ? 1 : 0) +
@@ -120,9 +124,8 @@ interface DisplayRow {
     /** 直前の項目との境界（＝2つ目以降の項目の先頭行）か。項目間の区切り線に使う。 */
     isUnitBoundary: boolean;
 }
-// 見積依頼画面：項目（unitId）内で「もらい（請求先）」を先、「払い（通常）」を後にまとめ、
-// 境界に線を引けるようにする（billingTarget 行の並び替えは quote-request のみ意味を持つが、
-// 他画面には billingTarget 行が現れないため実質的に元の並びのままになる）。
+// 項目（unitId）内で「もらい（請求先）」を先、「払い（通常）」を後にまとめ、境界に線を引けるようにする。
+// 区分列は見積管理の全画面に出すため、この並び替えも全画面で効く（請求先が無い項目は元の並びのまま）。
 // 項目名は「項目１つに複数の払い/もらいがある」ため、同一項目の行をまたいで rowspan で1回だけ出す
 // （felix_total の実行予算編集画面と同じ考え方）。
 const displayRows = computed<DisplayRow[]>(() => {
@@ -217,7 +220,7 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                 <!-- 全案件カードで列位置を揃えるため、固定レイアウト＋共通の列幅を指定する。 -->
                 <colgroup>
                     <col style="width: 22%" />
-                    <col v-if="isQuoteRequest" style="width: 7%" />
+                    <col v-if="showBillingKind" style="width: 7%" />
                     <col style="width: 23%" />
                     <col style="width: 13%" />
                     <col style="width: 13%" />
@@ -230,7 +233,7 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                 <thead class="text-center" :class="tableHeadClass">
                     <tr class="border-b-2 border-slate-300 text-[15px] font-bold uppercase tracking-wider">
                         <th class="px-3 py-2.5">項目</th>
-                        <th v-if="isQuoteRequest" class="px-3 py-2.5">区分</th>
+                        <th v-if="showBillingKind" class="px-3 py-2.5">区分</th>
                         <th class="px-3 py-2.5">パートナー</th>
                         <th class="px-3 py-2.5">標準単価<br />(税抜)</th>
                         <th class="px-3 py-2.5">予算単価<br />(税抜)</th>
@@ -251,7 +254,7 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                 ? 'border-t-4 border-slate-300'
                                 : (isBillingGroupStart ? 'border-t-2 border-dashed border-slate-400' : 'border-t'),
                             // 請求（もらい）行は淡い青の地色を敷き、バッジを見なくても行単位で区別できるようにする。
-                            isQuoteRequest && row.billingTarget ? 'bg-sky-50/70' : '',
+                            showBillingKind && row.billingTarget ? 'bg-sky-50/70' : '',
                         ]"
                     >
                         <!-- 項目名：同一項目の行数ぶん rowspan で1回だけ出す（1項目に複数の払い/もらいがあるため）。 -->
@@ -289,9 +292,9 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                 </div>
                             </div>
                         </td>
-                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみラベル。見積依頼画面のみ。
-                             見た目は業者承諾確認画面と共通（BillingKindBadge に集約）。 -->
-                        <td v-if="isQuoteRequest" class="px-3 py-2 text-center">
+                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみラベル。見積管理の全画面で出す。
+                             見た目は発注フロー側（業者承諾確認・発注取消承認）と共通（BillingKindBadge に集約）。 -->
+                        <td v-if="showBillingKind" class="px-3 py-2 text-center">
                             <BillingKindBadge v-if="row.companyId != null" :billing-target="row.billingTarget" />
                             <span v-else :class="mutedTextClass">—</span>
                         </td>

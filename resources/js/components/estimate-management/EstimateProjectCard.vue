@@ -29,6 +29,9 @@ const emit = defineEmits<{
 }>();
 
 const isThemed = computed(() => props.glass === true);
+// 明細カードの地色。項目名セルは rowspan で行グループ全体にまたがるため、
+// 先頭行（＝請求行）の地色を引き継がないよう、カード地色を明示して打ち消すのに使う。
+const cardBgClass = computed(() => (isThemed.value ? 'bg-white' : 'bg-card'));
 const config = computed(() => ESTIMATE_MODE_CONFIG[props.mode]);
 const isCheckbox = computed(() => config.value.kind === 'checkbox');
 // 取消申請 / 取消承認：行ボタンで理由モーダルを開き1件ずつ実行する（選択トグルではない）。
@@ -178,6 +181,24 @@ const mainBtnClass = (row: EstimateManagementRow): string => {
     return toggleBtnClass(toggleColor, isActive(row));
 };
 
+// 区分（請求／支払）バッジの配色。
+// 画面全体が FELIX ブランドの「紺（primary）＋金（#c4a35b）」の暖色系で、明細は白地。
+// そこへ淡い色を置いても沈むため、色相だけでなく「塗りの強さ」で差を付ける：
+//   請求（もらい＝入る側／全体の数%）… ベタ塗りの青＋白文字で最前面に出す
+//   支払（払い＝出る側／大多数）    … 輪郭のみの淡いグレーで背景へ引かせる
+// emerald（承認・回答あり）/ red（否認・回答なし）/ teal（業者追加）/ 金（primary）は
+// 既に別の意味を持つため、区分には未使用の sky 系を割り当てて衝突を避ける。
+// 押下できる要素と見分けが付くよう、ボタンの記号（丸ピル・白抜き文字・影・枠線・本文と同じ字送り）は
+// 一切使わず、角の立った小さめの「ラベル」に寄せる。この列の要素はクリックできないため、
+// ボタン（見積送信・業者マイページ）と同じ見た目にしないことを優先する。
+const billingBadgeClass = (row: EstimateManagementRow): string => {
+    const shape = 'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded px-3 py-1 text-sm font-bold tracking-wider';
+
+    return row.billingTarget
+        ? `${shape} bg-sky-600/15 text-sky-800`
+        : `${shape} bg-slate-500/10 text-slate-500`;
+};
+
 // コメント（やり取り）ボタンの配色。コメントが1件以上ある項目は選定ボタンと同じ配色で強調する。
 const chatBtnClass = (row: EstimateManagementRow): string => {
     const shape = 'relative inline-flex size-8 shrink-0 items-center justify-center rounded-xl border shadow-sm transition';
@@ -239,10 +260,12 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                             isUnitBoundary
                                 ? 'border-t-4 border-slate-300'
                                 : (isBillingGroupStart ? 'border-t-2 border-dashed border-slate-400' : 'border-t'),
+                            // 請求（もらい）行は淡い青の地色を敷き、バッジを見なくても行単位で区別できるようにする。
+                            isQuoteRequest && row.billingTarget ? 'bg-sky-50/70' : '',
                         ]"
                     >
                         <!-- 項目名：同一項目の行数ぶん rowspan で1回だけ出す（1項目に複数の払い/もらいがあるため）。 -->
-                        <td v-if="isUnitFirstRow" :rowspan="unitRowSpan" class="px-3 py-2 font-medium">
+                        <td v-if="isUnitFirstRow" :rowspan="unitRowSpan" class="px-3 py-2 font-medium" :class="cardBgClass">
                             <div class="flex items-center justify-between gap-2">
                                 <span>{{ row.itemName }}</span>
                                 <!-- 項目名の右隣（右寄せ）：やり取り（吹き出し）＋業者追加（見積依頼のみ・吹き出しの右隣）。 -->
@@ -276,11 +299,12 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                 </div>
                             </div>
                         </td>
-                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみバッジ。見積依頼画面のみ。色は付けず文言のみで区別する。 -->
+                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみバッジ。見積依頼画面のみ。
+                             配色の意図は billingBadgeClass のコメントを参照。 -->
                         <td v-if="isQuoteRequest" class="px-3 py-2 text-center">
                             <span
                                 v-if="row.companyId != null"
-                                class="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-slate-400/60 bg-slate-50 px-3 py-0.5 text-sm font-medium text-slate-600"
+                                :class="billingBadgeClass(row)"
                             >{{ row.billingTarget ? '請求' : '支払' }}</span>
                             <span v-else :class="mutedTextClass">—</span>
                         </td>

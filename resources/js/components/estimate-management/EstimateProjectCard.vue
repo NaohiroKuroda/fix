@@ -3,6 +3,7 @@
 import { computed } from 'vue';
 import { ChevronDown, CheckCircle2, Check, Plus, ExternalLink, Ban, MessageSquare } from 'lucide-vue-next';
 import { useEstimateTheme } from '@/composables/useEstimateTheme';
+import BillingKindBadge from '@/components/estimate-management/BillingKindBadge.vue';
 import { estimateRowKey, ESTIMATE_MODE_CONFIG } from '@/lib/estimate-management';
 import type { EstimateManagementMode, EstimateManagementProject, EstimateManagementRow } from '@/types/estimate-management';
 
@@ -188,17 +189,6 @@ const mainBtnClass = (row: EstimateManagementRow): string => {
 //   支払（払い＝出る側／大多数）    … 輪郭のみの淡いグレーで背景へ引かせる
 // emerald（承認・回答あり）/ red（否認・回答なし）/ teal（業者追加）/ 金（primary）は
 // 既に別の意味を持つため、区分には未使用の sky 系を割り当てて衝突を避ける。
-// 押下できる要素と見分けが付くよう、ボタンの記号（丸ピル・白抜き文字・影・枠線・本文と同じ字送り）は
-// 一切使わず、角の立った小さめの「ラベル」に寄せる。この列の要素はクリックできないため、
-// ボタン（見積送信・業者マイページ）と同じ見た目にしないことを優先する。
-const billingBadgeClass = (row: EstimateManagementRow): string => {
-    const shape = 'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded px-3 py-1 text-sm font-bold tracking-wider';
-
-    return row.billingTarget
-        ? `${shape} bg-sky-600/15 text-sky-800`
-        : `${shape} bg-slate-500/10 text-slate-500`;
-};
-
 // コメント（やり取り）ボタンの配色。コメントが1件以上ある項目は選定ボタンと同じ配色で強調する。
 const chatBtnClass = (row: EstimateManagementRow): string => {
     const shape = 'relative inline-flex size-8 shrink-0 items-center justify-center rounded-xl border shadow-sm transition';
@@ -299,13 +289,10 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                 </div>
                             </div>
                         </td>
-                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみバッジ。見積依頼画面のみ。
-                             配色の意図は billingBadgeClass のコメントを参照。 -->
+                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみラベル。見積依頼画面のみ。
+                             見た目は業者承諾確認画面と共通（BillingKindBadge に集約）。 -->
                         <td v-if="isQuoteRequest" class="px-3 py-2 text-center">
-                            <span
-                                v-if="row.companyId != null"
-                                :class="billingBadgeClass(row)"
-                            >{{ row.billingTarget ? '請求' : '支払' }}</span>
+                            <BillingKindBadge v-if="row.companyId != null" :billing-target="row.billingTarget" />
                             <span v-else :class="mutedTextClass">—</span>
                         </td>
                         <td class="px-3 py-2">

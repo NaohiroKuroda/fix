@@ -1,21 +1,21 @@
 <script setup lang="ts">
 // 見積依頼（FELIX→業者依頼前）。共通コンポーネントに mode='quote-request' を渡す。
-import EstimateManagementScreen from '@/components/estimate-management/EstimateManagementScreen.vue';
+import QuotationManagementScreen from '@/components/quotation-management/QuotationManagementScreen.vue';
 import type {
-    EstimateManagementFilters,
-    EstimateManagementPagination,
-    EstimateManagementProject,
-} from '@/types/estimate-management';
+    QuotationManagementFilters,
+    QuotationManagementPagination,
+    QuotationManagementProject,
+} from '@/types/quotation-management';
 
 defineProps<{
-    projects: EstimateManagementProject[];
-    pagination: EstimateManagementPagination;
-    filters: EstimateManagementFilters;
+    projects: QuotationManagementProject[];
+    pagination: QuotationManagementPagination;
+    filters: QuotationManagementFilters;
 }>();
 </script>
 
 <template>
-    <EstimateManagementScreen
+    <QuotationManagementScreen
         title="見積依頼"
         status-label="【FELIX→業者依頼前】"
         mode="quote-request"

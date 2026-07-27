@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // 見積管理の共通画面コンテナ（状態統括）。見積り依頼 / 業者選定 … で共用し、mode で出し分ける。
-// 子: EstimateFilterBar（絞り込み）/ EstimatePager（ページ送り）/ EstimateProjectCard（明細）。
-// 配色は useEstimateTheme に集約。glass=true は「明細は白／それ以外はリキッドグラス（FELIX 紺＋金）」。
-// 操作は mode（ESTIMATE_MODE_CONFIG）で出し分ける：
+// 子: QuotationFilterBar（絞り込み）/ QuotationPager（ページ送り）/ QuotationProjectCard（明細）。
+// 配色は useQuotationTheme に集約。glass=true は「明細は白／それ以外はリキッドグラス（FELIX 紺＋金）」。
+// 操作は mode（QUOTATION_MODE_CONFIG）で出し分ける：
 // - 見積依頼（quote-request）：未依頼行をチェックで選び、ヘッダー送信で相見積依頼を記録。
 // - 業者選定（vendor-selection）：サーバの採用状態を初期値にボタンでトグル（業者の選び替え）。
 // - 部長承認 / 取消申請 / 取消承認（pick-button）：未処理行をボタンで選び、ヘッダー確定で送信。
@@ -19,37 +19,37 @@ import { confirm as confirmCancelRequestRoute } from '@/routes/quotation-managem
 import { confirm as confirmCancelApprovalRoute } from '@/routes/quotation-management/cancel-approval';
 import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/routes/quotation-management/quotation-messages';
 import AppLayout from '@/layouts/AppLayout.vue';
-import EstimateFilterBar from '@/components/estimate-management/EstimateFilterBar.vue';
-import EstimatePager from '@/components/estimate-management/EstimatePager.vue';
-import EstimateProjectCard from '@/components/estimate-management/EstimateProjectCard.vue';
-import { useEstimateTheme } from '@/composables/useEstimateTheme';
-import { estimateRowKey, ESTIMATE_MODE_CONFIG } from '@/lib/estimate-management';
+import QuotationFilterBar from '@/components/quotation-management/QuotationFilterBar.vue';
+import QuotationPager from '@/components/quotation-management/QuotationPager.vue';
+import QuotationProjectCard from '@/components/quotation-management/QuotationProjectCard.vue';
+import { useQuotationTheme } from '@/composables/useQuotationTheme';
+import { quotationRowKey, QUOTATION_MODE_CONFIG } from '@/lib/quotation-management';
 import type {
-    EstimateChatMessage,
-    EstimateManagementFilters,
-    EstimateManagementMode,
-    EstimateManagementPagination,
-    EstimateManagementProject,
-    EstimateManagementRow,
-} from '@/types/estimate-management';
+    QuotationChatMessage,
+    QuotationManagementFilters,
+    QuotationManagementMode,
+    QuotationManagementPagination,
+    QuotationManagementProject,
+    QuotationManagementRow,
+} from '@/types/quotation-management';
 
 const props = defineProps<{
     title: string;
     statusLabel: string;
-    mode: EstimateManagementMode;
+    mode: QuotationManagementMode;
     actionLabel?: string | null;
     glass?: boolean;
-    projects: EstimateManagementProject[];
-    pagination: EstimateManagementPagination;
-    filters: EstimateManagementFilters;
+    projects: QuotationManagementProject[];
+    pagination: QuotationManagementPagination;
+    filters: QuotationManagementFilters;
 }>();
 
 const isThemed = computed(() => props.glass === true);
-const config = computed(() => ESTIMATE_MODE_CONFIG[props.mode]);
+const config = computed(() => QUOTATION_MODE_CONFIG[props.mode]);
 // toggle = 業者選定（サーバ状態を初期値にトグル）／pick = チェック/ボタンで未処理行を選ぶ。
 const isToggleMode = computed(() => config.value.kind === 'toggle-button');
 const { rootClass, stickyBgClass, glassPanelClass, headingClass, onGlassTextClass, pagerBtnClass } =
-    useEstimateTheme(isThemed);
+    useQuotationTheme(isThemed);
 
 // サイドバー折りたたみ時は左上に再オープンボタンが浮くため、タイトル行の左に余白を確保する
 // （AppLayout から provide。単独利用時は false 既定で余白なし）。
@@ -85,25 +85,25 @@ const toggleAllProjects = (): void => {
     });
 };
 
-const allRows = computed<EstimateManagementRow[]>(() => props.projects.flatMap((p) => p.rows));
+const allRows = computed<QuotationManagementRow[]>(() => props.projects.flatMap((p) => p.rows));
 // 行が「処理済み」か（mode ごとのサーバ側フラグ。例: 見積依頼=requested / 部長承認=approved）。
 // reselectable（見積依頼）はロックせず、依頼済みでも選択・再依頼できる。
-const isApplied = (row: EstimateManagementRow): boolean =>
+const isApplied = (row: QuotationManagementRow): boolean =>
     !config.value.reselectable && row[config.value.appliedKey] === true;
 
 // pick モード（見積依頼 / 部長承認 / 取消申請 / 取消承認）の選択。
 // 1つの真実は checked（行キー→真偽）。未処理行だけを選べる。表示用に Set を派生。
 const checked = reactive<Record<string, boolean>>({});
 const checkedKeys = computed(() => new Set(Object.keys(checked).filter((k) => checked[k])));
-const toggleRow = (row: EstimateManagementRow): void => {
+const toggleRow = (row: QuotationManagementRow): void => {
     if (row.companyId == null || isApplied(row)) {
         return;
     }
-    const key = estimateRowKey(row);
+    const key = quotationRowKey(row);
     checked[key] = !checked[key];
 };
 // 選べるのは「見積先（業者）が紐づき、かつ未処理」の行だけ（処理済みは再操作不可）。
-const selectableRows = computed<EstimateManagementRow[]>(() =>
+const selectableRows = computed<QuotationManagementRow[]>(() =>
     allRows.value.filter((r) => r.companyId != null && !isApplied(r)),
 );
 const anyChecked = computed(() => checkedKeys.value.size > 0);
@@ -112,35 +112,35 @@ const anyChecked = computed(() => checkedKeys.value.size > 0);
 // 初期値に、ローカル上書き（押下）で管理する。
 // 送信成功後はリロードされるため上書きはクリアする。
 const selectionOverride = reactive<Record<string, boolean>>({});
-const serverSelected = (row: EstimateManagementRow): boolean => row[config.value.appliedKey] === true;
+const serverSelected = (row: QuotationManagementRow): boolean => row[config.value.appliedKey] === true;
 // 見積回答あり（相見積に金額が入っている）。回答が無い業者は選定不可。
-const hasQuoteAnswer = (row: EstimateManagementRow): boolean => row.quotePrice != null && row.quotePrice > 0;
-const isRowSelected = (row: EstimateManagementRow): boolean => {
-    const key = estimateRowKey(row);
+const hasQuoteAnswer = (row: QuotationManagementRow): boolean => row.quotePrice != null && row.quotePrice > 0;
+const isRowSelected = (row: QuotationManagementRow): boolean => {
+    const key = quotationRowKey(row);
     return key in selectionOverride ? selectionOverride[key] : serverSelected(row);
 };
-const toggleSelect = (row: EstimateManagementRow): void => {
+const toggleSelect = (row: QuotationManagementRow): void => {
     if (row.companyId == null || !hasQuoteAnswer(row)) {
         return;
     }
-    const key = estimateRowKey(row);
+    const key = quotationRowKey(row);
     selectionOverride[key] = !isRowSelected(row);
 };
 // 現在「選定済（押下）」の行キー集合。明細カードのボタン表示に使う。
 const vendorSelectedKeys = computed(
-    () => new Set(allRows.value.filter((r) => r.companyId != null && isRowSelected(r)).map((r) => estimateRowKey(r))),
+    () => new Set(allRows.value.filter((r) => r.companyId != null && isRowSelected(r)).map((r) => quotationRowKey(r))),
 );
 // サーバ状態から1つでも変更（押下）があるか。確定ボタンの活性判定に使う。
 const vendorDirty = computed(() =>
     allRows.value.some((r) => {
-        const key = estimateRowKey(r);
+        const key = quotationRowKey(r);
         return key in selectionOverride && selectionOverride[key] !== serverSelected(r);
     }),
 );
 
 // 明細カードへ渡す「有効な行キー集合」と行トグル（モードで出し分け）。
 const activeKeys = computed(() => (isToggleMode.value ? vendorSelectedKeys.value : checkedKeys.value));
-const onRowToggle = (row: EstimateManagementRow): void => {
+const onRowToggle = (row: QuotationManagementRow): void => {
     if (isToggleMode.value) {
         toggleSelect(row);
     } else {
@@ -157,7 +157,7 @@ const provisionalKeys = computed(() => {
     const set = new Set<string>();
     for (const project of props.projects) {
         for (const row of project.rows) {
-            const key = estimateRowKey(row);
+            const key = quotationRowKey(row);
             const on = key in provisionalOverride ? provisionalOverride[key] : row.provisional === true;
             if (on) {
                 set.add(key);
@@ -166,11 +166,11 @@ const provisionalKeys = computed(() => {
     }
     return set;
 });
-const toggleProvisional = (row: EstimateManagementRow): void => {
+const toggleProvisional = (row: QuotationManagementRow): void => {
     if (row.companyId == null) {
         return;
     }
-    const key = estimateRowKey(row);
+    const key = quotationRowKey(row);
     const current = provisionalKeys.value.has(key);
     const next = !current;
     provisionalOverride[key] = next; // 楽観的に反映
@@ -195,10 +195,10 @@ const toggleProvisional = (row: EstimateManagementRow): void => {
 const provisionalOnly = ref(false);
 // 見積依頼画面は初期表示で「未依頼のみ表示」をチェック済みにする（未依頼の見積先から着手できるように）。
 const unrequestedOnly = ref(props.mode === 'quote-request');
-const displayProjects = computed<EstimateManagementProject[]>(() => {
-    const rowFilters: ((row: EstimateManagementRow) => boolean)[] = [];
+const displayProjects = computed<QuotationManagementProject[]>(() => {
+    const rowFilters: ((row: QuotationManagementRow) => boolean)[] = [];
     if (provisionalOnly.value) {
-        rowFilters.push((r) => provisionalKeys.value.has(estimateRowKey(r)));
+        rowFilters.push((r) => provisionalKeys.value.has(quotationRowKey(r)));
     }
     if (unrequestedOnly.value) {
         rowFilters.push((r) => r.sendCount === 0);
@@ -232,7 +232,7 @@ const closeIframe = (): void => {
 
 // 請求先行（billingTarget・見積依頼画面のみ）：チェック不要、押下で即座に単体で見積送信する。
 const billingSendForm = useForm<{ companyIds: number[] }>({ companyIds: [] });
-const submitBillingSend = (row: EstimateManagementRow): void => {
+const submitBillingSend = (row: QuotationManagementRow): void => {
     if (row.companyId == null || billingSendForm.processing) {
         return;
     }
@@ -242,7 +242,7 @@ const submitBillingSend = (row: EstimateManagementRow): void => {
 
 // 一括「全て選択」（全モード共通）。
 // toggle（業者選定）= 見積回答ありの業者行、pick（見積依頼 / 部長承認 / 取消申請 / 取消承認）= 未処理の業者行が対象。
-const bulkSelectableRows = computed<EstimateManagementRow[]>(() =>
+const bulkSelectableRows = computed<QuotationManagementRow[]>(() =>
     isToggleMode.value ? allRows.value.filter((r) => r.companyId != null && hasQuoteAnswer(r)) : selectableRows.value,
 );
 // 対象行がすべて選択状態か（ボタン表示名の出し分けに使う）。
@@ -253,18 +253,18 @@ const bulkAllSelected = computed(() => {
     }
     return isToggleMode.value
         ? rows.every((r) => isRowSelected(r))
-        : rows.every((r) => checkedKeys.value.has(estimateRowKey(r)));
+        : rows.every((r) => checkedKeys.value.has(quotationRowKey(r)));
 });
 // 全て選択 / 全て解除（現在の状態を反転）。
 const toggleSelectAll = (): void => {
     const select = !bulkAllSelected.value;
     if (isToggleMode.value) {
         bulkSelectableRows.value.forEach((r) => {
-            selectionOverride[estimateRowKey(r)] = select;
+            selectionOverride[quotationRowKey(r)] = select;
         });
     } else {
         bulkSelectableRows.value.forEach((r) => {
-            checked[estimateRowKey(r)] = select;
+            checked[quotationRowKey(r)] = select;
         });
     }
 };
@@ -277,13 +277,13 @@ const form = useForm<{ companyIds: number[]; reason: string }>({ companyIds: [],
 // これらの画面ではヘッダーの一括アクションボタン・一括選択は出さない。
 const isPerRowAction = computed(() => props.mode === 'cancel-request' || props.mode === 'cancel-approval');
 const actionModalOpen = ref(false);
-const actionTarget = ref<EstimateManagementRow | null>(null);
+const actionTarget = ref<QuotationManagementRow | null>(null);
 const closeActionModal = (): void => {
     actionModalOpen.value = false;
     actionTarget.value = null;
 };
 // 行の取消申請 / 取消承認ボタン：対象1件で理由モーダルを開く。
-const openRowAction = (row: EstimateManagementRow): void => {
+const openRowAction = (row: QuotationManagementRow): void => {
     if (row.companyId == null) {
         return;
     }
@@ -322,7 +322,7 @@ const submitAction = (): void => {
     }
     const keys = isToggleMode.value ? vendorSelectedKeys.value : checkedKeys.value;
     const companyIds = allRows.value
-        .filter((row) => row.companyId != null && keys.has(estimateRowKey(row)))
+        .filter((row) => row.companyId != null && keys.has(quotationRowKey(row)))
         .map((row) => row.companyId as number);
     if (companyIds.length === 0) {
         return;
@@ -351,9 +351,9 @@ const actionBtnClass = computed(() => {
 
 // 否認（部長承認画面）：理由入力モーダル → 業者選定へ差し戻し（approval_status を UNSELECTED に戻す）。
 const rejectForm = useForm<{ companyId: number | null; reason: string }>({ companyId: null, reason: '' });
-const rejectTarget = ref<EstimateManagementRow | null>(null);
+const rejectTarget = ref<QuotationManagementRow | null>(null);
 const rejectModalOpen = ref(false);
-const openReject = (row: EstimateManagementRow): void => {
+const openReject = (row: QuotationManagementRow): void => {
     if (row.companyId == null) {
         return;
     }
@@ -382,9 +382,9 @@ const submitReject = (): void => {
 const page = usePage();
 const myRole = computed<'manager' | 'staff'>(() => (page.props.auth?.user?.isEstimateManager ? 'manager' : 'staff'));
 const chatOpen = ref(false);
-const chatTarget = ref<EstimateManagementRow | null>(null);
+const chatTarget = ref<QuotationManagementRow | null>(null);
 const chatBuilding = ref('');
-const chatMessages = ref<EstimateChatMessage[]>([]);
+const chatMessages = ref<QuotationChatMessage[]>([]);
 const chatBody = ref('');
 const chatLoading = ref(false);
 const chatSending = ref(false);
@@ -480,7 +480,7 @@ const scrollChatToBottom = (): void => {
         }
     });
 };
-const openChat = async (row: EstimateManagementRow, buildingName = ''): Promise<void> => {
+const openChat = async (row: QuotationManagementRow, buildingName = ''): Promise<void> => {
     if (row.companyId == null) {
         return;
     }
@@ -588,7 +588,7 @@ const answerOptions: { value: AnswerFilter; label: string }[] = [
 const showAnswerFilter = computed(() => props.mode === 'vendor-selection' || props.mode === 'quote-request');
 // answer は既定（all）のとき URL から省く。
 const answerParam = (value: AnswerFilter): AnswerFilter | undefined => (value === 'all' ? undefined : value);
-const onSearch = (payload: EstimateManagementFilters): void => {
+const onSearch = (payload: QuotationManagementFilters): void => {
     router.get(
         window.location.pathname,
         {
@@ -684,7 +684,7 @@ const setComment = (value: CommentFilter): void => {
                         </button>
                     </div>
 
-                    <EstimateFilterBar :filters="filters" :glass="glass" @search="onSearch" />
+                    <QuotationFilterBar :filters="filters" :glass="glass" @search="onSearch" />
                 </div>
 
                 <!-- スクロール本体 -->
@@ -758,10 +758,10 @@ const setComment = (value: CommentFilter): void => {
                                 </button>
                             </div>
                         </div>
-                        <EstimatePager :pagination="pagination" :glass="glass" @change="goToPage" />
+                        <QuotationPager :pagination="pagination" :glass="glass" @change="goToPage" />
                     </div>
 
-                    <EstimateProjectCard
+                    <QuotationProjectCard
                         v-for="project in displayProjects"
                         :key="project.id"
                         :project="project"
@@ -790,7 +790,7 @@ const setComment = (value: CommentFilter): void => {
 
                     <!-- ページネーション（下） -->
                     <div class="flex justify-end pt-1">
-                        <EstimatePager :pagination="pagination" :glass="glass" @change="goToPage" />
+                        <QuotationPager :pagination="pagination" :glass="glass" @change="goToPage" />
                     </div>
                 </div>
             </div>

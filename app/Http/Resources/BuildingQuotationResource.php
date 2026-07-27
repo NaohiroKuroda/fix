@@ -9,7 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * 新スキーマ（t_buildings → t_building_cost_items → t_cost_quotations）の案件1件分を、
- * フロント（EstimateManagementScreen.vue）が扱う「案件 → 項目 → 見積先」のフラット行に整形する。
+ * フロント（QuotationManagementScreen.vue）が扱う「案件 → 項目 → 見積先」のフラット行に整形する。
  *
  * felix_total（旧）画面へのリンクは source_id（旧 id）で組み立てる。
  *

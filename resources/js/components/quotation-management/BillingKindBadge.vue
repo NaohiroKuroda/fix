@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 区分（もらい＝請求／払い＝支払）のラベル。見積依頼（EstimateProjectCard）と
+// 区分（もらい＝請求／払い＝支払）のラベル。見積依頼（QuotationProjectCard）と
 // 業者承諾確認（OrderProjectCard）で同じ見た目を使うため、1か所に切り出している。
 // 片方だけ直して見た目がずれることを防ぐのが目的なので、配色・寸法はここでのみ定義する。
 //

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-// 発注フロー1案件分の明細カード（タイトル帯＋テーブル）。見積管理の EstimateProjectCard を
+// 発注フロー1案件分の明細カード（タイトル帯＋テーブル）。見積管理の QuotationProjectCard を
 // 発注フロー用に簡略化したもの（相見積比較・仮選定・業者追加・iframe は持たない）。
 // 開閉・選択・否認・チャットは親へ emit で委譲。
 import { computed } from 'vue';
 import { ChevronDown, CheckCircle2, Check, Ban, MessageSquare, FileText, XCircle, ReceiptText } from 'lucide-vue-next';
-import { useEstimateTheme } from '@/composables/useEstimateTheme';
+import { useQuotationTheme } from '@/composables/useQuotationTheme';
 // 区分ラベルは見積依頼画面と共通（見た目のずれを防ぐため実装を1か所に集約）。
-import BillingKindBadge from '@/components/estimate-management/BillingKindBadge.vue';
+import BillingKindBadge from '@/components/quotation-management/BillingKindBadge.vue';
 import { orderRowKey } from '@/lib/order-delivery';
 import type { OrderDeliveryModeConfig } from '@/lib/order-delivery';
 import type { OrderDeliveryProject, OrderDeliveryRow } from '@/types/order-delivery';
@@ -69,7 +69,7 @@ const columnCount = computed(
         (props.config.showCancelRequest ? 1 : 0),
 );
 const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellTextClass, mutedTextClass } =
-    useEstimateTheme(isThemed);
+    useQuotationTheme(isThemed);
 
 const yen = (value: number | null): string => (value === null || value === undefined ? '—' : `¥${value.toLocaleString()}`);
 const isActive = (row: OrderDeliveryRow): boolean => props.selectedKeys.has(orderRowKey(row));

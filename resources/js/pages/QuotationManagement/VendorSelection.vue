@@ -1,21 +1,21 @@
 <script setup lang="ts">
 // 業者選定（業者→FELIX返答済）。共通コンポーネントに mode='vendor-selection' を渡す。
-import EstimateManagementScreen from '@/components/estimate-management/EstimateManagementScreen.vue';
+import QuotationManagementScreen from '@/components/quotation-management/QuotationManagementScreen.vue';
 import type {
-    EstimateManagementFilters,
-    EstimateManagementPagination,
-    EstimateManagementProject,
-} from '@/types/estimate-management';
+    QuotationManagementFilters,
+    QuotationManagementPagination,
+    QuotationManagementProject,
+} from '@/types/quotation-management';
 
 defineProps<{
-    projects: EstimateManagementProject[];
-    pagination: EstimateManagementPagination;
-    filters: EstimateManagementFilters;
+    projects: QuotationManagementProject[];
+    pagination: QuotationManagementPagination;
+    filters: QuotationManagementFilters;
 }>();
 </script>
 
 <template>
-    <EstimateManagementScreen
+    <QuotationManagementScreen
         title="業者選定"
         status-label="【業者→FELIX返答済】"
         mode="vendor-selection"

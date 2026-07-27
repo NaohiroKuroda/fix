@@ -1,21 +1,21 @@
 <script setup lang="ts">
 // 部長承認（FELIX→業者選定済）。共通コンポーネントに mode='manager-approval' を渡す。
-import EstimateManagementScreen from '@/components/estimate-management/EstimateManagementScreen.vue';
+import QuotationManagementScreen from '@/components/quotation-management/QuotationManagementScreen.vue';
 import type {
-    EstimateManagementFilters,
-    EstimateManagementPagination,
-    EstimateManagementProject,
-} from '@/types/estimate-management';
+    QuotationManagementFilters,
+    QuotationManagementPagination,
+    QuotationManagementProject,
+} from '@/types/quotation-management';
 
 defineProps<{
-    projects: EstimateManagementProject[];
-    pagination: EstimateManagementPagination;
-    filters: EstimateManagementFilters;
+    projects: QuotationManagementProject[];
+    pagination: QuotationManagementPagination;
+    filters: QuotationManagementFilters;
 }>();
 </script>
 
 <template>
-    <EstimateManagementScreen
+    <QuotationManagementScreen
         title="部長承認"
         status-label="【業者選定済→FELIX(建設部)】"
         mode="manager-approval"

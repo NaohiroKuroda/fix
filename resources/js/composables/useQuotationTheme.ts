@@ -8,7 +8,7 @@ import { computed, toValue, type MaybeRefOrGetter } from 'vue';
  *
  * create-adaptable-composable 方針に従い、入力は MaybeRefOrGetter で受け toValue で正規化する。
  */
-export function useEstimateTheme(isThemedInput: MaybeRefOrGetter<boolean>) {
+export function useQuotationTheme(isThemedInput: MaybeRefOrGetter<boolean>) {
     const themed = computed(() => toValue(isThemedInput));
 
     const rootClass = computed(() =>

@@ -40,6 +40,11 @@ export interface OrderDeliveryModeConfig {
     /** 発注日列を出すか（発注書の右隣・業者承諾確認画面のみ）。 */
     showOrderDate: boolean;
     /**
+     * 区分（請求／支払）列をパートナーの左に出すか（業者承諾確認・発注取消承認画面）。
+     * 見積依頼画面と同じ見た目（BillingKindBadge）・同じ元データ（is_billing_target）を使う。
+     */
+    showBillingKind: boolean;
+    /**
      * 操作列（承諾確認→承諾日）で、既に承諾済み（vendorAcceptedAt あり）の行はボタンの代わりに
      * その日付を表示するか（業者承諾確認画面のみ）。
      */
@@ -70,7 +75,7 @@ export interface OrderDeliveryModeConfig {
 
 /**
  * 画面モードごとの操作 UI 定義。発注〜納品フローの7画面で共用する。
- * 見積管理（ESTIMATE_MODE_CONFIG）と同じ考え方。全画面「物件カード＋右端ボタン＋チャット」。
+ * 見積管理（QUOTATION_MODE_CONFIG）と同じ考え方。全画面「物件カード＋右端ボタン＋チャット」。
  */
 export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDeliveryModeConfig> = {
     'order-execution': {
@@ -87,6 +92,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showReject: false,
         showOrderDocument: true,
         showOrderDate: false,
+        showBillingKind: false,
         showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
@@ -109,6 +115,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showReject: true,
         showOrderDocument: true,
         showOrderDate: false,
+        showBillingKind: false,
         showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
@@ -131,6 +138,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showReject: false,
         showOrderDocument: false,
         showOrderDate: false,
+        showBillingKind: false,
         showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
@@ -153,6 +161,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showReject: false,
         showOrderDocument: false,
         showOrderDate: false,
+        showBillingKind: true,
         showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: true,
@@ -176,6 +185,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showReject: false,
         showOrderDocument: true,
         showOrderDate: true,
+        showBillingKind: true,
         showAcceptedDate: true,
         showCancelRequest: true,
         isPerRowAction: false,
@@ -198,6 +208,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showReject: false,
         showOrderDocument: false,
         showOrderDate: false,
+        showBillingKind: false,
         showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
@@ -220,6 +231,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showReject: true,
         showOrderDocument: false,
         showOrderDate: false,
+        showBillingKind: false,
         showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
@@ -242,6 +254,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showReject: false,
         showOrderDocument: false,
         showOrderDate: false,
+        showBillingKind: false,
         showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,

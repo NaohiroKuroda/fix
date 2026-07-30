@@ -1,10 +1,10 @@
-import type { EstimateManagementMode, EstimateManagementRow } from '@/types/estimate-management';
+import type { QuotationManagementMode, QuotationManagementRow } from '@/types/quotation-management';
 
 /**
  * 明細行の一意キー。業者ありは companyId（c{id}）、業者なしは unitId（u{id}）。
  * v-for の key と見積依頼の選択状態キーに共用する（案件内で一意）。
  */
-export const estimateRowKey = (row: EstimateManagementRow): string =>
+export const quotationRowKey = (row: QuotationManagementRow): string =>
     row.companyId != null ? `c${row.companyId}` : `u${row.unitId}`;
 
 /**
@@ -14,13 +14,13 @@ export const estimateRowKey = (row: EstimateManagementRow): string =>
  *                   処理済み行は静的バッジ（依頼済みと同様、再操作不可）。
  * - toggle-button : 業者選定。サーバ状態を初期値に押下でトグル（業者の選び替え）。
  */
-export type EstimateActionKind = 'checkbox' | 'pick-button' | 'toggle-button';
+export type QuotationActionKind = 'checkbox' | 'pick-button' | 'toggle-button';
 
 /** 行の「処理済み」を表すサーバ側フラグ（boolean プロパティ名）。 */
-export type EstimateAppliedKey = 'requested' | 'selected' | 'approved' | 'cancelRequested' | 'cancelApproved';
+export type QuotationAppliedKey = 'requested' | 'selected' | 'approved' | 'cancelRequested' | 'cancelApproved';
 
-export interface EstimateModeConfig {
-    kind: EstimateActionKind;
+export interface QuotationModeConfig {
+    kind: QuotationActionKind;
     /** 最終列のヘッダー名。 */
     columnLabel: string;
     /** 相見積（税抜）列を表示するか（業者選定以降の画面で表示）。 */
@@ -28,7 +28,7 @@ export interface EstimateModeConfig {
     /** 見積金額列（showQuote=true）の見出し。未指定は「相見積」。例: 部長取消申請=「確定見積」。 */
     quoteColumnLabel?: string;
     /** 行が「処理済み」かを表すサーバ側フラグ名。 */
-    appliedKey: EstimateAppliedKey;
+    appliedKey: QuotationAppliedKey;
     /**
      * 処理済みでも再操作を許す（ロックしない）か。
      * 見積依頼は何度でも依頼できるよう true（依頼済みでもチェック可・静的バッジを出さない）。
@@ -52,9 +52,9 @@ export interface EstimateModeConfig {
 
 /**
  * 画面モードごとの操作 UI 定義（最終列のラベル・操作種別・処理済み判定）。
- * 画面コンテナ（EstimateManagementScreen）と明細カード（EstimateProjectCard）で共用する。
+ * 画面コンテナ（QuotationManagementScreen）と明細カード（QuotationProjectCard）で共用する。
  */
-export const ESTIMATE_MODE_CONFIG: Record<EstimateManagementMode, EstimateModeConfig> = {
+export const QUOTATION_MODE_CONFIG: Record<QuotationManagementMode, QuotationModeConfig> = {
     'quote-request': {
         kind: 'checkbox',
         columnLabel: '見積依頼／送信',

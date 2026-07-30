@@ -1,20 +1,20 @@
 <script setup lang="ts">
 // 発注〜納品〜請求フローの共通画面コンテナ。7画面（mode）で共用する。
-// 見積管理（EstimateManagementScreen）とほぼ同じUI：物件カード＋右端ボタン＋項目横チャット。
+// 見積管理（QuotationManagementScreen）とほぼ同じUI：物件カード＋右端ボタン＋項目横チャット。
 // 業者はシステムに登録しないため、ファイル添付は持たず、全画面「選択→ヘッダー確定／否認」だけ。
-// チャットは見積管理と同じ項目単位コメント（estimate-management の quotation-messages ルート）を流用する。
+// チャットは見積管理と同じ項目単位コメント（quotation-management の quotation-messages ルート）を流用する。
 import { computed, inject, nextTick, reactive, ref, type Ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { X, Ban, MessageSquare, Send, Paperclip, FileText, XCircle, CheckCircle2, ReceiptText } from 'lucide-vue-next';
-import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/routes/estimate-management/quotation-messages';
+import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/routes/quotation-management/quotation-messages';
 import AppLayout from '@/layouts/AppLayout.vue';
-import EstimateFilterBar from '@/components/estimate-management/EstimateFilterBar.vue';
-import EstimatePager from '@/components/estimate-management/EstimatePager.vue';
+import QuotationFilterBar from '@/components/quotation-management/QuotationFilterBar.vue';
+import QuotationPager from '@/components/quotation-management/QuotationPager.vue';
 import OrderProjectCard from '@/components/order-delivery/OrderProjectCard.vue';
-import { useEstimateTheme } from '@/composables/useEstimateTheme';
+import { useQuotationTheme } from '@/composables/useQuotationTheme';
 import { orderRowKey, ORDER_DELIVERY_MODE_CONFIG } from '@/lib/order-delivery';
 import type { OrderDeliveryFilters, OrderDeliveryMode, OrderDeliveryPagination, OrderDeliveryProject, OrderDeliveryRow } from '@/types/order-delivery';
-import type { EstimateChatMessage, EstimateManagementFilters } from '@/types/estimate-management';
+import type { QuotationChatMessage, QuotationManagementFilters } from '@/types/quotation-management';
 
 const props = defineProps<{
     mode: OrderDeliveryMode;
@@ -36,7 +36,7 @@ const props = defineProps<{
 
 const isThemed = ref(true); // 見積管理と同じリキッドグラス調にする。
 const config = computed(() => ORDER_DELIVERY_MODE_CONFIG[props.mode]);
-const { rootClass, stickyBgClass, glassPanelClass, headingClass, onGlassTextClass, pagerBtnClass } = useEstimateTheme(isThemed);
+const { rootClass, stickyBgClass, glassPanelClass, headingClass, onGlassTextClass, pagerBtnClass } = useQuotationTheme(isThemed);
 
 // タイトル行左の余白（サイドバー折りたたみ時に再オープンボタンと重ならないよう）。
 const sidebarCollapsed = inject<Ref<boolean>>('sidebarCollapsed', ref(false));
@@ -111,7 +111,7 @@ const submitReject = (): void => {
     rejectForm.post(props.rejectUrl, { preserveScroll: true, onSuccess: () => closeReject() });
 };
 
-// 取消モーダル（理由必須）：部長取消申請／取消承認画面（EstimateManagementScreen）と同じ、理由入力→確定の流れ。
+// 取消モーダル（理由必須）：部長取消申請／取消承認画面（QuotationManagementScreen）と同じ、理由入力→確定の流れ。
 // 業者承諾確認では追加列の「取消申請」、発注取消承認では主操作の「取消承認」として使う（mode で文言を出し分け）。
 const isCancelApprovalMode = computed(() => props.mode === 'order-cancel-approval');
 const cancelModalTitle = computed(() => (isCancelApprovalMode.value ? '取消承認' : '取消申請'));
@@ -189,8 +189,8 @@ const showBillingMonthFilter = computed(() => config.value.isCompletionCheck);
 // billingMonth は既定（current＝当月）のとき URL から省く。
 const billingMonthParam = (value: BillingMonthFilter): BillingMonthFilter | undefined => (value === 'current' ? undefined : value);
 
-// 絞り込み（物件名 / 項目名 / 見積先）。見積管理の EstimateFilterBar を流用。
-const onSearch = (payload: EstimateManagementFilters): void => {
+// 絞り込み（物件名 / 項目名 / 見積先）。見積管理の QuotationFilterBar を流用。
+const onSearch = (payload: QuotationManagementFilters): void => {
     router.get(
         window.location.pathname,
         {
@@ -266,7 +266,7 @@ const myRole = computed<'manager' | 'staff'>(() => (page.props.auth?.user?.isEst
 const chatOpen = ref(false);
 const chatTarget = ref<OrderDeliveryRow | null>(null);
 const chatBuilding = ref('');
-const chatMessages = ref<EstimateChatMessage[]>([]);
+const chatMessages = ref<QuotationChatMessage[]>([]);
 const chatBody = ref('');
 const chatLoading = ref(false);
 const chatSending = ref(false);
@@ -436,7 +436,7 @@ const sendChat = async (): Promise<void> => {
                         </div>
                     </div>
 
-                    <EstimateFilterBar :filters="filters" glass @search="onSearch" />
+                    <QuotationFilterBar :filters="filters" glass @search="onSearch" />
                 </div>
 
                 <div class="space-y-4 px-4 pb-6 pt-3 md:px-6">
@@ -465,7 +465,7 @@ const sendChat = async (): Promise<void> => {
                                 </button>
                             </div>
                         </div>
-                        <EstimatePager :pagination="pagination" glass @change="goToPage" />
+                        <QuotationPager :pagination="pagination" glass @change="goToPage" />
                     </div>
 
                     <OrderProjectCard
@@ -490,7 +490,7 @@ const sendChat = async (): Promise<void> => {
                     </div>
 
                     <div class="flex justify-end pt-1">
-                        <EstimatePager :pagination="pagination" glass @change="goToPage" />
+                        <QuotationPager :pagination="pagination" glass @change="goToPage" />
                     </div>
                 </div>
             </div>

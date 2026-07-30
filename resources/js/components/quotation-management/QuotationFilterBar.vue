@@ -1,15 +1,15 @@
 <script setup lang="ts">
 // 見積管理の絞り込みフォーム（物件名 / 項目名 / 見積先）。送信は親へ emit('search') で委譲。
 import { reactive } from 'vue';
-import { useEstimateTheme } from '@/composables/useEstimateTheme';
-import type { EstimateManagementFilters } from '@/types/estimate-management';
+import { useQuotationTheme } from '@/composables/useQuotationTheme';
+import type { QuotationManagementFilters } from '@/types/quotation-management';
 
-const props = defineProps<{ filters: EstimateManagementFilters; glass?: boolean }>();
-const emit = defineEmits<{ (e: 'search', payload: EstimateManagementFilters): void }>();
+const props = defineProps<{ filters: QuotationManagementFilters; glass?: boolean }>();
+const emit = defineEmits<{ (e: 'search', payload: QuotationManagementFilters): void }>();
 
-const { glassPanelClass, inputClass, primaryBtnClass, onGlassTextClass } = useEstimateTheme(() => props.glass === true);
+const { glassPanelClass, inputClass, primaryBtnClass, onGlassTextClass } = useQuotationTheme(() => props.glass === true);
 
-const form = reactive<EstimateManagementFilters>({
+const form = reactive<QuotationManagementFilters>({
     keyword: props.filters.keyword,
     itemLabel: props.filters.itemLabel,
     vendor: props.filters.vendor,

@@ -2,13 +2,14 @@
 // 1案件分の明細カード（タイトル帯＋テーブル）。開閉とチェックは親へ emit で委譲。
 import { computed } from 'vue';
 import { ChevronDown, CheckCircle2, Check, Plus, ExternalLink, Ban, MessageSquare } from 'lucide-vue-next';
-import { useEstimateTheme } from '@/composables/useEstimateTheme';
-import { estimateRowKey, ESTIMATE_MODE_CONFIG } from '@/lib/estimate-management';
-import type { EstimateManagementMode, EstimateManagementProject, EstimateManagementRow } from '@/types/estimate-management';
+import { useQuotationTheme } from '@/composables/useQuotationTheme';
+import BillingKindBadge from '@/components/quotation-management/BillingKindBadge.vue';
+import { quotationRowKey, QUOTATION_MODE_CONFIG } from '@/lib/quotation-management';
+import type { QuotationManagementMode, QuotationManagementProject, QuotationManagementRow } from '@/types/quotation-management';
 
 const props = defineProps<{
-    project: EstimateManagementProject;
-    mode: EstimateManagementMode;
+    project: QuotationManagementProject;
+    mode: QuotationManagementMode;
     open: boolean;
     glass?: boolean;
     /** 有効な行キーの集合（見積依頼=チェック / それ以外=選定/選択中）。 */
@@ -18,23 +19,30 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
     (e: 'toggle'): void;
-    (e: 'row-toggle', row: EstimateManagementRow): void;
-    (e: 'row-action', row: EstimateManagementRow): void;
-    (e: 'provisional-toggle', row: EstimateManagementRow): void;
-    (e: 'reject', row: EstimateManagementRow): void;
-    (e: 'open-chat', row: EstimateManagementRow, buildingName: string): void;
+    (e: 'row-toggle', row: QuotationManagementRow): void;
+    (e: 'row-action', row: QuotationManagementRow): void;
+    (e: 'provisional-toggle', row: QuotationManagementRow): void;
+    (e: 'reject', row: QuotationManagementRow): void;
+    (e: 'open-chat', row: QuotationManagementRow, buildingName: string): void;
     (e: 'open-iframe', payload: { url: string | null; title: string }): void;
     /** 請求先行（billingTarget）：チェック不要で押下即座に見積を送信する。見積依頼画面のみ。 */
-    (e: 'billing-send', row: EstimateManagementRow): void;
+    (e: 'billing-send', row: QuotationManagementRow): void;
 }>();
 
 const isThemed = computed(() => props.glass === true);
-const config = computed(() => ESTIMATE_MODE_CONFIG[props.mode]);
+// 明細カードの地色。項目名セルは rowspan で行グループ全体にまたがるため、
+// 先頭行（＝請求行）の地色を引き継がないよう、カード地色を明示して打ち消すのに使う。
+const cardBgClass = computed(() => (isThemed.value ? 'bg-white' : 'bg-card'));
+const config = computed(() => QUOTATION_MODE_CONFIG[props.mode]);
 const isCheckbox = computed(() => config.value.kind === 'checkbox');
 // 取消申請 / 取消承認：行ボタンで理由モーダルを開き1件ずつ実行する（選択トグルではない）。
 const isPerRowAction = computed(() => props.mode === 'cancel-request' || props.mode === 'cancel-approval');
 // 見積依頼画面のみ、見積先名を業者マイページへのリンクにする。
 const isQuoteRequest = computed(() => props.mode === 'quote-request');
+// 「区分」列（請求／支払）は見積管理の全画面（見積依頼・業者選定・部長承認・部長取消申請・部長取消承認）で出す。
+// 元データ（billingTarget）は BuildingQuotationResource が全モードで返しているため、画面ごとの出し分けは不要。
+// 発注フロー側（OrderProjectCard）は画面ごとに出し分けるため config.showBillingKind で制御している。
+const showBillingKind = computed(() => true);
 // 「仮選定」列は見積依頼画面のみ出す。
 const showProvisional = computed(() => props.mode === 'quote-request');
 // 「見積依頼送信回数」列も見積依頼画面のみ（右端）。
@@ -49,25 +57,25 @@ const isToggleButton = computed(() => config.value.kind === 'toggle-button');
 const columnCount = computed(
     () =>
         5 +
-        (isQuoteRequest.value ? 1 : 0) +
+        (showBillingKind.value ? 1 : 0) +
         (config.value.showQuote ? 1 : 0) +
         (showProvisional.value ? 1 : 0) +
         (showSendCount.value ? 1 : 0) +
         (showReject.value ? 1 : 0),
 );
 const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellTextClass, mutedTextClass } =
-    useEstimateTheme(isThemed);
+    useQuotationTheme(isThemed);
 
 const yen = (value: number | null): string =>
     value === null || value === undefined ? '—' : `¥${value.toLocaleString()}`;
-const isActive = (row: EstimateManagementRow): boolean => props.selectedKeys.has(estimateRowKey(row));
+const isActive = (row: QuotationManagementRow): boolean => props.selectedKeys.has(quotationRowKey(row));
 // 仮選定（DB保存は将来。現状はフロントのローカル状態）。
-const isProvisional = (row: EstimateManagementRow): boolean => props.provisionalKeys?.has(estimateRowKey(row)) ?? false;
+const isProvisional = (row: QuotationManagementRow): boolean => props.provisionalKeys?.has(quotationRowKey(row)) ?? false;
 // 見積回答あり（相見積に金額が入っている）。無い業者は業者選定を不可にする。
-const hasQuoteAnswer = (row: EstimateManagementRow): boolean => row.quotePrice != null && row.quotePrice > 0;
+const hasQuoteAnswer = (row: QuotationManagementRow): boolean => row.quotePrice != null && row.quotePrice > 0;
 // 行が「処理済み」か（mode ごとのサーバ側フラグ）。処理済みは静的バッジで表示し再操作不可。
 // ただし reselectable（見積依頼）はロックせず、常にチェックボックスを出す（何度でも依頼可）。
-const isApplied = (row: EstimateManagementRow): boolean =>
+const isApplied = (row: QuotationManagementRow): boolean =>
     !config.value.reselectable && row[config.value.appliedKey] === true;
 
 // 業者選定系ボタンの配色パレット（押下＝ベタ塗り「選定済」、未押下＝淡色「選定する」）。
@@ -106,7 +114,7 @@ const toggleBtnClass = (color: ToggleColor, active: boolean): string => {
 
 /** 表示用に組み立てた1行（払い/もらいの並び替え・境界線・項目の rowspan 情報を持つ）。 */
 interface DisplayRow {
-    row: EstimateManagementRow;
+    row: QuotationManagementRow;
     /** もらい（請求先）→払い（通常）の境界の先頭行か。両方揃う項目にだけ線を引く。 */
     isBillingGroupStart: boolean;
     /** この項目（unitId）の表示上の先頭行か。項目名セルはここにだけ rowspan で出す。 */
@@ -116,14 +124,13 @@ interface DisplayRow {
     /** 直前の項目との境界（＝2つ目以降の項目の先頭行）か。項目間の区切り線に使う。 */
     isUnitBoundary: boolean;
 }
-// 見積依頼画面：項目（unitId）内で「もらい（請求先）」を先、「払い（通常）」を後にまとめ、
-// 境界に線を引けるようにする（billingTarget 行の並び替えは quote-request のみ意味を持つが、
-// 他画面には billingTarget 行が現れないため実質的に元の並びのままになる）。
+// 項目（unitId）内で「もらい（請求先）」を先、「払い（通常）」を後にまとめ、境界に線を引けるようにする。
+// 区分列は見積管理の全画面に出すため、この並び替えも全画面で効く（請求先が無い項目は元の並びのまま）。
 // 項目名は「項目１つに複数の払い/もらいがある」ため、同一項目の行をまたいで rowspan で1回だけ出す
 // （felix_total の実行予算編集画面と同じ考え方）。
 const displayRows = computed<DisplayRow[]>(() => {
     const unitOrder: number[] = [];
-    const byUnit = new Map<number, EstimateManagementRow[]>();
+    const byUnit = new Map<number, QuotationManagementRow[]>();
     for (const row of props.project.rows) {
         if (!byUnit.has(row.unitId)) {
             byUnit.set(row.unitId, []);
@@ -151,16 +158,16 @@ const displayRows = computed<DisplayRow[]>(() => {
 });
 
 // 否認差し戻し（deny_comment あり）の見積先か。
-const isDenied = (row: EstimateManagementRow): boolean => row.denied === true;
+const isDenied = (row: QuotationManagementRow): boolean => row.denied === true;
 // 同一項目のいずれかの見積先が選定（選択）されているか。否認差し戻しの解消判定に使う。
-const itemHasSelection = (row: EstimateManagementRow): boolean =>
+const itemHasSelection = (row: QuotationManagementRow): boolean =>
     props.project.rows.some((r) => r.unitId === row.unitId && isActive(r));
 // メインボタンの状態色：
 // - 赤  ：否認で差し戻され、まだ同一項目のどの業者も選定されていない。
 // - 緑  ：仮選定済み、または否認差し戻しがいずれかの業者の選定で解消された（赤→緑）。
 // - base：上記いずれでもない（現状のゴールド表示のまま）。
 type RowColor = 'base' | 'green' | 'red';
-const rowColor = (row: EstimateManagementRow): RowColor => {
+const rowColor = (row: QuotationManagementRow): RowColor => {
     if (isDenied(row) && !itemHasSelection(row)) {
         return 'red';
     }
@@ -172,14 +179,21 @@ const rowColor = (row: EstimateManagementRow): RowColor => {
 // メインボタン（業者選定のトグル／承認・取消のボタン）の配色。
 // 状態色（赤=否認差し戻し / 緑=仮選定・否認解消 / gold=通常）を選び、選定済/選定する で
 // 淡色⇄ベタ塗りが切り替わる同一デザインにする。
-const mainBtnClass = (row: EstimateManagementRow): string => {
+const mainBtnClass = (row: QuotationManagementRow): string => {
     const color = rowColor(row);
     const toggleColor: ToggleColor = color === 'base' ? 'gold' : color;
     return toggleBtnClass(toggleColor, isActive(row));
 };
 
+// 区分（請求／支払）バッジの配色。
+// 画面全体が FELIX ブランドの「紺（primary）＋金（#c4a35b）」の暖色系で、明細は白地。
+// そこへ淡い色を置いても沈むため、色相だけでなく「塗りの強さ」で差を付ける：
+//   請求（もらい＝入る側／全体の数%）… ベタ塗りの青＋白文字で最前面に出す
+//   支払（払い＝出る側／大多数）    … 輪郭のみの淡いグレーで背景へ引かせる
+// emerald（承認・回答あり）/ red（否認・回答なし）/ teal（業者追加）/ 金（primary）は
+// 既に別の意味を持つため、区分には未使用の sky 系を割り当てて衝突を避ける。
 // コメント（やり取り）ボタンの配色。コメントが1件以上ある項目は選定ボタンと同じ配色で強調する。
-const chatBtnClass = (row: EstimateManagementRow): string => {
+const chatBtnClass = (row: QuotationManagementRow): string => {
     const shape = 'relative inline-flex size-8 shrink-0 items-center justify-center rounded-xl border shadow-sm transition';
     if (row.hasComments) {
         return isThemed.value
@@ -206,7 +220,7 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                 <!-- 全案件カードで列位置を揃えるため、固定レイアウト＋共通の列幅を指定する。 -->
                 <colgroup>
                     <col style="width: 22%" />
-                    <col v-if="isQuoteRequest" style="width: 7%" />
+                    <col v-if="showBillingKind" style="width: 7%" />
                     <col style="width: 23%" />
                     <col style="width: 13%" />
                     <col style="width: 13%" />
@@ -219,7 +233,7 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                 <thead class="text-center" :class="tableHeadClass">
                     <tr class="border-b-2 border-slate-300 text-[15px] font-bold uppercase tracking-wider">
                         <th class="px-3 py-2.5">項目</th>
-                        <th v-if="isQuoteRequest" class="px-3 py-2.5">区分</th>
+                        <th v-if="showBillingKind" class="px-3 py-2.5">区分</th>
                         <th class="px-3 py-2.5">パートナー</th>
                         <th class="px-3 py-2.5">標準単価<br />(税抜)</th>
                         <th class="px-3 py-2.5">予算単価<br />(税抜)</th>
@@ -233,16 +247,18 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                 <tbody>
                     <tr
                         v-for="{ row, isBillingGroupStart, isUnitFirstRow, unitRowSpan, isUnitBoundary } in displayRows"
-                        :key="estimateRowKey(row)"
+                        :key="quotationRowKey(row)"
                         :class="[
                             rowBorderClass,
                             isUnitBoundary
                                 ? 'border-t-4 border-slate-300'
                                 : (isBillingGroupStart ? 'border-t-2 border-dashed border-slate-400' : 'border-t'),
+                            // 請求（もらい）行は淡い青の地色を敷き、バッジを見なくても行単位で区別できるようにする。
+                            showBillingKind && row.billingTarget ? 'bg-sky-50/70' : '',
                         ]"
                     >
                         <!-- 項目名：同一項目の行数ぶん rowspan で1回だけ出す（1項目に複数の払い/もらいがあるため）。 -->
-                        <td v-if="isUnitFirstRow" :rowspan="unitRowSpan" class="px-3 py-2 font-medium">
+                        <td v-if="isUnitFirstRow" :rowspan="unitRowSpan" class="px-3 py-2 font-medium" :class="cardBgClass">
                             <div class="flex items-center justify-between gap-2">
                                 <span>{{ row.itemName }}</span>
                                 <!-- 項目名の右隣（右寄せ）：やり取り（吹き出し）＋業者追加（見積依頼のみ・吹き出しの右隣）。 -->
@@ -276,12 +292,10 @@ const chatBtnClass = (row: EstimateManagementRow): string => {
                                 </div>
                             </div>
                         </td>
-                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみバッジ。見積依頼画面のみ。色は付けず文言のみで区別する。 -->
-                        <td v-if="isQuoteRequest" class="px-3 py-2 text-center">
-                            <span
-                                v-if="row.companyId != null"
-                                class="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-slate-400/60 bg-slate-50 px-3 py-0.5 text-sm font-medium text-slate-600"
-                            >{{ row.billingTarget ? '請求' : '支払' }}</span>
+                        <!-- 区分（もらい/請求・払い/支払）：クリック不可の表示のみラベル。見積管理の全画面で出す。
+                             見た目は発注フロー側（業者承諾確認・発注取消承認）と共通（BillingKindBadge に集約）。 -->
+                        <td v-if="showBillingKind" class="px-3 py-2 text-center">
+                            <BillingKindBadge v-if="row.companyId != null" :billing-target="row.billingTarget" />
                             <span v-else :class="mutedTextClass">—</span>
                         </td>
                         <td class="px-3 py-2">

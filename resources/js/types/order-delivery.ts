@@ -8,6 +8,11 @@ export interface OrderDeliveryRow {
     companyId: number;
     itemName: string;
     vendorName: string;
+    /**
+     * 区分（もらい＝請求 / 払い＝支払）。見積依頼画面と同じ t_cost_quotations.is_billing_target。
+     * 業者承諾確認画面（showBillingKind）の「区分」列に出す。
+     */
+    billingTarget: boolean;
     masterPrice: number | null;
     budgetPrice: number | null;
     /** 相見積／見積（税抜）＝業者の見積額（最新の相見積履歴）。 */

@@ -82,6 +82,9 @@ class OrderDeliveryResource extends JsonResource
             'companyId' => (int) $quotation->id,
             'itemName' => (string) ($item->item_name ?? ''),
             'vendorName' => (string) ($quotation->company?->company_name ?? '（業者未設定）'),
+            // 区分（もらい＝請求 / 払い＝支払）。見積依頼画面と同じ t_cost_quotations.is_billing_target。
+            // 業者承諾確認画面の「区分」列に出す（{@see \App\Http\Resources\BuildingQuotationResource}）。
+            'billingTarget' => (int) $quotation->is_billing_target === 1,
             // 金額列。発注実行=標準単価/予算単価/相見積、発注承認以降=予算単価/見積/発注。
             'masterPrice' => Format::yen($item->master_price),
             'budgetPrice' => Format::yen($item->budget_price),

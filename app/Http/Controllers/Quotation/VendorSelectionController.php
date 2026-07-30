@@ -28,7 +28,7 @@ class VendorSelectionController extends AbstractQuotationScreenController
     {
         return $this->renderScreen(
             $request,
-            'EstimateManagement/VendorSelection',
+            'QuotationManagement/VendorSelection',
             $this->service->paginate($request->filters(), self::PER_PAGE),
         );
     }

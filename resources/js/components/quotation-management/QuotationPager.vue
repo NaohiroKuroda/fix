@@ -1,12 +1,12 @@
 <script setup lang="ts">
 // 件数表示 + 前へ/次へ。ページ変更は親へ emit('change', page) で委譲。
-import { useEstimateTheme } from '@/composables/useEstimateTheme';
-import type { EstimateManagementPagination } from '@/types/estimate-management';
+import { useQuotationTheme } from '@/composables/useQuotationTheme';
+import type { QuotationManagementPagination } from '@/types/quotation-management';
 
-const props = defineProps<{ pagination: EstimateManagementPagination; glass?: boolean }>();
+const props = defineProps<{ pagination: QuotationManagementPagination; glass?: boolean }>();
 const emit = defineEmits<{ (e: 'change', page: number): void }>();
 
-const { pagerBtnClass, onGlassTextClass } = useEstimateTheme(() => props.glass === true);
+const { pagerBtnClass, onGlassTextClass } = useQuotationTheme(() => props.glass === true);
 </script>
 
 <template>

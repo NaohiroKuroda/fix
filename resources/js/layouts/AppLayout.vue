@@ -23,6 +23,9 @@ interface NavChild {
 const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
+// 建設部部長か（発注取消承認・部長完了承認・請求管理メニューの表示判定）。
+// 判定は HandleInertiaRequests::share の auth.user.isEstimateManager（config/felix.php の manager_role_slugs）が唯一の正。
+const isEstimateManager = computed(() => page.props.auth?.user?.isEstimateManager ?? false);
 
 // サイドメニューの表示可否（ロール別）。config/felix.php（menu_roles）が唯一の正。
 // メニューキー => 表示するか。administrator は全メニュー true になる。
@@ -36,7 +39,7 @@ const badges = computed(() => page.props.menuBadges ?? null);
 // href 付き＝実装済み（リンク）。href 無し＝未実装（プレースホルダ「準備中」）。
 // badge は各画面の未処理件数（部長取消申請はバッヂ対象外）。
 // ロールごとの表示可否（perms）で最終的に絞り込む。
-const estimateChildren = computed<NavChild[]>(() =>
+const quotationChildren = computed<NavChild[]>(() =>
     [
         { key: 'quote-request', label: '見積依頼【FELIX→業者依頼前】', href: '/quotation-management/quote-request', active: path.value.startsWith('/quotation-management/quote-request'), badge: badges.value?.['quote-request'] },
         { key: 'vendor-selection', label: '業者選定【業者→FELIX返答済】', href: '/quotation-management/vendor-selection', active: path.value.startsWith('/quotation-management/vendor-selection'), badge: badges.value?.['vendor-selection'], badge2: badges.value?.['vendor-selection-rejected'] },
@@ -46,14 +49,14 @@ const estimateChildren = computed<NavChild[]>(() =>
     ].filter((child) => canSee(child.key)),
 );
 // 配下メニューが1つも無いロールでは「見積管理」グループごと非表示にする。
-const hasEstimateMenu = computed(() => estimateChildren.value.length > 0);
-const estimateMenuOpen = ref(true);
+const hasQuotationMenu = computed(() => quotationChildren.value.length > 0);
+const quotationMenuOpen = ref(true);
 
 // 発注管理（今後実装予定）は menu_roles に 'order-management' を追加し、
 // perms.value['order-management'] で同様に表示制御する（下の見積管理グループと同じ作り）。
 
 // 親「見積管理」に出す合計バッジ。
-const estimateBadgeTotal = computed(() => estimateChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
+const quotationBadgeTotal = computed(() => quotationChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 
 // 発注管理（トグル）。業者承諾確認・発注取消承認の2画面のみ（取消申請は業者承諾確認画面内のボタンで行うため独立画面はメニューに出さない）。
 // 発注取消承認は見積管理の部長取消承認と同じ方針で建設部部長のみ表示。
@@ -89,31 +92,31 @@ const orderMenuOpen = ref(isOrderPath(path.value));
 const deliveryMenuOpen = ref(isDeliveryPath(path.value));
 const billingMenuOpen = ref(isBillingPath(path.value));
 if (orderMenuOpen.value || deliveryMenuOpen.value || billingMenuOpen.value) {
-    estimateMenuOpen.value = false;
+    quotationMenuOpen.value = false;
 }
 watch(() => path.value, (p) => {
     if (isOrderPath(p)) {
         orderMenuOpen.value = true;
         deliveryMenuOpen.value = false;
         billingMenuOpen.value = false;
-        estimateMenuOpen.value = false;
+        quotationMenuOpen.value = false;
     } else if (isDeliveryPath(p)) {
         deliveryMenuOpen.value = true;
         orderMenuOpen.value = false;
         billingMenuOpen.value = false;
-        estimateMenuOpen.value = false;
+        quotationMenuOpen.value = false;
     } else if (isBillingPath(p)) {
         billingMenuOpen.value = true;
         orderMenuOpen.value = false;
         deliveryMenuOpen.value = false;
-        estimateMenuOpen.value = false;
+        quotationMenuOpen.value = false;
     }
 });
 // 発注管理メニューのトグル。開くときは他のメニューを閉じる。
 const toggleOrderMenu = (): void => {
     orderMenuOpen.value = !orderMenuOpen.value;
     if (orderMenuOpen.value) {
-        estimateMenuOpen.value = false;
+        quotationMenuOpen.value = false;
         deliveryMenuOpen.value = false;
         billingMenuOpen.value = false;
     }
@@ -122,7 +125,7 @@ const toggleOrderMenu = (): void => {
 const toggleDeliveryMenu = (): void => {
     deliveryMenuOpen.value = !deliveryMenuOpen.value;
     if (deliveryMenuOpen.value) {
-        estimateMenuOpen.value = false;
+        quotationMenuOpen.value = false;
         orderMenuOpen.value = false;
         billingMenuOpen.value = false;
     }
@@ -131,7 +134,7 @@ const toggleDeliveryMenu = (): void => {
 const toggleBillingMenu = (): void => {
     billingMenuOpen.value = !billingMenuOpen.value;
     if (billingMenuOpen.value) {
-        estimateMenuOpen.value = false;
+        quotationMenuOpen.value = false;
         orderMenuOpen.value = false;
         deliveryMenuOpen.value = false;
     }
@@ -206,23 +209,23 @@ const logout = () => router.post('/logout');
                 <!-- 見積管理（トグル）。クリックで配下の画面リンクを開閉する。
                      配下メニューが1つも表示されないロールではグループごと非表示にする。 -->
                 <button
-                    v-if="hasEstimateMenu"
+                    v-if="hasQuotationMenu"
                     type="button"
                     class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-base font-medium text-white/80 transition-colors hover:bg-white/10"
-                    @click="estimateMenuOpen = !estimateMenuOpen"
+                    @click="quotationMenuOpen = !quotationMenuOpen"
                 >
                     <ClipboardList class="size-4.5 shrink-0" />
                     <span class="flex-1 text-left">見積管理</span>
                     <span
-                        v-if="estimateBadgeTotal"
+                        v-if="quotationBadgeTotal"
                         class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
                     >
-                        <span class="block translate-y-[0.5px] leading-none">{{ estimateBadgeTotal > 99 ? '99+' : estimateBadgeTotal }}</span>
+                        <span class="block translate-y-[0.5px] leading-none">{{ quotationBadgeTotal > 99 ? '99+' : quotationBadgeTotal }}</span>
                     </span>
-                    <ChevronDown class="size-4 shrink-0 transition-transform" :class="estimateMenuOpen ? '' : '-rotate-90'" />
+                    <ChevronDown class="size-4 shrink-0 transition-transform" :class="quotationMenuOpen ? '' : '-rotate-90'" />
                 </button>
-                <div v-if="hasEstimateMenu" v-show="estimateMenuOpen" class="mt-1 space-y-1 pl-4">
-                    <template v-for="child in estimateChildren" :key="child.label">
+                <div v-if="hasQuotationMenu" v-show="quotationMenuOpen" class="mt-1 space-y-1 pl-4">
+                    <template v-for="child in quotationChildren" :key="child.label">
                         <!-- 実装済み：リンク -->
                         <Link
                             v-if="child.href"

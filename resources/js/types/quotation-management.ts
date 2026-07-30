@@ -2,10 +2,10 @@
 // サーバの BuildingQuotationResource と一致させること。
 
 /** 案件 → 項目 → 見積先 を展開した1行。 */
-export interface EstimateManagementRow {
+export interface QuotationManagementRow {
     unitId: number;
     companyId: number | null;
-    /** 項目名（全行に入る）。表示は「表示中の同一項目の先頭行」にのみ出す（EstimateProjectCard 側で制御）。 */
+    /** 項目名（全行に入る）。表示は「表示中の同一項目の先頭行」にのみ出す（QuotationProjectCard 側で制御）。 */
     itemName: string;
     vendorName: string;
     /** 見積先の詳細（iframe で開く felix_total の見積先編集フォーム）。会社名リンクに使う。 */
@@ -48,7 +48,7 @@ export interface EstimateManagementRow {
 }
 
 /** やり取り（コメント履歴）の添付ファイル1件。 */
-export interface EstimateChatFile {
+export interface QuotationChatFile {
     id: number;
     name: string;
     mime: string | null;
@@ -62,7 +62,7 @@ export interface EstimateChatFile {
 }
 
 /** やり取り（チャット）の1発言。サーバの QuotationMessageController と一致させること。 */
-export interface EstimateChatMessage {
+export interface QuotationChatMessage {
     id: number;
     /** 発言者の役割：manager=建設部部長 / staff=部下。 */
     senderRole: 'manager' | 'staff';
@@ -72,18 +72,18 @@ export interface EstimateChatMessage {
     body: string;
     createdAt: string | null;
     /** 添付ファイル（無ければ空配列）。 */
-    files: EstimateChatFile[];
+    files: QuotationChatFile[];
 }
 
 /** 案件（実行予算）1件。 */
-export interface EstimateManagementProject {
+export interface QuotationManagementProject {
     id: number;
     no: number | null;
     name: string;
-    rows: EstimateManagementRow[];
+    rows: QuotationManagementRow[];
 }
 
-export interface EstimateManagementPagination {
+export interface QuotationManagementPagination {
     currentPage: number;
     lastPage: number;
     perPage: number;
@@ -92,7 +92,7 @@ export interface EstimateManagementPagination {
     to: number | null;
 }
 
-export interface EstimateManagementFilters {
+export interface QuotationManagementFilters {
     keyword: string;
     itemLabel: string;
     /** 見積先（業者名）での絞り込み。 */
@@ -107,7 +107,7 @@ export interface EstimateManagementFilters {
  * 画面モード（列の出し分け / アクション）。
  * quote-request 以外は「業者選定」と同じボタン形式（押下→ヘッダー確定→API→リロード）。
  */
-export type EstimateManagementMode =
+export type QuotationManagementMode =
     | 'quote-request'
     | 'vendor-selection'
     | 'manager-approval'

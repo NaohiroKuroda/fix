@@ -89,8 +89,9 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                         $quotationFilter($q->getQuery());
                         $q->orderBy('id')->with(['company:id,company_name', 'latestHistory']);
                         // 見積依頼：送信回数（requests_count）を一覧表示・未依頼判定に使う。
+                        // 併せて最終依頼日時（requests_max_requested_at＝requested_at の最大値）も付与する。
                         if ($isQuoteRequest) {
-                            $q->withCount('requests');
+                            $q->withCount('requests')->withMax('requests', 'requested_at');
                         }
                     }]);
             }])

@@ -87,8 +87,11 @@ class BuildingQuotationResource extends JsonResource
             'quotePrice' => Format::yen($quotation?->display_quote),
             // 見積依頼済み（送信回数が 1 回以上）。未依頼＝送信回数 0。
             'requested' => $sendCount > 0,
-            // 見積依頼の送信回数（一覧右端の列・未依頼絞り込みに使用）。
+            // 見積依頼の送信回数（一覧の列・未依頼絞り込みに使用）。
             'sendCount' => $sendCount,
+            // 最終依頼日時（t_cost_quotation_requests.requested_at の最大値）。リポジトリが withMax で付与。
+            // 未依頼（0 件）および見積依頼以外の画面（未取得）は null。
+            'lastRequestedAt' => Format::dateTime($quotation?->requests_max_requested_at),
             // やり取り（コメント）の件数（費用項目単位。業者選定・部長承認の「やり取り」列に表示）。
             'messageCount' => (int) ($quotation?->comments_count ?? 0),
             // やり取り（コメント）が1件以上あるか。コメントボタンの配色（選定ボタンと同色）に使う。

@@ -37,6 +37,23 @@ class Format
         return $text === '' ? null : $text;
     }
 
+    /**
+     * 日時値を `Y/m/d H:i` 文字列へ整形する。空・ゼロ日付・解釈不能は null を返す。
+     * 「値なし」をフロントで「—」表示に落とすため、date() と違い空文字ではなく null を返す。
+     */
+    public static function dateTime(string|CarbonInterface|null $value): ?string
+    {
+        if ($value === null || $value === '' || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->format('Y/m/d H:i');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     /** 日付値を `Y/m/d` 文字列へ整形する。空・ゼロ日付は空文字を返す。 */
     public static function date(string|CarbonInterface|null $value): string
     {

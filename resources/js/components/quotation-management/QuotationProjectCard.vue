@@ -45,15 +45,17 @@ const isQuoteRequest = computed(() => props.mode === 'quote-request');
 const showBillingKind = computed(() => true);
 // 「仮選定」列は見積依頼画面のみ出す。
 const showProvisional = computed(() => props.mode === 'quote-request');
-// 「見積依頼送信回数」列も見積依頼画面のみ（右端）。
+// 「見積依頼送信回数」列も見積依頼画面のみ。
 const showSendCount = computed(() => props.mode === 'quote-request');
+// 「最終依頼日時」列も見積依頼画面のみ（右端）。t_cost_quotation_requests.requested_at の最大値。
+const showLastRequestedAt = computed(() => props.mode === 'quote-request');
 // 「否認」列は部長承認画面のみ（右端）。否認＝業者選定へ差し戻し。
 const showReject = computed(() => props.mode === 'manager-approval');
 // やり取り（チャット）は全画面で行う。
 // 列は設けず、項目名の右隣に吹き出しボタンとして表示する。
 const showChat = computed(() => true);
 const isToggleButton = computed(() => config.value.kind === 'toggle-button');
-// 区分列（請求/支払バッジ）＋相見積列＋仮選定列＋送信回数列＋否認列。空行の colspan に使う。
+// 区分列（請求/支払バッジ）＋相見積列＋仮選定列＋送信回数列＋最終依頼日時列＋否認列。空行の colspan に使う。
 const columnCount = computed(
     () =>
         5 +
@@ -61,6 +63,7 @@ const columnCount = computed(
         (config.value.showQuote ? 1 : 0) +
         (showProvisional.value ? 1 : 0) +
         (showSendCount.value ? 1 : 0) +
+        (showLastRequestedAt.value ? 1 : 0) +
         (showReject.value ? 1 : 0),
 );
 const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellTextClass, mutedTextClass } =
@@ -228,6 +231,7 @@ const chatBtnClass = (row: QuotationManagementRow): string => {
                     <col v-if="showProvisional" style="width: 9%" />
                     <col style="width: 15%" />
                     <col v-if="showSendCount" style="width: 11%" />
+                    <col v-if="showLastRequestedAt" style="width: 13%" />
                     <col v-if="showReject" style="width: 11%" />
                 </colgroup>
                 <thead class="text-center" :class="tableHeadClass">
@@ -241,6 +245,7 @@ const chatBtnClass = (row: QuotationManagementRow): string => {
                         <th v-if="showProvisional" class="px-3 py-2.5">仮選定</th>
                         <th class="px-3 py-2.5">{{ config.columnLabel }}</th>
                         <th v-if="showSendCount" class="px-3 py-2.5">送信回数</th>
+                        <th v-if="showLastRequestedAt" class="px-3 py-2.5">最終依頼日時</th>
                         <th v-if="showReject" class="px-3 py-2.5">否認</th>
                     </tr>
                 </thead>
@@ -407,10 +412,21 @@ const chatBtnClass = (row: QuotationManagementRow): string => {
                                 <span v-else :class="mutedTextClass">—</span>
                             </template>
                         </td>
-                        <!-- 見積依頼送信回数（右端・見積依頼画面のみ）。0=未依頼は淡色で表示。 -->
+                        <!-- 見積依頼送信回数（見積依頼画面のみ）。0=未依頼は淡色で表示。 -->
                         <td v-if="showSendCount" class="px-3 py-2 text-center tabular-nums">
                             <span v-if="row.companyId != null" :class="row.sendCount === 0 ? mutedTextClass : 'font-semibold'">
                                 {{ row.sendCount }}回
+                            </span>
+                            <span v-else :class="mutedTextClass">—</span>
+                        </td>
+                        <!-- 最終依頼日時（右端・見積依頼画面のみ）。t_cost_quotation_requests.requested_at の最大値。
+                             未依頼（null）／見積先なしは淡色の「—」。 -->
+                        <td v-if="showLastRequestedAt" class="px-3 py-2 text-center">
+                            <span
+                                v-if="row.companyId != null && row.lastRequestedAt"
+                                class="whitespace-nowrap text-[13px] tabular-nums"
+                            >
+                                {{ row.lastRequestedAt }}
                             </span>
                             <span v-else :class="mutedTextClass">—</span>
                         </td>

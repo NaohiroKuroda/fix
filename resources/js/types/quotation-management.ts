@@ -21,6 +21,11 @@ export interface QuotationManagementRow {
     requested: boolean;
     /** 見積依頼の送信回数（t_cost_quotation_requests の件数）。0=未依頼。見積依頼画面のみ意味を持つ。 */
     sendCount: number;
+    /**
+     * 最終依頼日時（t_cost_quotation_requests.requested_at の最大値。`Y/m/d H:i` 整形済み）。
+     * 未依頼および見積依頼以外の画面は null。見積依頼画面のみ意味を持つ。
+     */
+    lastRequestedAt: string | null;
     /** やり取り（コメント）の件数（費用項目単位）。業者選定・部長承認の「やり取り」列に表示。 */
     messageCount: number;
     /** やり取り（コメント）が1件以上あるか。コメントボタンを選定ボタンと同色にする判定に使う。 */

@@ -308,7 +308,7 @@ const logout = () => router.post('/logout');
                     </Link>
                 </div>
 
-                <!-- 完了・納品管理（トグル）。完了確認と部長完了承認。 -->
+                <!-- 完了・納品と請求のサイドメニューを一時非表示。見積・発注をまずリリースするため。
                 <button
                     type="button"
                     class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-base font-medium text-white/80 transition-colors hover:bg-white/10"
@@ -347,7 +347,6 @@ const logout = () => router.post('/logout');
                     </Link>
                 </div>
 
-                <!-- 請求管理（トグル）。請求承認と部長請求取消確認。建設部部長のみ表示。 -->
                 <template v-if="showBillingMenu">
                     <button
                         type="button"
@@ -387,6 +386,7 @@ const logout = () => router.post('/logout');
                         </Link>
                     </div>
                 </template>
+                -->
             </nav>
 
             <!-- フッター（コピーライト風）：サイドバー最下部にシステム名を控えめに表示。 -->

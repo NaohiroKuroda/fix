@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasBlameColumns;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -32,6 +33,8 @@ use Illuminate\Support\Carbon;
  */
 class TAttachment extends Model
 {
+    use HasBlameColumns;
+
     protected $table = 't_attachments';
 
     protected $fillable = [

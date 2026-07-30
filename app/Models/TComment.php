@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasBlameColumns;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -31,6 +32,8 @@ use Illuminate\Support\Carbon;
  */
 class TComment extends Model
 {
+    use HasBlameColumns;
+
     protected $table = 't_comments';
 
     protected $fillable = [

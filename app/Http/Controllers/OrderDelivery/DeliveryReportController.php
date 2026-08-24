@@ -17,7 +17,7 @@ class DeliveryReportController extends AbstractOrderDeliveryScreenController
     {
         return $this->renderScreen(
             $request,
-            'OrderDelivery/DeliveryReportSubmission',
+            'order-delivery/delivery-report-submission',
             $this->service->paginate('delivery-report', $request->filters(), self::PER_PAGE),
         );
     }

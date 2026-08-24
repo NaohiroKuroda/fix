@@ -27,7 +27,7 @@ class CancelRequestController extends AbstractQuotationScreenController
     {
         return $this->renderScreen(
             $request,
-            'QuotationManagement/CancelRequest',
+            'quotation-management/cancel-request',
             $this->service->paginate($request->filters(), self::PER_PAGE),
         );
     }

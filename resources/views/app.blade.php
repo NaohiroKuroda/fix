@@ -6,7 +6,7 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        @vite(['resources/css/app.css', 'resources/js/app.ts'])
+        @vite(['resources/css/app.css', 'resources/js/app/index.ts'])
         @inertiaHead
     </head>
     <body>

@@ -14,7 +14,7 @@ export default defineConfig({
     },
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.ts'],
+            input: ['resources/css/app.css', 'resources/js/app/index.ts'],
             refresh: true,
             fonts: [
                 bunny('Instrument Sans', {
@@ -33,6 +33,9 @@ export default defineConfig({
         tailwindcss(),
         wayfinder({
             formVariants: true,
+            // 生成物は「業務ロジックを持たないバックエンド連携」なので shared/api 配下に出す
+            // （frontend.md 4.6）。→ shared/api/{actions,routes,wayfinder}
+            path: 'resources/js/shared/api',
         }),
     ],
     server: {

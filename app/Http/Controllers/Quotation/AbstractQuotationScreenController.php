@@ -24,7 +24,7 @@ abstract class AbstractQuotationScreenController extends Controller
      * 案件一覧を Inertia ページとして描画する。
      *
      * @param  QuotationManagementRequest  $request  絞り込み条件（filtersForView 用）
-     * @param  string  $page  Inertia ページ名（例: QuotationManagement/QuoteRequest）
+     * @param  string  $page  Inertia ページ名（例: quotation-management/quote-request）
      * @param  LengthAwarePaginator<int, \App\Models\TBuilding>  $paginator  案件のページネーション
      * @return Response  projects / pagination / filters を渡した Inertia レスポンス
      */

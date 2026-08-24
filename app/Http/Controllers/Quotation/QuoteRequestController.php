@@ -27,7 +27,7 @@ class QuoteRequestController extends AbstractQuotationScreenController
     {
         return $this->renderScreen(
             $request,
-            'QuotationManagement/QuoteRequest',
+            'quotation-management/quote-request',
             $this->service->paginate($request->filters(), self::PER_PAGE),
         );
     }

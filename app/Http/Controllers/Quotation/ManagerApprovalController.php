@@ -28,7 +28,7 @@ class ManagerApprovalController extends AbstractQuotationScreenController
     {
         return $this->renderScreen(
             $request,
-            'QuotationManagement/ManagerApproval',
+            'quotation-management/manager-approval',
             $this->service->paginate($request->filters(), self::PER_PAGE),
         );
     }

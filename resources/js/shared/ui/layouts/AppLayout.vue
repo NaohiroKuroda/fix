@@ -155,10 +155,14 @@ const orderBadgeTotal = computed(() => orderChildren.value.reduce((sum, c) => su
 const deliveryBadgeTotal = computed(() => deliveryChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 const billingBadgeTotal = computed(() => billingChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 
-// ラベルを最初の「【」の前で2行に分割する（業務名 / 【状態】）。
+// ラベルを2行に分割する（1行目＝区分＋業務名 / 2行目＝【状態】）。
+// 例: 「【支払】部長承認【業者選定済→FELIX(建設部)】」
+//      → head「【支払】部長承認」/ tail「【業者選定済→FELIX(建設部)】」
+// 区分（【支払】/【請求】）を先頭に付けたため、**最後の「【」**で切る。
+// 最初の「【」で切ると区分の直前（＝先頭）で分かれてしまい、1行目が空になる。
 const splitLabel = (label: string): { head: string; tail: string } => {
-    const i = label.search(/【/);
-    return i < 0 ? { head: label, tail: '' } : { head: label.slice(0, i), tail: label.slice(i) };
+    const i = label.lastIndexOf('【');
+    return i <= 0 ? { head: label, tail: '' } : { head: label.slice(0, i), tail: label.slice(i) };
 };
 
 const mobileOpen = ref(false);  // モバイル: オーバーレイ表示

@@ -2,7 +2,10 @@
 
 > 「画面同士・システム同士が **何を共有していて**、**何かが起きたら誰に伝わるか**」を整理するドキュメント。
 > 姉妹資料 [`見積管理_シナリオテスト.md`](./見積管理_シナリオテスト.md)（＝正常系シナリオ／ハッピーパス）と対になる。
-> 本書は **実装コードに準拠**。仕様の出典は `docs/detailed-design/quotations/`（00〜06）。差異があれば詳細設計書を正とする。
+> 本書は **実装コードに準拠**。仕様の出典は `docs/detailed-design/quotations/`（00〜09 / 99）。
+> **注**: 2026-08 のスキーマ改訂でテーブル名と `approval_status` の値が変わった
+> （旧 → 新の対応は [`backend.md` §3.7](../../architecture/backend.md)）。本書中のテーブル名は追随済みだが、
+> ステータス値（`MANAGER_APPROVED` / `CANCEL_REQUESTED` 等）は**未更新**なので読み替えること。差異があれば詳細設計書を正とする。
 
 ---
 
@@ -14,7 +17,7 @@
 | # | 成果物 | 内容 | 本書での扱い |
 | :-: | :-- | :-- | :-- |
 | 1 | 用語・前提 | 登場人物（ロール）、データ単位の定義 | [シナリオテスト §0](./見積管理_シナリオテスト.md) を参照 |
-| 2 | 画面一覧 | 各画面の役割・遷移 | [詳細設計 01〜05](../../detailed-design/quotations/) を参照 |
+| 2 | 画面一覧 | 各画面の役割・遷移 | [詳細設計 01〜05（支払）](../../detailed-design/quotations/) を参照 |
 | 3 | **連携仕様（IF仕様）** | 状態の一覧＋イベントの一覧（本書の主題） | **本書 §3** |
 | 4 | 正常系シナリオ | 「この操作をしたら、こう動く」の手順 | 本書 §4＋[シナリオテスト](./見積管理_シナリオテスト.md) |
 
@@ -35,18 +38,18 @@
 
 - **共有される「正」のデータ**は、fix と felix_total が **同一 MySQL（`fix`）を共有** しているため、DB を単一の真実源（Single Source of Truth）とする。画面間の受け渡しは DB 再取得で反映される。
 - **「通知」の手段はメール等ではなく**、①コメントスレッドへの自動記録（`t_comments`）と ②一覧の未読数バッヂ（`unread_count`）である。担当 ⇔ 部長の連絡はこの2つで伝わる。
-- コメントスレッドは **費用項目（`t_building_cost_items`）単位**。項目に業者（見積先）が複数あっても1スレッドに集約される。
+- コメントスレッドは **費用項目（`t_building_budget_items`）単位**。項目に業者（見積先）が複数あっても1スレッドに集約される。
 
 ### 3-1. 状態の一覧（何が「正」で、どこに保存されるか）
 
 | # | 状態・データ | 保存先（テーブル.カラム） | 「正」の定義 / 値 | 参照する画面 |
 | :-: | :-- | :-- | :-- | :-- |
-| S1 | 承認状態 | `t_cost_quotations.approval_status` | `UNSELECTED` / `STAFF_APPROVED` / `MANAGER_APPROVED` / `CANCEL_REQUESTED` / `APPROVED` | 全画面（画面ごとに対象状態が異なる） |
-| S2 | 仮選定 | `t_cost_quotations.is_drafted` | `1`=仮選定中 / `0`=解除 | 見積依頼・業者選定 |
-| S3 | 否認理由 | `t_cost_quotations.deny_comment` | 部長否認で記録される差し戻し理由（`null`=否認なし） | 業者選定（赤表示判定） |
-| S4 | 確定見積額 | `t_building_cost_items.quotation_amount` | 選定確定後の項目金額 | 部長承認・取消申請・取消承認 |
+| S1 | 承認状態 | `t_payable_partners.approval_status` | `UNSELECTED` / `STAFF_APPROVED` / `MANAGER_APPROVED` / `CANCEL_REQUESTED` / `APPROVED` | 全画面（画面ごとに対象状態が異なる） |
+| S2 | 仮選定 | `t_payable_partners.is_drafted` | `1`=仮選定中 / `0`=解除 | 見積依頼・業者選定 |
+| S3 | 否認理由 | `t_payable_partners.deny_comment` | 部長否認で記録される差し戻し理由（`null`=否認なし） | 業者選定（赤表示判定） |
+| S4 | 確定見積額 | `t_building_budget_items.quotation_amount` | 選定確定後の項目金額 | 部長承認・取消申請・取消承認 |
 | S5 | 相見積回答額 | 相見積履歴 `amount_excluding_tax`（`is_latest`） | 業者からの最新回答。有無が「回答状態」 | 見積依頼・業者選定 |
-| S6 | 見積依頼履歴 | `t_cost_quotation_requests` | その見積先へ送信した依頼のログ（件数＝`sendCount`） | 見積依頼 |
+| S6 | 見積依頼履歴 | `t_payable_quotation_requests` | その見積先へ送信した依頼のログ（件数＝`sendCount`） | 見積依頼 |
 | S7 | やり取り（コメント） | `t_comments`（`commentable_type=TBuildingCostItem` / `commentable_id=項目ID`） | 項目単位スレッドの発言（本文・投稿者・時刻） | 全画面（チャット） |
 | S8 | 既読ポインタ | `t_comment_read_timestamps`（`readable_type/readable_id/user_id/last_read_at`） | ユーザー×項目ごとの最終既読時刻 | 全画面（未読バッヂ） |
 | S9 | 添付ファイル | `t_attachments`（`file_path/original_name/mime_type/size/user_id`）＋ `public` ディスク | 本体 `comments/{itemId}/{uuid}.{ext}`、サムネ `.../thumbs/{uuid}.jpg` | 全画面（チャット） |
@@ -80,7 +83,7 @@
 | :-- | :-- | :-- | :-- |
 | 見積依頼 | fix → felix_total | `FelixTotalQuoteRequestGateway::orderEstimate` | E1 |
 | 発注業者確定 | fix → felix_total | `adoptCompany`（`no_competitive_flg` 既定0） | E3 |
-| 取消系 | fix 内で完結 | `t_cost_quotations` 直接 UPDATE（felix_total 連携なし） | E6・E7 |
+| 取消系 | fix 内で完結 | `t_payable_partners` 直接 UPDATE（felix_total 連携なし） | E6・E7 |
 | 一覧の反映 | 双方向（同一DB） | `router.reload` による再取得 | iframe モーダルを閉じた後 等 |
 
 ---

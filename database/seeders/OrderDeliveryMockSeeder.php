@@ -3,13 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\AdminUser;
-use App\Models\TCostQuotation;
 use App\Models\TDeliveryReport;
 use App\Models\TDeliveryReportApprovalAction;
 use App\Models\TOrder;
 use App\Models\TOrderApprovalAction;
+use App\Models\TPayablePartner;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * 会議デモ用：発注〜納品フローの各画面にデータが乗った状態を作る。
@@ -34,7 +35,7 @@ class OrderDeliveryMockSeeder extends Seeder
             return;
         }
 
-        $quotations = TCostQuotation::query()
+        $quotations = TPayablePartner::query()
             ->where('approval_status', 'APPROVED')
             ->with('latestHistory')
             ->orderByDesc('id')
@@ -53,7 +54,7 @@ class OrderDeliveryMockSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, TCostQuotation>  $quotations
+     * @param  Collection<int, TPayablePartner>  $quotations
      */
     private function buildStage($quotations, string $stage, int $operatorId): void
     {

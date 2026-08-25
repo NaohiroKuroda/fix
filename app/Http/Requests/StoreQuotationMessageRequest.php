@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 
 /**
- * 見積先（t_cost_quotations）のやり取り（チャット）への投稿入力。
+ * 見積先（t_payable_partners）のやり取り（チャット）への投稿入力。
  */
 class StoreQuotationMessageRequest extends FormRequest
 {

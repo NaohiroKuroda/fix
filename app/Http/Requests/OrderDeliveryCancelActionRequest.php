@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * 業者承諾確認画面からの取消申請の入力。
- * 対象は見積先ID（t_cost_quotations.id）の配列＋理由（必須）。
+ * 対象は見積先ID（t_payable_partners.id）の配列＋理由（必須）。
  * 部長取消申請（CancelActionRequest）と同様、理由入力を必須にする。
  */
 class OrderDeliveryCancelActionRequest extends FormRequest
@@ -21,7 +21,7 @@ class OrderDeliveryCancelActionRequest extends FormRequest
     {
         return [
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:t_cost_quotations,id'],
+            'ids.*' => ['integer', 'distinct', 'exists:t_payable_partners,id'],
             'reason' => ['required', 'string', 'max:1000'],
         ];
     }

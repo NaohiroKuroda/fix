@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * 見積依頼送信（見積り依頼画面）の入力。
  *
- * 選択された見積先（t_cost_quotations.id）の配列を受け取り、見積依頼を記録する。
+ * 選択された見積先（t_payable_partners.id）の配列を受け取り、見積依頼を記録する。
  */
 class SendQuoteRequestRequest extends FormRequest
 {
@@ -28,7 +28,7 @@ class SendQuoteRequestRequest extends FormRequest
     {
         return [
             'companyIds' => ['required', 'array', 'min:1'],
-            'companyIds.*' => ['integer', 'distinct', 'exists:t_cost_quotations,id'],
+            'companyIds.*' => ['integer', 'distinct', 'exists:t_payable_partners,id'],
         ];
     }
 

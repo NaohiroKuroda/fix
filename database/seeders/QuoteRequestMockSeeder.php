@@ -2,11 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Http\Resources\BuildingQuotationResource;
 use App\Models\TBuilding;
-use App\Models\TBuildingCostItem;
-use App\Models\TCostQuotation;
-use App\Models\TCostQuotationHistory;
-use App\Models\TCostQuotationRequest;
+use App\Models\TBuildingBudgetItem;
+use App\Models\TPayablePartner;
+use App\Models\TPayableQuotation;
+use App\Models\TPayableQuotationRequest;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  * 見積依頼画面は t_cost_quotations.source_id が NOT NULL（felix_total 移行済み）の見積先のみ並べ、
  * 画面上のリンク（見積先名＝業者詳細 / 見積編集 / 業者追加）は source_id を felix_total の
  * estimate_unit_companies.id / estimate_units.id に埋め込んで組み立てる
- * （{@see \App\Http\Resources\BuildingQuotationResource}、{@see config/felix.php}）。
+ * （{@see BuildingQuotationResource}、{@see config/felix.php}）。
  *
  * source_id を実在する estimate_unit_companies.id 等に一致させることで、リンク・ボタンが
  * ローカル felix_total の「既存Fix画面」を実際に開けるようにする。
@@ -41,12 +42,12 @@ class QuoteRequestMockSeeder extends Seeder
         // 再実行に備え、前回の見積依頼デモ物件（division_code = 'QR-*'）を掃除する。
         $oldBuildingIds = TBuilding::where('division_code', 'like', 'QR-%')->pluck('id');
         if ($oldBuildingIds->isNotEmpty()) {
-            $oldItemIds = TBuildingCostItem::whereIn('building_id', $oldBuildingIds)->pluck('id');
-            $oldQuotationIds = TCostQuotation::whereIn('building_cost_item_id', $oldItemIds)->pluck('id');
-            TCostQuotationHistory::whereIn('cost_quotation_id', $oldQuotationIds)->forceDelete();
-            TCostQuotationRequest::whereIn('cost_quotation_id', $oldQuotationIds)->forceDelete();
-            TCostQuotation::whereIn('id', $oldQuotationIds)->forceDelete();
-            TBuildingCostItem::whereIn('id', $oldItemIds)->forceDelete();
+            $oldItemIds = TBuildingBudgetItem::whereIn('building_id', $oldBuildingIds)->pluck('id');
+            $oldQuotationIds = TPayablePartner::whereIn('building_budget_item_id', $oldItemIds)->pluck('id');
+            TPayableQuotation::whereIn('payable_partner_id', $oldQuotationIds)->forceDelete();
+            TPayableQuotationRequest::whereIn('payable_partner_id', $oldQuotationIds)->forceDelete();
+            TPayablePartner::whereIn('id', $oldQuotationIds)->forceDelete();
+            TBuildingBudgetItem::whereIn('id', $oldItemIds)->forceDelete();
             TBuilding::whereIn('id', $oldBuildingIds)->forceDelete();
         }
 
@@ -75,7 +76,7 @@ class QuoteRequestMockSeeder extends Seeder
             }
 
             $building = TBuilding::create([
-                'building_name' => (string) $estimate->name,
+                'name' => (string) $estimate->name,
                 'division_code' => sprintf('QR-%03d', $bi + 1),
                 'source_id' => (int) $estimate->id,
                 'created_at' => now()->subDays(rand(5, 60)),
@@ -89,13 +90,13 @@ class QuoteRequestMockSeeder extends Seeder
             foreach ($units as $sort => $unit) {
                 $master = (int) ($unit->master_price > 0 ? $unit->master_price : ($unit->price > 0 ? $unit->price : rand(500, 5000) * 10000));
 
-                $item = new TBuildingCostItem();
+                $item = new TBuildingBudgetItem;
                 $item->forceFill([
                     'building_id' => $building->id,
                     'item_kind' => 6,
                     'sort' => $sort + 1,
                     'is_enabled' => true,
-                    'item_name' => (string) $unit->label,
+                    'name' => (string) $unit->label,
                     'master_price' => $master,
                     'budget_price' => (int) ($master * 0.95),
                     'quotation_amount' => null,
@@ -115,15 +116,13 @@ class QuoteRequestMockSeeder extends Seeder
                     ->get(['id', 'company_id']);
 
                 foreach ($companies as $euc) {
-                    $quotation = TCostQuotation::create([
-                        'building_cost_item_id' => $item->id,
+                    $quotation = TPayablePartner::create([
+                        'building_budget_item_id' => $item->id,
                         'company_id' => (int) $euc->company_id,
                         'branch_company_id' => null,
                         'counter_company_id' => null,
                         'is_drafted' => true,
-                        'is_billing_target' => false,
                         'approval_status' => 'UNSELECTED',
-                        'deny_comment' => null,
                         'source_id' => (int) $euc->id,
                         'created_at' => now()->subDays(rand(1, 40)),
                         'updated_at' => now(),
@@ -145,15 +144,16 @@ class QuoteRequestMockSeeder extends Seeder
                 $master = $bq['master'];
 
                 if (in_array($quotation->id, $billingQuotationIds, true)) {
-                    $quotation->update(['is_drafted' => false, 'is_billing_target' => true]);
+                    // 請求先（もらい）は t_billing_partners へ分離されたため、ここでは支払のみを作る。
+                    $quotation->update(['is_drafted' => false]);
 
                     continue;
                 }
 
                 // 約6割は業者回答あり（最新の相見積履歴を持つ＝回答済み）。
                 if (rand(1, 10) <= 6) {
-                    TCostQuotationHistory::create([
-                        'cost_quotation_id' => $quotation->id,
+                    TPayableQuotation::create([
+                        'payable_partner_id' => $quotation->id,
                         'is_latest' => true,
                         'file_url' => null,
                         'quotation_date' => now()->subDays(rand(1, 30))->toDateString(),
@@ -168,8 +168,8 @@ class QuoteRequestMockSeeder extends Seeder
 
                 // 約3割は依頼済み（残りは未依頼）。画面のトグルで切替確認できるよう混在させる。
                 if (rand(1, 10) <= 3) {
-                    TCostQuotationRequest::create([
-                        'cost_quotation_id' => $quotation->id,
+                    TPayableQuotationRequest::create([
+                        'payable_partner_id' => $quotation->id,
                         'requested_at' => now()->subDays(rand(1, 20)),
                     ]);
                 }

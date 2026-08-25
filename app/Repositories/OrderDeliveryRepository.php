@@ -4,17 +4,18 @@ namespace App\Repositories;
 
 use App\Models\AdminUser;
 use App\Models\TBuilding;
-use App\Models\TBuildingCostItem;
-use App\Models\TCostQuotation;
+use App\Models\TBuildingBudgetItem;
 use App\Models\TDeliveryReport;
 use App\Models\TDeliveryReportApprovalAction;
 use App\Models\TInvoice;
 use App\Models\TInvoiceApprovalAction;
 use App\Models\TOrder;
 use App\Models\TOrderApprovalAction;
+use App\Models\TPayablePartner;
 use App\Repositories\Contracts\OrderDeliveryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -43,14 +44,14 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
         };
 
         $paginator = TBuilding::query()
-            ->when($keyword, fn (Builder $q, string $kw) => $q->where('building_name', 'like', "%{$kw}%"))
-            ->whereHas('costItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $quotationFilter))
-            ->with(['costItems' => function (HasMany $i) use ($itemLabel, $quotationFilter): void {
+            ->when($keyword, fn (Builder $q, string $kw) => $q->where('name', 'like', "%{$kw}%"))
+            ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $quotationFilter))
+            ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $quotationFilter): void {
                 $this->applyItemFilter($i->getQuery(), $itemLabel, $quotationFilter);
                 $i->orderBy('sort')->orderBy('id')
-                    ->with(['quotations' => function (HasMany $q) use ($quotationFilter): void {
+                    ->with(['payablePartners' => function (HasMany $q) use ($quotationFilter): void {
                         $quotationFilter($q->getQuery());
-                        $q->orderBy('id')->with(['company:id,company_name', 'latestHistory', 'order.deliveryReport.invoice']);
+                        $q->orderBy('id')->with(['company:id,company_name', 'latestQuotation', 'order.deliveryReport.invoice']);
                     }]);
             }])
             ->orderByDesc('id')
@@ -63,7 +64,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     }
 
     /**
-     * mode ごとの見積先（t_cost_quotations）状態フィルタ。
+     * mode ごとの見積先（t_payable_partners）状態フィルタ。
      *
      * @param  array<string, mixed>  $filters
      */
@@ -136,28 +137,28 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     private function applyItemFilter(Builder $i, string|false $itemLabel, callable $quotationFilter): Builder
     {
         if ($itemLabel !== false) {
-            $i->where('item_name', 'like', "%{$itemLabel}%");
+            $i->where('name', 'like', "%{$itemLabel}%");
         }
 
-        return $i->whereHas('quotations', fn (Builder $q) => $quotationFilter($q));
+        return $i->whereHas('payablePartners', fn (Builder $q) => $quotationFilter($q));
     }
 
-    // ---- アクション（全て t_cost_quotations.id 起点）----
+    // ---- アクション（全て t_payable_partners.id 起点）----
 
     public function executeOrders(array $quotationIds): int
     {
-        $quotations = TCostQuotation::query()
+        $quotations = TPayablePartner::query()
             ->whereIn('id', $quotationIds)
             ->where('approval_status', 'APPROVED')
             ->whereDoesntHave('order')
-            ->with('latestHistory')
+            ->with('latestQuotation')
             ->get();
 
         foreach ($quotations as $quotation) {
             $order = TOrder::create([
                 'cost_quotation_id' => $quotation->id,
                 'order_status' => 'STAFF_APPROVED',
-                'amount' => optional($quotation->latestHistory)->amount_excluding_tax,
+                'amount' => optional($quotation->latestQuotation)->amount_excluding_tax,
                 'order_date' => Carbon::now()->toDateString(),
             ]);
             $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'STAFF', 'SELECT');
@@ -286,7 +287,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
 
     public function pendingCounts(): array
     {
-        $countBy = fn (string $mode): int => TCostQuotation::query()->tap(fn (Builder $q) => $this->applyModeFilter($q, $mode))->count();
+        $countBy = fn (string $mode): int => TPayablePartner::query()->tap(fn (Builder $q) => $this->applyModeFilter($q, $mode))->count();
 
         return [
             'order-execution' => $countBy('order-execution'),
@@ -294,7 +295,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
             'order-cancel-approval' => $countBy('order-cancel-approval'),
             'order-acceptance' => $countBy('order-acceptance'),
             // 完了確認画面自体は業者承諾済み全件を表示するが、バッヂは「未確認」のみをカウントする。
-            'delivery-report-submission' => TCostQuotation::query()
+            'delivery-report-submission' => TPayablePartner::query()
                 ->whereHas('order', fn (Builder $o) => $o->whereNotNull('vendor_accepted_at')->whereDoesntHave('deliveryReport'))
                 ->count(),
             'delivery-approval' => $countBy('delivery-approval'),
@@ -304,9 +305,9 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
 
     public function itemIdForQuotation(int $quotationId): ?int
     {
-        $itemId = TCostQuotation::query()
+        $itemId = TPayablePartner::query()
             ->where('id', $quotationId)
-            ->value('building_cost_item_id');
+            ->value('building_budget_item_id');
 
         return $itemId === null ? null : (int) $itemId;
     }
@@ -315,7 +316,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
 
     /**
      * @param  list<int>  $quotationIds
-     * @return \Illuminate\Database\Eloquent\Collection<int, TOrder>
+     * @return Collection<int, TOrder>
      */
     private function ordersFor(array $quotationIds, callable $extra)
     {
@@ -328,7 +329,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
 
     /**
      * @param  list<int>  $quotationIds
-     * @return \Illuminate\Database\Eloquent\Collection<int, TDeliveryReport>
+     * @return Collection<int, TDeliveryReport>
      */
     private function reportsFor(array $quotationIds, callable $extra)
     {
@@ -344,7 +345,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
 
     /**
      * @param  list<int>  $quotationIds
-     * @return \Illuminate\Database\Eloquent\Collection<int, TInvoice>
+     * @return Collection<int, TInvoice>
      */
     private function invoicesFor(array $quotationIds, callable $extra)
     {
@@ -377,16 +378,16 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
      */
     private function attachCommentMeta(LengthAwarePaginator $paginator): void
     {
-        $morphType = (new TBuildingCostItem)->getMorphClass();
+        $morphType = (new TBuildingBudgetItem)->getMorphClass();
         $admin = Auth::guard('admin')->user();
         $userId = $admin instanceof AdminUser ? (int) $admin->id : 0;
 
         $quotations = [];
         $itemIds = [];
         foreach ($paginator as $building) {
-            foreach ($building->costItems as $item) {
+            foreach ($building->budgetItems as $item) {
                 $itemIds[(int) $item->id] = true;
-                foreach ($item->quotations as $quotation) {
+                foreach ($item->payablePartners as $quotation) {
                     $quotations[] = $quotation;
                 }
             }
@@ -421,7 +422,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
         }
 
         foreach ($quotations as $quotation) {
-            $itemId = (int) $quotation->building_cost_item_id;
+            $itemId = (int) $quotation->building_budget_item_id;
             $count = (int) ($countMap[$itemId] ?? 0);
             $quotation->setAttribute('comments_count', $count);
             $quotation->setAttribute('has_comments', $count > 0);

@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * 部長承認画面の「否認」（業者選定へ差し戻し）の入力。
- * 対象の見積先（t_cost_quotations.id）1件と否認理由を受け取る。
+ * 対象の見積先（t_payable_partners.id）1件と否認理由を受け取る。
  */
 class RejectManagerApprovalRequest extends FormRequest
 {
@@ -21,7 +21,7 @@ class RejectManagerApprovalRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'companyId' => ['required', 'integer', 'exists:t_cost_quotations,id'],
+            'companyId' => ['required', 'integer', 'exists:t_payable_partners,id'],
             'reason' => ['required', 'string', 'max:1000'],
         ];
     }

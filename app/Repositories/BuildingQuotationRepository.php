@@ -4,8 +4,8 @@ namespace App\Repositories;
 
 use App\Models\AdminUser;
 use App\Models\TBuilding;
-use App\Models\TBuildingCostItem;
-use App\Models\TCostQuotation;
+use App\Models\TBuildingBudgetItem;
+use App\Models\TPayablePartner;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
 use App\Services\FelixTotal\FelixTotalQuoteRequestGateway;
 use App\Utils\Blame;
@@ -17,8 +17,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * 新スキーマ（t_buildings / t_building_cost_items / t_cost_quotations /
- * t_cost_quotation_histories）からの見積管理データ取得。
+ * 新スキーマ（t_buildings / t_building_budget_items / t_payable_partners /
+ * t_payable_quotations）からの見積管理データ取得。
+ *
+ * 2026-08 のスキーマ改訂で見積先が支払／請求で分割された（支払＝t_payable_partners /
+ * 請求＝t_billing_partners）。**本リポジトリは支払（はらい）側のみを扱う**。
+ * 請求（もらい）は専用の【請求】系画面が扱う（docs/detailed-design/quotations/06〜09）。
  *
  * 旧 felix_total スキーマ版（{@see QuotationRepository}）と同じ {@see QuotationRepositoryInterface}
  * を実装し、サイドメニューのデータソース切替で差し替えて使う。
@@ -34,8 +38,8 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     private const MODE_STATUS = [
         'vendor-selection' => 'UNSELECTED',       // 業者未選定
         'manager-approval' => 'STAFF_APPROVED',   // 担当承認済（部長承認待ち）
-        'cancel-request' => 'MANAGER_APPROVED',   // 部長承認済
-        'cancel-approval' => 'CANCEL_REQUESTED',  // 取消申請中
+        'cancel-request' => 'APPROVED',           // 部長承認済
+        'cancel-approval' => 'CANCEL_APPLIED',    // 取消申請中
     ];
 
     public function __construct(
@@ -44,8 +48,8 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
 
     public function forEstimateManagement(array $filters, int $perPage, string $mode): LengthAwarePaginator
     {
-        $keyword = $this->nonEmpty($filters['keyword'] ?? null);     // 実行予算名（building_name）
-        $itemLabel = $this->nonEmpty($filters['itemLabel'] ?? null); // 項目名（item_name）
+        $keyword = $this->nonEmpty($filters['keyword'] ?? null);     // 実行予算名（t_buildings.name）
+        $itemLabel = $this->nonEmpty($filters['itemLabel'] ?? null); // 項目名（t_building_budget_items.name）
         $vendor = $this->nonEmpty($filters['vendor'] ?? null);       // 見積先（company_name）
         $answer = (string) ($filters['answer'] ?? 'all');            // 業者選定の回答状態（既定=全て）
         $comment = (string) ($filters['comment'] ?? 'all');          // コメント有無（all/has/none）
@@ -53,7 +57,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $status = self::MODE_STATUS[$mode] ?? null;
         $empty = $status === null && ! $isQuoteRequest;              // 見積依頼以外で条件未定は空
 
-        // 見積先（t_cost_quotations）の絞り込み：approval_status ＋ 業者名 ＋（業者選定の）回答状態。
+        // 見積先（t_payable_partners）の絞り込み：approval_status ＋ 業者名 ＋（業者選定の）回答状態。
         $quotationFilter = function (Builder $q) use ($status, $vendor, $answer, $mode, $isQuoteRequest): void {
             if ($status !== null) {
                 $q->where('approval_status', $status);
@@ -71,23 +75,23 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                 // 回答あり＝相見積額（最新の相見積履歴 is_latest）を持つ。回答なし＝持たない。
                 $hasLatest = fn (Builder $h) => $h->whereNotNull('is_latest');
                 if ($answer === 'answered') {
-                    $q->whereHas('histories', $hasLatest);
+                    $q->whereHas('quotations', $hasLatest);
                 } elseif ($answer === 'unanswered') {
-                    $q->whereDoesntHave('histories', $hasLatest);
+                    $q->whereDoesntHave('quotations', $hasLatest);
                 }
             }
         };
 
         $paginator = TBuilding::query()
             ->when($empty, fn (Builder $q) => $q->whereRaw('1 = 0'))
-            ->when($keyword, fn (Builder $q, string $kw) => $q->where('building_name', 'like', "%{$kw}%"))
-            ->whereHas('costItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $quotationFilter))
-            ->with(['costItems' => function (HasMany $i) use ($itemLabel, $comment, $quotationFilter, $isQuoteRequest): void {
+            ->when($keyword, fn (Builder $q, string $kw) => $q->where('name', 'like', "%{$kw}%"))
+            ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $quotationFilter))
+            ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $comment, $quotationFilter, $isQuoteRequest): void {
                 $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $quotationFilter);
                 $i->orderBy('sort')->orderBy('id')
-                    ->with(['quotations' => function (HasMany $q) use ($quotationFilter, $isQuoteRequest): void {
+                    ->with(['payablePartners' => function (HasMany $q) use ($quotationFilter, $isQuoteRequest): void {
                         $quotationFilter($q->getQuery());
-                        $q->orderBy('id')->with(['company:id,company_name', 'latestHistory']);
+                        $q->orderBy('id')->with(['company:id,company_name', 'latestQuotation']);
                         // 見積依頼：送信回数（requests_count）を一覧表示・未依頼判定に使う。
                         // 併せて最終依頼日時（requests_max_requested_at＝requested_at の最大値）も付与する。
                         if ($isQuoteRequest) {
@@ -103,17 +107,17 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         // 見積依頼 / 業者選定＝相見積（業者の最新回答＝最新履歴）/ それ以外＝確定見積（項目）。
         $useLatestQuote = in_array($mode, ['quote-request', 'vendor-selection'], true);
         foreach ($paginator as $building) {
-            foreach ($building->costItems as $item) {
-                foreach ($item->quotations as $quotation) {
+            foreach ($building->budgetItems as $item) {
+                foreach ($item->payablePartners as $quotation) {
                     $quotation->setAttribute('display_quote', $useLatestQuote
-                        ? optional($quotation->latestHistory)->amount_excluding_tax
+                        ? optional($quotation->latestQuotation)->amount_excluding_tax
                         : $item->quotation_amount);
                 }
             }
         }
 
         // やり取り（コメント）のメタ情報（件数・コメント有無・未読数）を各見積先に付与（全画面）。
-        // コメントは費用項目（t_building_cost_items）単位。未読はログインユーザーの最終既読より新しい他者コメント。
+        // コメントは建物予算項目（t_building_budget_items）単位。未読はログインユーザーの最終既読より新しい他者コメント。
         $this->attachCommentMeta($paginator);
 
         return $paginator;
@@ -121,19 +125,20 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
 
     /**
      * ページ内の各見積先に、コメント（t_comments）のメタ情報を付与する。
-     * コメントは費用項目（t_building_cost_items）単位のポリモーフィック（commentable）で保持する。
+     * コメントは建物予算項目（t_building_budget_items）単位のポリモーフィック（commentable）で保持する。
      *
      * 付与する属性（同一項目の各見積先へ同じ値を割り当てる。ボタンは項目の先頭見積先に出るため）:
      * - comments_count : 項目のコメント総数（「やり取り」列・messageCount 用）
      * - has_comments   : コメントが1件以上あるか（コメントボタンの配色用）
      * - unread_count   : ログインユーザーの最終既読（t_comment_read_timestamps）より新しい他者コメント数
+     * - denied         : 「【否認】」で始まるコメントがあるか（否認差し戻しの赤色表示用）
      *
      * @param  LengthAwarePaginator<int, TBuilding>  $paginator
      */
     private function attachCommentMeta(LengthAwarePaginator $paginator): void
     {
         // コメント対象＝費用項目のモーフ型（morph map 未設定のため FQCN）。
-        $morphType = (new TBuildingCostItem)->getMorphClass();
+        $morphType = (new TBuildingBudgetItem)->getMorphClass();
 
         $admin = Auth::guard('admin')->user();
         $userId = $admin instanceof AdminUser ? (int) $admin->id : 0;
@@ -141,9 +146,9 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $quotations = [];
         $itemIds = [];
         foreach ($paginator as $building) {
-            foreach ($building->costItems as $item) {
+            foreach ($building->budgetItems as $item) {
                 $itemIds[(int) $item->id] = true;
-                foreach ($item->quotations as $quotation) {
+                foreach ($item->payablePartners as $quotation) {
                     $quotations[] = $quotation;
                 }
             }
@@ -152,6 +157,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
 
         $countMap = [];
         $unreadMap = [];
+        $deniedMap = [];
         if ($itemIds !== []) {
             // 項目ごとのコメント総数。
             $countMap = DB::table('t_comments')
@@ -161,6 +167,15 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                 ->selectRaw('commentable_id as id, COUNT(*) as cnt')
                 ->pluck('cnt', 'id')
                 ->all();
+
+            // 否認済み判定（新スキーマに否認理由の列が無いため、コメント本文の接頭辞で判定する）。
+            $deniedMap = array_flip(array_map('intval', DB::table('t_comments')
+                ->where('commentable_type', $morphType)
+                ->whereIn('commentable_id', $itemIds)
+                ->where('body', 'like', '【否認】%')
+                ->distinct()
+                ->pluck('commentable_id')
+                ->all()));
 
             // 項目ごとの未読数（最終既読より後・かつ他者の投稿）。
             $unreadMap = DB::table('t_comments as c')
@@ -180,11 +195,12 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         }
 
         foreach ($quotations as $quotation) {
-            $itemId = (int) $quotation->building_cost_item_id;
+            $itemId = (int) $quotation->building_budget_item_id;
             $count = (int) ($countMap[$itemId] ?? 0);
             $quotation->setAttribute('comments_count', $count);
             $quotation->setAttribute('has_comments', $count > 0);
             $quotation->setAttribute('unread_count', (int) ($unreadMap[$itemId] ?? 0));
+            $quotation->setAttribute('denied', isset($deniedMap[$itemId]));
         }
     }
 
@@ -192,24 +208,24 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, callable $quotationFilter): Builder
     {
         if ($itemLabel !== false) {
-            $i->where('item_name', 'like', "%{$itemLabel}%");
+            $i->where('name', 'like', "%{$itemLabel}%");
         }
 
-        // コメント有無（コメントは項目=t_building_cost_items 単位のポリモーフィック）。
+        // コメント有無（コメントは項目=t_building_budget_items 単位のポリモーフィック）。
         if ($comment === 'has') {
             $i->whereHas('comments');
         } elseif ($comment === 'none') {
             $i->whereDoesntHave('comments');
         }
 
-        return $i->whereHas('quotations', fn (Builder $q) => $quotationFilter($q));
+        return $i->whereHas('payablePartners', fn (Builder $q) => $quotationFilter($q));
     }
 
     /**
-     * 見積依頼送信。チェックされた見積先（t_cost_quotations）を旧 ID（source_id）へ写像し、
+     * 見積依頼送信。チェックされた見積先（t_payable_partners）を旧 ID（source_id）へ写像し、
      * felix_total の見積依頼処理（トークン発行＋履歴作成＋業者へメール送信）をサーバ間 HTTP で実行する。
      *
-     * @param  list<int>  $companyIds  見積先（t_cost_quotations.id）の配列
+     * @param  list<int>  $companyIds  見積先（t_payable_partners.id）の配列
      * @return int 依頼を送信した見積先の件数
      */
     public function recordQuoteRequests(array $companyIds): int
@@ -221,16 +237,16 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         // 新スキーマの見積先 → 旧 ID（source_id）対応を取得する。
         // felix_total は "{estimate_units.id}:{estimate_unit_companies.id}" 形式を要求するため、
         // 見積先の source_id（= 旧 estimate_unit_companies.id）と
-        // 費用 t_building_cost_items.source_id（= 旧 estimate_units.id）の両方が要る。
-        $quotations = TCostQuotation::query()
+        // 費用 t_building_budget_items.source_id（= 旧 estimate_units.id）の両方が要る。
+        $quotations = TPayablePartner::query()
             ->whereIn('id', $companyIds)
             ->whereNotNull('source_id')
-            ->with(['costItem:id,source_id'])
-            ->get(['id', 'building_cost_item_id', 'source_id']);
+            ->with(['budgetItem:id,source_id'])
+            ->get(['id', 'building_budget_item_id', 'source_id']);
 
         $pairs = [];
         foreach ($quotations as $quotation) {
-            $unitSourceId = $quotation->costItem?->source_id;
+            $unitSourceId = $quotation->budgetItem?->source_id;
             if ($unitSourceId === null || $quotation->source_id === null) {
                 continue; // 移行元の無い見積先は felix_total へ依頼できないため除外。
             }
@@ -248,7 +264,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
      * 発注業者選定の確定：新テーブルの承認状態を UNSELECTED → STAFF_APPROVED へ進めたうえで、
      * felix_total の採用（update_adoption_flg）をサーバ間 HTTP で呼ぶ。
      *
-     * @param  list<int>  $companyIds  見積先（t_cost_quotations.id）
+     * @param  list<int>  $companyIds  見積先（t_payable_partners.id）
      * @return int UNSELECTED → STAFF_APPROVED へ実際に遷移した見積先の件数
      */
     public function recordVendorSelections(array $companyIds): int
@@ -263,18 +279,18 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
-     * 部長承認：新テーブルの承認状態を STAFF_APPROVED → MANAGER_APPROVED へ進めたうえで、
+     * 部長承認：新テーブルの承認状態を STAFF_APPROVED → APPROVED へ進めたうえで、
      * felix_total の建設部選定（update_tmp_company_select_flg）をサーバ間 HTTP で呼ぶ。
      *
-     * @param  list<int>  $companyIds  見積先（t_cost_quotations.id）
-     * @return int STAFF_APPROVED → MANAGER_APPROVED へ実際に遷移した見積先の件数
+     * @param  list<int>  $companyIds  見積先（t_payable_partners.id）
+     * @return int STAFF_APPROVED → APPROVED へ実際に遷移した見積先の件数
      */
     public function recordManagerApprovals(array $companyIds): int
     {
         return $this->syncWithFelixTotal(
             $companyIds,
             'STAFF_APPROVED',
-            'MANAGER_APPROVED',
+            'APPROVED',
             fn (int $unit, int $company) => $this->felix->tmpSelectCompany($unit, $company),
         );
     }
@@ -286,7 +302,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
      * felix_total 側が失敗（接続不可・非 2xx・権限エラー）した場合は例外が送出され、
      * 新テーブルの更新はロールバックされる（＝両方書けたときだけ成功として扱う）。
      *
-     * @param  list<int>  $companyIds  見積先（t_cost_quotations.id）
+     * @param  list<int>  $companyIds  見積先（t_payable_partners.id）
      * @param  string  $from  遷移元の承認状態
      * @param  string  $to  遷移先の承認状態
      * @param  callable(int, int): void  $callFelixTotal  旧 ID（unit, company）を受け取り現行処理を呼ぶ
@@ -329,7 +345,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
      */
     private function filterByStatus(array $rows, string $status): array
     {
-        $matched = TCostQuotation::query()
+        $matched = TPayablePartner::query()
             ->whereIn('id', array_column($rows, 'id'))
             ->where('approval_status', $status)
             ->pluck('id')
@@ -342,7 +358,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
 
     /**
      * 部長承認の否認（業者選定へ差し戻し）：担当承認済（STAFF_APPROVED）→ 未選定（UNSELECTED）。
-     * 否認理由（deny_comment）を記録したうえで、felix_total の採用取消（update_adoption_flg / mode=false）
+     * felix_total の採用取消（update_adoption_flg / mode=false）
      * をサーバ間 HTTP で呼び、現行側も業者選定前の状態（adoption_flg=0）へ戻す。
      *
      * 選定・承認（{@see syncWithFelixTotal}）と同様、felix_total 側が失敗した場合は
@@ -355,15 +371,14 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         // 移行元（source_id）が無い見積先は felix_total を呼べないため、新テーブルのみ差し戻す。
         $targets = $this->filterByStatus($this->mapSourceIds([$companyId]), 'STAFF_APPROVED');
 
-        return DB::transaction(function () use ($companyId, $reason, $targets): int {
-            $count = TCostQuotation::query()
+        return DB::transaction(function () use ($companyId, $targets): int {
+            $count = TPayablePartner::query()
                 ->where('id', $companyId)
                 ->where('approval_status', 'STAFF_APPROVED')
                 // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
-                ->update(Blame::stampUpdate([
-                    'approval_status' => 'UNSELECTED',
-                    'deny_comment' => $reason,
-                ]));
+                // 否認理由は新スキーマに列が無いため、項目単位のコメントスレッド
+                // （t_comments に「【否認】{理由}」で投稿）を唯一の記録とする。投稿は Service 側で行う。
+                ->update(Blame::stampUpdate(['approval_status' => 'UNSELECTED']));
 
             if ($count === 0) {
                 return 0;
@@ -378,13 +393,13 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
-     * 見積先（t_cost_quotations.id）が属する費用項目（t_building_cost_items.id）を返す。
+     * 見積先（t_payable_partners.id）が属する建物予算項目（t_building_budget_items.id）を返す。
      */
     public function itemIdForQuotation(int $quotationId): ?int
     {
-        $itemId = TCostQuotation::query()
+        $itemId = TPayablePartner::query()
             ->where('id', $quotationId)
-            ->value('building_cost_item_id');
+            ->value('building_budget_item_id');
 
         return $itemId === null ? null : (int) $itemId;
     }
@@ -396,7 +411,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
      */
     public function recordCancelRequests(array $companyIds): int
     {
-        return $this->advanceStatus($companyIds, 'MANAGER_APPROVED', 'CANCEL_REQUESTED');
+        return $this->advanceStatus($companyIds, 'APPROVED', 'CANCEL_APPLIED');
     }
 
     /**
@@ -419,8 +434,8 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     {
         return $this->syncWithFelixTotal(
             $companyIds,
-            'CANCEL_REQUESTED',
-            'APPROVED',
+            'CANCEL_APPLIED',
+            'CANCEL_APPROVED',
             function (int $unit, int $company): void {
                 // 承認の段を逆順に戻す（建設部選定 → 採用の順で解除）。
                 $this->felix->cancelTmpSelection($unit, $company);
@@ -430,10 +445,10 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
-     * 見積先（t_cost_quotations.id）を旧 ID（source_id）へ写像する。移行元の無い行は除外。
+     * 見積先（t_payable_partners.id）を旧 ID（source_id）へ写像する。移行元の無い行は除外。
      *
      * @param  list<int>  $companyIds
-     * @return list<array{id:int, unit:int, company:int}> id=t_cost_quotations.id / unit=旧 estimate_units.id / company=旧 estimate_unit_companies.id
+     * @return list<array{id:int, unit:int, company:int}> id=t_payable_partners.id / unit=旧 estimate_units.id / company=旧 estimate_unit_companies.id
      */
     private function mapSourceIds(array $companyIds): array
     {
@@ -441,15 +456,15 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             return [];
         }
 
-        $quotations = TCostQuotation::query()
+        $quotations = TPayablePartner::query()
             ->whereIn('id', $companyIds)
             ->whereNotNull('source_id')
-            ->with(['costItem:id,source_id'])
-            ->get(['id', 'building_cost_item_id', 'source_id']);
+            ->with(['budgetItem:id,source_id'])
+            ->get(['id', 'building_budget_item_id', 'source_id']);
 
         $rows = [];
         foreach ($quotations as $quotation) {
-            $unitSourceId = $quotation->costItem?->source_id;
+            $unitSourceId = $quotation->budgetItem?->source_id;
             if ($unitSourceId === null || $quotation->source_id === null) {
                 continue;
             }
@@ -470,7 +485,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             return 0;
         }
 
-        return TCostQuotation::query()
+        return TPayablePartner::query()
             ->whereIn('id', $ids)
             ->where('approval_status', $from)
             // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
@@ -478,13 +493,13 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
-     * 仮選定の保存：t_cost_quotations.is_drafted を更新する。
+     * 仮選定の保存：t_payable_partners.is_drafted を更新する。
      *
-     * @param  int  $companyId  t_cost_quotations.id
+     * @param  int  $companyId  t_payable_partners.id
      */
     public function setProvisional(int $companyId, bool $drafted): int
     {
-        return TCostQuotation::query()
+        return TPayablePartner::query()
             ->where('id', $companyId)
             // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
             ->update(Blame::stampUpdate(['is_drafted' => $drafted ? 1 : 0]));
@@ -493,32 +508,55 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     public function pendingCounts(): array
     {
         return [
-            // 見積依頼：移行済み（source_id あり）かつ費用見積依頼（t_cost_quotation_requests）が無い見積先。
-            'quote-request' => TCostQuotation::query()
+            // 見積依頼：移行済み（source_id あり）かつ費用見積依頼（t_payable_quotation_requests）が無い見積先。
+            'quote-request' => TPayablePartner::query()
                 ->whereNotNull('source_id')
                 ->whereNotExists(fn (QueryBuilder $sub) => $sub->selectRaw('1')
-                    ->from('t_cost_quotation_requests')
-                    ->whereColumn('t_cost_quotation_requests.cost_quotation_id', 't_cost_quotations.id'))
+                    ->from('t_payable_quotation_requests')
+                    ->whereColumn('t_payable_quotation_requests.payable_partner_id', 't_payable_partners.id'))
                 ->count(),
             // 業者選定：未選定（UNSELECTED）かつ業者回答あり（最新の相見積履歴を持つ）。
-            'vendor-selection' => TCostQuotation::query()
+            'vendor-selection' => TPayablePartner::query()
                 ->where('approval_status', 'UNSELECTED')
-                ->whereHas('histories', fn (Builder $h) => $h->whereNotNull('is_latest'))
+                ->whereHas('quotations', fn (Builder $h) => $h->whereNotNull('is_latest'))
                 ->count(),
-            // 業者選定（差し戻し）：部長承認で否認され業者選定へ戻った（UNSELECTED かつ否認理由あり）。
-            'vendor-selection-rejected' => TCostQuotation::query()
+            // 業者選定（差し戻し）：部長承認で否認され業者選定へ戻った。
+            // 新スキーマに否認理由の列が無いため、項目のコメントに「【否認】」で始まる投稿が
+            // あることをもって否認済みと判定する（{@see denialItemIds}）。
+            'vendor-selection-rejected' => TPayablePartner::query()
                 ->where('approval_status', 'UNSELECTED')
-                ->whereNotNull('deny_comment')
+                ->whereIn('building_budget_item_id', $this->denialItemIds())
                 ->count(),
             // 部長承認：担当承認済（STAFF_APPROVED）で部長承認待ち。
-            'manager-approval' => TCostQuotation::query()
+            'manager-approval' => TPayablePartner::query()
                 ->where('approval_status', 'STAFF_APPROVED')
                 ->count(),
-            // 部長取消承認：取消申請中（CANCEL_REQUESTED）で承認待ち。
-            'cancel-approval' => TCostQuotation::query()
-                ->where('approval_status', 'CANCEL_REQUESTED')
+            // 部長取消承認：取消申請中（CANCEL_APPLIED）で承認待ち。
+            'cancel-approval' => TPayablePartner::query()
+                ->where('approval_status', 'CANCEL_APPLIED')
                 ->count(),
         ];
+    }
+
+    /**
+     * 否認済み（部長承認で差し戻された）とみなす項目 ID の一覧。
+     *
+     * 2026-08 のスキーマ改訂で否認理由の列（旧 t_payable_partners.deny_comment）が無くなったため、
+     * 項目単位のコメントスレッドに「【否認】」で始まる投稿があることをもって否認済みと判定する。
+     * コメントは項目単位のため、同一項目に複数の見積先がある場合は全て否認扱いになる
+     * （見積先単位の否認履歴が必要になったら t_approval_actions への記録を検討すること）。
+     *
+     * @return list<int>
+     */
+    private function denialItemIds(): array
+    {
+        return DB::table('t_comments')
+            ->where('commentable_type', (new TBuildingBudgetItem)->getMorphClass())
+            ->where('body', 'like', '【否認】%')
+            ->distinct()
+            ->pluck('commentable_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     /** 値が「未指定（null/空文字/'all'）」でなければ文字列として返す。 */

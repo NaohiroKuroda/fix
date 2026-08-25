@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * 新スキーマ（t_buildings → t_building_cost_items → t_cost_quotations）の案件1件分を、
+ * 新スキーマ（t_buildings → t_building_budget_items → t_payable_partners）の案件1件分を、
  * フロント（QuotationManagementScreen.vue）が扱う「案件 → 項目 → 見積先」のフラット行に整形する。
  *
  * felix_total（旧）画面へのリンクは source_id（旧 id）で組み立てる。
@@ -24,7 +24,7 @@ class BuildingQuotationResource extends JsonResource
             'id' => (int) $this->id,
             // 見出しの「No.」は felix_total（旧）実行予算 ID（t_buildings.source_id = estimates.id）を表示する。
             'no' => $this->source_id !== null ? (int) $this->source_id : null,
-            'name' => (string) $this->building_name,
+            'name' => (string) $this->name,
             'rows' => $this->buildRows(),
         ];
     }
@@ -36,20 +36,20 @@ class BuildingQuotationResource extends JsonResource
      */
     private function buildRows(): array
     {
-        $items = $this->relationLoaded('costItems') ? $this->costItems : collect();
+        $items = $this->relationLoaded('budgetItems') ? $this->budgetItems : collect();
         $rows = [];
 
         foreach ($items as $item) {
-            $quotations = $item->relationLoaded('quotations') ? $item->quotations : collect();
+            $partners = $item->relationLoaded('payablePartners') ? $item->payablePartners : collect();
 
-            if ($quotations->isEmpty()) {
+            if ($partners->isEmpty()) {
                 $rows[] = $this->row($item, null);
 
                 continue;
             }
 
-            foreach ($quotations as $quotation) {
-                $rows[] = $this->row($item, $quotation);
+            foreach ($partners as $partner) {
+                $rows[] = $this->row($item, $partner);
             }
         }
 
@@ -57,14 +57,14 @@ class BuildingQuotationResource extends JsonResource
     }
 
     /**
-     * @param  object  $item  明細項目（BuildingCostItem）
-     * @param  object|null  $quotation  見積先（CostQuotation）
+     * @param  object  $item  建物予算項目（TBuildingBudgetItem）
+     * @param  object|null  $quotation  支払取引先（TPayablePartner）
      * @return array<string, mixed>
      */
     private function row(object $item, ?object $quotation): array
     {
         $status = $quotation?->approval_status;
-        // 見積依頼の送信回数（t_cost_quotation_requests の件数）。リポジトリが withCount で付与。
+        // 見積依頼の送信回数（t_payable_quotation_requests の件数）。リポジトリが withCount で付与。
         // 0=未依頼。見積依頼以外の画面では未取得のため 0 になる。
         $sendCount = (int) ($quotation?->requests_count ?? 0);
 
@@ -73,7 +73,7 @@ class BuildingQuotationResource extends JsonResource
             'companyId' => $quotation ? (int) $quotation->id : null,
             // 項目名は全行に持たせ、表示側で「表示中の先頭行」にのみ出す（フィルタで先頭行が
             // 消えても項目名が失われないようにするため）。
-            'itemName' => (string) ($item->item_name ?? ''),
+            'itemName' => (string) ($item->name ?? ''),
             'vendorName' => $quotation
                 ? (string) ($quotation->company?->company_name ?? '（業者未設定）')
                 : '—',
@@ -89,7 +89,7 @@ class BuildingQuotationResource extends JsonResource
             'requested' => $sendCount > 0,
             // 見積依頼の送信回数（一覧の列・未依頼絞り込みに使用）。
             'sendCount' => $sendCount,
-            // 最終依頼日時（t_cost_quotation_requests.requested_at の最大値）。リポジトリが withMax で付与。
+            // 最終依頼日時（t_payable_quotation_requests.requested_at の最大値）。リポジトリが withMax で付与。
             // 未依頼（0 件）および見積依頼以外の画面（未取得）は null。
             'lastRequestedAt' => Format::dateTime($quotation?->requests_max_requested_at),
             // やり取り（コメント）の件数（費用項目単位。業者選定・部長承認の「やり取り」列に表示）。
@@ -100,18 +100,20 @@ class BuildingQuotationResource extends JsonResource
             'unreadCount' => (int) ($quotation?->unread_count ?? 0),
             // 選定済み（業者未選定でない）。
             'selected' => $status !== null && $status !== 'UNSELECTED',
-            // 部長承認済み（部長承認済 / 完了）。
-            'approved' => in_array($status, ['MANAGER_APPROVED', 'APPROVED'], true),
+            // 部長承認済み（APPROVED 以降）。
+            'approved' => in_array($status, ['APPROVED', 'CANCEL_APPLIED', 'CANCEL_APPROVED'], true),
             // 取消申請中。
-            'cancelRequested' => $status === 'CANCEL_REQUESTED',
+            'cancelRequested' => $status === 'CANCEL_APPLIED',
             // 取消承認済み（完了）。
-            'cancelApproved' => $status === 'APPROVED',
-            // 仮選定（t_cost_quotations.is_drafted）。
+            'cancelApproved' => $status === 'CANCEL_APPROVED',
+            // 仮選定（t_payable_partners.is_drafted）。
             'provisional' => $quotation !== null && (int) $quotation->is_drafted === 1,
-            // 請求先（t_cost_quotations.is_billing_target）。業者追加時に「請求先とする」をONにした業者。
-            'billingTarget' => $quotation !== null && (int) $quotation->is_billing_target === 1,
-            // 部長承認で否認され業者選定へ差し戻された（deny_comment あり）。ボタンの赤色表示に使う。
-            'denied' => $quotation !== null && $quotation->deny_comment !== null,
+            // 区分（請求／支払）。2026-08 のスキーマ改訂で請求（もらい）は t_billing_partners へ
+            // 分離されたため、本画面（支払）に並ぶ行は全て支払。請求は【請求】系画面が扱う。
+            'billingTarget' => false,
+            // 部長承認で否認され業者選定へ差し戻された。新スキーマに否認理由の列が無いため、
+            // 項目のコメントに「【否認】」の投稿があるかで判定する（リポジトリが付与）。
+            'denied' => (bool) ($quotation?->denied ?? false),
         ];
     }
 

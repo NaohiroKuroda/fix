@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * 建物（旧：estimates）
  *
- * @see database/migrations/2026_06_19_133637_create_t_buildings_table.php
+ * 2026-08 のスキーマ改訂で建物名の列が `building_name` → `name` に変わっている
+ * （テーブル定義書に準拠）。
  */
 class TBuilding extends Model
 {
@@ -18,16 +19,16 @@ class TBuilding extends Model
     protected $table = 't_buildings';
 
     protected $fillable = [
-        'building_name',
+        'name',
         'division_code',
         'created_at',
         'updated_at',
         'source_id',
     ];
 
-    // 費用
-    public function costItems()
+    // 建物予算項目
+    public function budgetItems()
     {
-        return $this->hasMany(TBuildingCostItem::class, 'building_id');
+        return $this->hasMany(TBuildingBudgetItem::class, 'building_id');
     }
 }

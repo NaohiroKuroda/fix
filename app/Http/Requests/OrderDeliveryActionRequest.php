@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * 発注〜納品〜請求フローの一括アクション（発注実行・承認・承諾記録・確認・仮締め）の入力。
- * 対象は見積先ID（t_cost_quotations.id）の配列。全画面共通で使う。
+ * 対象は見積先ID（t_payable_partners.id）の配列。全画面共通で使う。
  */
 class OrderDeliveryActionRequest extends FormRequest
 {
@@ -20,7 +20,7 @@ class OrderDeliveryActionRequest extends FormRequest
     {
         return [
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:t_cost_quotations,id'],
+            'ids.*' => ['integer', 'distinct', 'exists:t_payable_partners,id'],
         ];
     }
 

@@ -4,7 +4,7 @@ namespace App\Services\Quotation;
 
 use App\Exceptions\ServiceException;
 use App\Models\AdminUser;
-use App\Models\TBuildingCostItem;
+use App\Models\TBuildingBudgetItem;
 use App\Models\TComment;
 use App\Repositories\Contracts\CommentRepositoryInterface;
 use App\Services\Image\ImageCompressor;
@@ -17,14 +17,23 @@ use Illuminate\Support\Facades\Log;
 /**
  * やり取り（コメント）のユースケース入口。
  *
- * コメントは費用項目（t_building_cost_items）単位で1スレッドに集約する
- * （commentable_type = App\Models\TBuildingCostItem / commentable_id = 項目ID）。
+ * コメントは建物予算項目（t_building_budget_items）単位で1スレッドに集約する
+ * （commentable_type = "App\Models\TBuildingCostItem" ＝ 旧クラス名のモーフ別名 / commentable_id = 項目ID）。
  * 投稿者・既読の user_id はログイン中の admin_users.id を用いる。
  */
 class QuotationCommentService
 {
-    /** コメント対象＝費用項目（t_building_cost_items）のモデル。 */
-    private const COMMENTABLE_TYPE = TBuildingCostItem::class;
+    /**
+     * コメント対象＝建物予算項目（t_building_budget_items）のモーフ型。
+     *
+     * 2026-08 のスキーマ改訂でモデルを TBuildingBudgetItem へ改称したが、既存の t_comments には
+     * 旧クラス名が保存済みのため、FQCN 直書きではなく morphMap（AppServiceProvider）を通した
+     * getMorphClass() の値を使う。＝ 既存行と同じ型文字列で読み書きできる。
+     */
+    private function commentableType(): string
+    {
+        return (new TBuildingBudgetItem)->getMorphClass();
+    }
 
     public function __construct(
         private readonly CommentRepositoryInterface $comments,
@@ -39,11 +48,11 @@ class QuotationCommentService
     public function thread(int $itemId): Collection
     {
         try {
-            $comments = $this->comments->forCommentable(self::COMMENTABLE_TYPE, $itemId);
+            $comments = $this->comments->forCommentable($this->commentableType(), $itemId);
 
             $userId = $this->currentUserId();
             if ($userId !== null) {
-                $this->comments->markRead(self::COMMENTABLE_TYPE, $itemId, $userId, Carbon::now());
+                $this->comments->markRead($this->commentableType(), $itemId, $userId, Carbon::now());
             }
 
             return $comments;
@@ -70,7 +79,7 @@ class QuotationCommentService
         try {
             $userId = $this->currentUserId() ?? 0;
 
-            $comment = $this->comments->create(self::COMMENTABLE_TYPE, $itemId, $userId, $body);
+            $comment = $this->comments->create($this->commentableType(), $itemId, $userId, $body);
 
             // 添付ファイルは ImageCompressor 経由で public ディスクへ保存する
             // （画像は圧縮＋サムネ生成・UUID化。それ以外はそのまま保存）。

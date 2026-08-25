@@ -35,7 +35,9 @@ class TOrder extends Model
     // 元となった費用見積
     public function quotation()
     {
-        return $this->belongsTo(TCostQuotation::class, 'cost_quotation_id');
+        // 2026-08 のスキーマ改訂で t_cost_quotations は t_payable_partners へ改称。
+        // t_orders 側の列名（cost_quotation_id）は変更されていない。
+        return $this->belongsTo(TPayablePartner::class, 'cost_quotation_id');
     }
 
     // 発注承認履歴

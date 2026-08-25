@@ -2,13 +2,14 @@
 
 namespace App\Repositories\Contracts;
 
+use App\Models\TBuilding;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 /**
  * 発注〜納品フローの各画面が使うデータアクセス。
  *
  * 見積管理と同じ「物件 → 項目 → 見積先」の構造で一覧を返し、各見積先に発注・納品の状態を付与する。
- * アクションは全て見積先ID（t_cost_quotations.id）を起点にする。
+ * アクションは全て見積先ID（t_payable_partners.id）を起点にする。
  *
  * mode は画面名：order-execution / order-approval / order-cancel-request /
  * order-cancel-approval / order-acceptance / delivery-report / delivery-approval。
@@ -19,7 +20,7 @@ interface OrderDeliveryRepositoryInterface
      * 画面（mode）ごとの対象を物件ネスト構造でページネーションして返す。
      *
      * @param  array<string, mixed>  $filters
-     * @return LengthAwarePaginator<int, \App\Models\TBuilding>
+     * @return LengthAwarePaginator<int, TBuilding>
      */
     public function forScreen(string $mode, array $filters, int $perPage): LengthAwarePaginator;
 
@@ -86,14 +87,14 @@ interface OrderDeliveryRepositoryInterface
     public function cancelInvoices(array $quotationIds): int;
 
     /**
-     * サイドメニューのバッヂ用：各画面の未処理件数（見積先＝t_cost_quotations 単位）。
+     * サイドメニューのバッヂ用：各画面の未処理件数（見積先＝t_payable_partners 単位）。
      *
      * @return array<string, int>
      */
     public function pendingCounts(): array;
 
     /**
-     * 見積先（t_cost_quotations.id）が属する費用項目（t_building_cost_items.id）を返す。
+     * 見積先（t_payable_partners.id）が属する建物予算項目（t_building_budget_items.id）を返す。
      * 取消申請の理由コメントを投稿する項目を特定するために使う。
      */
     public function itemIdForQuotation(int $quotationId): ?int;

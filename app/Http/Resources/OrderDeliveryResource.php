@@ -22,7 +22,7 @@ class OrderDeliveryResource extends JsonResource
         return [
             'id' => (int) $this->id,
             'no' => (int) $this->id,
-            'name' => (string) $this->building_name,
+            'name' => (string) $this->name,
             // 発注書（発注実行・発注承認画面のボタン）で開く felix_total の発注書確認画面 URL。
             // 物件（t_buildings.source_id = 旧 estimates.id）で絞り込む。移行元が無ければ null。
             'orderDocumentUrl' => $this->felixUrl('felix.order_document_url', $this->source_id),
@@ -66,8 +66,8 @@ class OrderDeliveryResource extends JsonResource
     }
 
     /**
-     * @param  object  $item  明細項目（TBuildingCostItem）
-     * @param  object  $quotation  見積先（TCostQuotation）
+     * @param  object  $item  建物予算項目（TBuildingBudgetItem）
+     * @param  object  $quotation  支払取引先（TPayablePartner）
      * @return array<string, mixed>
      */
     private function row(object $item, object $quotation): array
@@ -78,13 +78,14 @@ class OrderDeliveryResource extends JsonResource
 
         return [
             'unitId' => (int) $item->id,
-            // チャット・アクションの単位＝見積先ID（t_cost_quotations.id）。見積管理と同じ。
+            // チャット・アクションの単位＝見積先ID（t_payable_partners.id）。見積管理と同じ。
             'companyId' => (int) $quotation->id,
-            'itemName' => (string) ($item->item_name ?? ''),
+            'itemName' => (string) ($item->name ?? ''),
             'vendorName' => (string) ($quotation->company?->company_name ?? '（業者未設定）'),
-            // 区分（もらい＝請求 / 払い＝支払）。見積依頼画面と同じ t_cost_quotations.is_billing_target。
+            // 区分（もらい＝請求 / 払い＝支払）。2026-08 のスキーマ改訂で請求は t_billing_partners へ
+            // 分離されたため、支払テーブル由来の本画面の行は全て支払。
             // 業者承諾確認画面の「区分」列に出す（{@see \App\Http\Resources\BuildingQuotationResource}）。
-            'billingTarget' => (int) $quotation->is_billing_target === 1,
+            'billingTarget' => false,
             // 金額列。発注実行=標準単価/予算単価/相見積、発注承認以降=予算単価/見積/発注。
             'masterPrice' => Format::yen($item->master_price),
             'budgetPrice' => Format::yen($item->budget_price),

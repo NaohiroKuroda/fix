@@ -16,12 +16,18 @@ use App\Models\TCostQuotationHistory;
 use App\Models\TCostQuotationRequest;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
- * 費用見積まわり（T_/M_テーブル）のダミーデータ投入。
+ * 【要改修】費用見積まわり（T_/M_テーブル）のダミーデータ投入。
  *
- * FiX ER図（G:\共有ドライブ\016_フィリックス_システム開発\99_再構築\FiX ER図.drawio）の
- * 列挙値定義（approval_status / step_name / action_type / item_kind）に基づく。
+ * 2026-08 のスキーマ改訂（t_building_cost_items → t_building_budget_items /
+ * t_cost_quotations → t_payable_partners・t_billing_partners /
+ * t_cost_quotation_histories → t_payable_quotations 等）に追随していないため、処理を停止している。
+ * 承認履歴も t_approval_requests / t_approval_actions へ置き換わっており、
+ * 本シーダーが書いていた t_cost_quotation_approval_actions は旧設計の名残である。
+ *
+ * 作り直す場合は最新のテーブル定義書に合わせること。
  */
 class NewEstimateTablesSeeder extends Seeder
 {
@@ -33,6 +39,14 @@ class NewEstimateTablesSeeder extends Seeder
 
     public function run(): void
     {
+        $this->command?->warn(
+            '[NewEstimateTablesSeeder] 2026-08 のスキーマ改訂に未追随のため停止中です。'
+            .'テーブル定義書に合わせて作り直してください。'
+        );
+
+        return;
+
+        // @phpstan-ignore-next-line 以降は旧スキーマ向けの実装（参照用に残している）。
         $adminUserIds = AdminUser::query()->inRandomOrder()->limit(10)->pluck('id')->all();
         $companyIds = Company::query()->inRandomOrder()->limit(30)->pluck('id')->all();
 
@@ -100,7 +114,7 @@ class NewEstimateTablesSeeder extends Seeder
             foreach (range(1, 2) as $sort) {
                 $kind = $this->itemKinds[array_rand($this->itemKinds)];
                 $master = rand(500, 5000) * 10000;
-                $item = new TBuildingCostItem();
+                $item = new TBuildingCostItem;
                 $item->forceFill([
                     'building_id' => $building->id,
                     'item_kind' => $kind,
@@ -221,7 +235,7 @@ class NewEstimateTablesSeeder extends Seeder
                 TAttachment::create([
                     'attachable_type' => TComment::class,
                     'attachable_id' => $comment->id,
-                    'file_path' => 'attachments/'.\Illuminate\Support\Str::uuid().'.pdf',
+                    'file_path' => 'attachments/'.Str::uuid().'.pdf',
                     'original_name' => '見積書.pdf',
                     'mime_type' => 'application/pdf',
                     'size' => rand(10_000, 2_000_000),

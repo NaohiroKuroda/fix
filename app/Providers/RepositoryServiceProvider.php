@@ -12,7 +12,7 @@ use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
-    /** interface ⇔ 実装のバインド。見積管理は新スキーマ（t_cost_quotations 等）から取得する。 */
+    /** interface ⇔ 実装のバインド。見積管理は新スキーマ（t_payable_partners 等）から取得する。 */
     public function register(): void
     {
         $this->app->bind(QuotationRepositoryInterface::class, BuildingQuotationRepository::class);

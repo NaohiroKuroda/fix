@@ -47,17 +47,17 @@ interface QuotationRepositoryInterface
      * 部長承認の否認（業者選定へ差し戻し）。対象の見積先（担当承認済＝STAFF_APPROVED）を
      * 未選定（UNSELECTED）へ戻し、否認理由（deny_comment）を記録する。
      *
-     * @param  int  $companyId  見積先 ID（新スキーマ=t_cost_quotations.id）
+     * @param  int  $companyId  見積先 ID（新スキーマ=t_payable_partners.id）
      * @param  string  $reason  否認理由
      * @return int 実際に差し戻した件数（0=対象外）
      */
     public function rejectManagerApproval(int $companyId, string $reason): int;
 
     /**
-     * 見積先（t_cost_quotations.id）が属する費用項目（t_building_cost_items.id）を返す。
+     * 見積先（t_payable_partners.id）が属する建物予算項目（t_building_budget_items.id）を返す。
      * コメント（項目単位）を紐づける際の commentable_id 解決に使う。
      *
-     * @param  int  $quotationId  見積先 ID（t_cost_quotations.id）
+     * @param  int  $quotationId  見積先 ID（t_payable_partners.id）
      * @return int|null 費用項目 ID（見積先が無ければ null）
      */
     public function itemIdForQuotation(int $quotationId): ?int;
@@ -80,17 +80,17 @@ interface QuotationRepositoryInterface
 
     /**
      * 仮選定の保存。指定の見積先を仮選定 ON/OFF にする。
-     * 新スキーマ（t_cost_quotations.is_drafted）でのみ永続化し、旧スキーマは未対応（0 を返す）。
+     * 新スキーマ（t_payable_partners.is_drafted）でのみ永続化し、旧スキーマは未対応（0 を返す）。
      *
-     * @param  int  $companyId  見積先 ID（新スキーマ=t_cost_quotations.id）
+     * @param  int  $companyId  見積先 ID（新スキーマ=t_payable_partners.id）
      * @param  bool  $drafted  仮選定 ON=true / OFF=false
      * @return int 実際に更新した件数（0=未更新/未対応）
      */
     public function setProvisional(int $companyId, bool $drafted): int;
 
     /**
-     * サイドメニューのバッヂ用：各画面の未処理件数（見積先=t_cost_quotations 単位）。
-     * - quote-request    : まだ見積依頼を出していない数（t_cost_quotation_requests が無い）
+     * サイドメニューのバッヂ用：各画面の未処理件数（見積先=t_payable_partners 単位）。
+     * - quote-request    : まだ見積依頼を出していない数（t_payable_quotation_requests が無い）
      * - vendor-selection : まだ選定していない数（UNSELECTED かつ業者回答あり）
      * - manager-approval : まだ部長承認していない数（STAFF_APPROVED）
      * - cancel-approval  : 取消申請されており未承認の数（CANCEL_REQUESTED）

@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 費用見積承認履歴
+ * 費用見積承認履歴（旧スキーマの名残）。
  *
- * @see database/migrations/2026_06_22_165123_create_t_cost_quotation_approval_actions_table.php
+ * 2026-08 のスキーマ改訂で承認履歴は `t_approval_requests` / `t_approval_actions` に置き換わり、
+ * 親テーブル `t_cost_quotation_histories` は廃止された（本テーブル自体は DB に残っている）。
+ * 現在どの画面からも参照していないため、参照する場合は新テーブルへの移行可否を先に確認すること。
  */
 class TCostQuotationApprovalAction extends Model
 {
@@ -32,12 +34,6 @@ class TCostQuotationApprovalAction extends Model
     protected $casts = [
         'action_at' => 'datetime',
     ];
-
-    // 費用見積履歴
-    public function history()
-    {
-        return $this->belongsTo(TCostQuotationHistory::class, 'cost_quotation_history_id');
-    }
 
     // ユーザー
     public function operator()

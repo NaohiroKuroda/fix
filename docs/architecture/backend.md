@@ -16,6 +16,7 @@
 | テスト | `phpunit/phpunit`（Feature テストで Inertia 応答を検証） | `^12.5` |
 | 開発補助 | `laravel/pail`（ログ） / `nunomaduro/collision` / `mockery/mockery` / `fakerphp/faker` | — |
 | データベース | MySQL（既存 `felix_total` の `fix_db` を参照） | — |
+| 数値計算 | PHP 拡張 `ext-bcmath`（小数を含む計算は必須／§5.5） | — |
 
 > パッケージ単位の詳細は §4.2、各技術の運用方針（Repository / JsonResource / Wayfinder 等）は §1 以降を参照。
 > 新規パッケージを追加する場合は、本ドキュメントに追記してから導入する（[`CLAUDE.md`](../../CLAUDE.md)）。
@@ -33,6 +34,8 @@
     * `laravel/tinker`（`^3.0`）
     * `laravel/wayfinder`
     * （Inertia サーバアダプタ）`inertiajs/inertia-laravel`
+* **必須の PHP 拡張**
+    * `ext-bcmath` — 小数を含む計算は BCMath で行う（§5.5）
 * **開発用（composer require-dev）**
     * `laravel/pint`（`^1.27`） — コードフォーマッタ
     * `phpunit/phpunit`（`^12.5`） — テスト
@@ -309,7 +312,7 @@ class StatusManagementController extends Controller
     {
         $paginator = $this->estimateService->searchForStatusManagement($request->filters(), $perPage);
 
-        return Inertia::render('StatusManagement/Index', [
+        return Inertia::render('status-management', [
             'estimates' => EstimateResource::collection($paginator->getCollection()),
             // pagination / filters / options は省略
         ]);
@@ -334,8 +337,8 @@ class StatusManagementController extends Controller
 - **永続化境界としての位置づけ**: 新スキーマでは「見積依頼を記録する」＝「felix_total を呼ぶ」である。
   そのため Repository（`BuildingQuotationRepository::recordQuoteRequests`）からゲートウェイを呼ぶ。
   ゲートウェイ自身は Eloquent に触れず、HTTP と認証のみを担う（モデルアクセスは Repository に限る方針を維持）。
-- **ID 写像**: チェックされた `t_cost_quotations.id` を、`source_id`（旧 `estimate_unit_companies.id`）と
-  その費用 `t_building_cost_items.source_id`（旧 `estimate_units.id`）へ写像し、
+- **ID 写像**: チェックされた `t_payable_partners.id` を、`source_id`（旧 `estimate_unit_companies.id`）と
+  その費用 `t_building_budget_items.source_id`（旧 `estimate_units.id`）へ写像し、
   `estimate_unit_ids = "{estimate_units.id}:{estimate_unit_companies.id}"` 形式で渡す
   （`estimate_id=""` を渡すと felix_total 側がユニットの案件で自動グルーピングする）。
   `source_id` を持たない（移行されていない）見積先は依頼対象外として除外する。
@@ -355,9 +358,9 @@ class StatusManagementController extends Controller
 **`created_by`（作成者 ID）/ `updated_by`（更新者 ID）** を持つ（値は `admin_users.id`・いずれも nullable）。
 マイグレーションは felix_total 側に存在する（fix は同一 MySQL を default 接続で参照する）。
 
-対象テーブル: `t_buildings` / `t_building_cost_items` / `t_building_cost_item_groups` /
-`t_building_group_statuses` / `t_cost_quotations` / `t_cost_quotation_histories` /
-`t_cost_quotation_details` / `t_cost_quotation_requests` / `t_approval_requests` /
+対象テーブル: `t_buildings` / `t_building_budget_items` / `t_building_budget_item_groups` /
+`t_building_group_statuses` / `t_payable_partners` / `t_payable_quotations` /
+`t_payable_quotation_details` / `t_payable_quotation_requests` / `t_approval_requests` /
 `t_approval_actions` / `t_comments` / `t_comment_read_timestamps` / `t_attachments`
 
 - **押印は Eloquent のモデルイベントで自動化する。** 各層（Service / Repository）で個別に
@@ -392,6 +395,46 @@ return TCostQuotation::query()
 > （`NewQuotationRegisterService` 等）。そちらは laravel-admin の `Admin::user()` を用いる
 > `App\Traits\BlameableTrait`（felix_total リポジトリ）で同等の押印を行う。仕様は本節と揃える。
 
+### 3.7 2026-08 スキーマ改訂（旧 → 新の対応）
+
+2026-08 に DB が新スキーマへ差し替えられ、旧テーブル（`t_building_cost_items` / `t_cost_quotations` /
+`t_cost_quotation_requests` / `t_cost_quotation_histories` / `t_cost_quotation_details`）は削除された。
+**見積先は支払／請求で 2 テーブルに分割**されている。
+
+| 旧テーブル | 新テーブル | 主な列変更 |
+| --- | --- | --- |
+| `t_buildings` | `t_buildings` | `building_name` → `name` |
+| `t_building_cost_items` | `t_building_budget_items` | `item_name` → `name`（`is_shared` / `cost_unit_id` 追加） |
+| `t_cost_quotations` | **`t_payable_partners`（支払）** / **`t_billing_partners`（請求）** | `building_cost_item_id` → `building_budget_item_id`、`is_billing_target` 廃止（テーブル分割）、`deny_comment` 廃止 |
+| `t_cost_quotation_requests` | `t_payable_quotation_requests` | `cost_quotation_id` → `payable_partner_id` |
+| `t_cost_quotation_histories` | `t_payable_quotations` / `t_billing_quotations` | `cost_quotation_id` → `payable_partner_id` / `billing_partner_id` |
+| `t_cost_quotation_details` | `t_payable_quotation_details` / `t_billing_quotation_details` | `tax_class` → `tax_type`、`is_tax_included` → `is_tax_inclusive` |
+
+承認ステータス（`approval_status`）も改訂された。
+
+| 旧 | 新 | 意味 |
+| --- | --- | --- |
+| `UNSELECTED` | `UNSELECTED` | 未選定（承認申請なし） |
+| `STAFF_APPROVED` | `STAFF_APPROVED` | 担当者承認済（部長承認待ち） |
+| `MANAGER_APPROVED` | **`APPROVED`** | 部長承認済（承認完了） |
+| `CANCEL_REQUESTED` | **`CANCEL_APPLIED`** | 取消申請中（部長承認待ち） |
+| `APPROVED`（取消承認＝完了） | **`CANCEL_APPROVED`** | 取消承認済 |
+
+> `t_orders` / `t_delivery_reports` / `t_invoices` の `*_status` は**改訂対象外**。値はそのまま
+> （`STAFF_APPROVED` / `APPROVED` / `CANCEL_REQUESTED`）である点に注意する。
+
+移行に伴う実装上の注意:
+
+- **否認理由**: 旧 `deny_comment` 列に相当する列が新スキーマに無い。否認理由は項目単位の
+  コメントスレッド（`t_comments` に `【否認】{理由}` で投稿）を**唯一の記録**とし、
+  一覧の `denied`（赤ボタン）もコメントの有無から導出する。
+  コメントは項目単位のため、同一項目に複数の見積先があると全て否認扱いになる。
+- **モーフ型**: `t_comments.commentable_type` / `t_comment_read_timestamps.readable_type` には
+  旧クラス名 `App\Models\TBuildingCostItem` が保存済み。既存データを書き換えずに済むよう、
+  `AppServiceProvider` の `Relation::morphMap()` で旧 FQCN を別名として `TBuildingBudgetItem` に割り当てている。
+- **区分（請求／支払）**: 支払系の一覧（`BuildingQuotationResource`）は `t_payable_partners` のみを
+  読むため `billingTarget` は常に `false`。請求（もらい）は【請求】系画面が扱う。
+
 ## 4. レスポンス整形（JsonResource）
 
 **フロント（Inertia props）へ渡すデータは、必ず JsonResource を経由して整形すること。**
@@ -402,7 +445,7 @@ Eloquent モデルやコレクションをそのまま `Inertia::render()` の p
 - API/props として公開する **フィールドを明示的に制御**する（不要・機密カラムの漏洩防止）。
 - 日付フォーマットや表示用の派生値など、**プレゼンテーション都合の整形をここに集約**する（フロントではロジックを持たない方針＝`frontend.md` 4.2 と対応）。
 - `App\Http\Resources` に配置し、`XxxResource`（単数）/ コレクションは `XxxResource::collection(...)` を用いる。
-- フロントの型定義（`resources/js/types/`）と **キー・型を一致**させる。
+- フロントの型定義（該当スライスの `model/` または `shared/api/`。`frontend.md` 4.3.3 参照）と **キー・型を一致**させる。
 
 ### 4.2 実装例
 
@@ -434,7 +477,7 @@ class EstimateResource extends JsonResource
 ```
 
 ```php
-return Inertia::render('StatusManagement/Index', [
+return Inertia::render('status-management', [
     'estimates' => EstimateResource::collection($estimates),
 ]);
 ```
@@ -525,17 +568,222 @@ $title = (new EstimateViewHelper($estimate))->title(); // "#123 ●○マンシ�
 > 表示専用の整形は JsonResource から呼び出して再利用してよい（例: Resource で `Format::yen(...)`）。
 > ユーティリティ／ヘルパーが業務判断を持ち始めたら、それは Service / Action へ移すサイン。
 
+## 5.5 数値計算（BCMath）
+
+> 参照: [PHP マニュアル — BCMath 任意精度数学関数](https://www.php.net/manual/ja/book.bc.php)
+
+**小数点が絡む計算（金額・単価・数量・税額・率・按分・原価率など）は、浮動小数点演算
+（`float` と `+ - * /`）を使わず、必ず BCMath を使用する。**
+
+`float` は IEEE 754 の二進浮動小数のため 10 進の小数を正確に表現できず（`0.1 + 0.2 !== 0.3`）、
+金額計算で 1 円のズレや「明細合計 ≠ 総額」を生む。BCMath は値を**文字列**として扱う
+任意精度演算であり、10 進の値を誤差なく計算できる。
+
+### 5.5.1 前提
+
+- PHP 拡張 `ext-bcmath` が必須。`composer.json` の `require` に `"ext-bcmath": "*"` を明記する。
+- 本プロジェクトは **PHP 8.3** のため、PHP 8.4 で追加された API（`BcMath\Number` クラス /
+  `bcdivmod()`）は使用しない。**関数形式のみ**を使う。
+
+### 5.5.2 MUST / MUST NOT
+
+**MUST**
+
+- 計算対象の値は **文字列（`string`）** で受け渡す。DB → PHP → 計算 → DB の全経路で文字列を保つ。
+- モデルの `casts()` で `'decimal:2'` 等を指定し、**文字列**として取り出す（`float` cast は使わない）。
+- 金額・数量などのカラムは **`DECIMAL(p, s)`** で定義する。
+- `scale`（小数以下の桁数）は **呼び出しごとに明示指定**する。
+- 大小・一致の判定は **`bccomp()`** を使う。
+- 丸め（四捨五入 / 切り捨て / 切り上げ）は**業務ルール**なので、どれを使うかを Service 層で明示する。
+
+**MUST NOT**
+
+- 小数を含む値への `(float)` / `(int)` キャスト、`+ - * /` 演算子、`round()` / `floor()` / `ceil()` / `array_sum()`。
+    - 件数・個数など **整数であることが確定している**値の演算は対象外（通常の `int` 演算でよい）。
+- `bcscale()` によるグローバルスケール設定への依存（暗黙の既定値に頼らない）。
+- `==` / `<` / `>` による小数文字列の直接比較（`'1.10' == '1.1'` は文字列比較で false になる）。
+- DB カラムでの `FLOAT` / `DOUBLE` の使用。
+- **フロントエンド（TypeScript）での金額計算**。値はサーバ側で確定させ、フロントは表示のみ
+  （[`frontend.md`](frontend.md) §4.9）。
+
+### 5.5.3 使用する関数（PHP 8.3 で利用可）
+
+| 関数 | 用途 | 備考 |
+| --- | --- | --- |
+| `bcadd($a, $b, $scale)` | 加算 | |
+| `bcsub($a, $b, $scale)` | 減算 | |
+| `bcmul($a, $b, $scale)` | 乗算 | |
+| `bcdiv($a, $b, $scale)` | 除算 | 除数 0 は `DivisionByZeroError` |
+| `bcmod($a, $b, $scale)` | 剰余 | |
+| `bcpow($a, $b, $scale)` | 累乗 | 指数は整数文字列 |
+| `bcsqrt($a, $scale)` | 平方根 | |
+| `bccomp($a, $b, $scale)` | 比較（`-1` / `0` / `1`） | 小数の比較は必ずこれ |
+| `bcscale()` | 既定スケール設定 | **使用しない**（scale は都度明示） |
+
+### 5.5.4 丸めは自前で行う（重要）
+
+BCMath は指定 `scale` で **切り捨て（truncate, 0 方向）** する。**四捨五入は行われない。**
+
+```php
+bcadd('1.9', '0', 0);   // '1'  ← 1.9 でも切り捨て
+bcdiv('10', '3', 2);    // '3.33'
+```
+
+消費税の端数処理などは自前で実装し、後述の `App\Utils\Decimal` に集約する。
+各所で `bcadd(..., 0)` を「丸め」のつもりで書かない。
+
+### 5.5.5 実装場所
+
+- 生の `bc*()` 呼び出しを Service / Resource に散らさず、**`App\Utils\Decimal`**（ステートレス・`static`／§5.2）に集約する。
+- Service は `Decimal` 経由で計算し、丸め方針を**メソッド選択で明示**する。
+- 表示用整形は `App\Utils\Format` の責務（`Decimal` の結果を受け取るだけで、整形側で計算しない）。
+
+```php
+<?php
+
+namespace App\Utils;
+
+/**
+ * 小数を含む数値計算（BCMath ラッパ）。
+ *
+ * 値は常に文字列で受け渡す。float へ一度でも通すと IEEE 754 の誤差が
+ * 確定してしまうため、このクラスは内部でも float 化しない。
+ */
+class Decimal
+{
+    /** 内部計算の既定スケール。最終的な丸めは呼び出し側が明示する。 */
+    public const SCALE = 6;
+
+    public static function add(string $a, string $b, int $scale = self::SCALE): string
+    {
+        return bcadd($a, $b, $scale);
+    }
+
+    public static function sub(string $a, string $b, int $scale = self::SCALE): string
+    {
+        return bcsub($a, $b, $scale);
+    }
+
+    public static function mul(string $a, string $b, int $scale = self::SCALE): string
+    {
+        return bcmul($a, $b, $scale);
+    }
+
+    /** 除算。$b が '0' の場合は DivisionByZeroError を送出する。 */
+    public static function div(string $a, string $b, int $scale = self::SCALE): string
+    {
+        return bcdiv($a, $b, $scale);
+    }
+
+    /** 合計。空配列でも指定スケールの 0 を返す（array_sum は使わない）。 */
+    public static function sum(array $values, int $scale = self::SCALE): string
+    {
+        return array_reduce(
+            $values,
+            static fn (string $carry, string $value): string => bcadd($carry, $value, $scale),
+            bcadd('0', '0', $scale),
+        );
+    }
+
+    /** 四捨五入。BCMath は切り捨てのため、符号に応じて半単位を足してから切り捨てる。 */
+    public static function round(string $value, int $scale = 0): string
+    {
+        $half = '0.'.str_repeat('0', $scale).'5';
+
+        return self::isNegative($value)
+            ? bcsub($value, $half, $scale)
+            : bcadd($value, $half, $scale);
+    }
+
+    /** 切り捨て（0 方向）。 */
+    public static function truncate(string $value, int $scale = 0): string
+    {
+        return bcadd($value, '0', $scale);
+    }
+
+    /** 切り上げ（絶対値が大きくなる方向）。 */
+    public static function ceil(string $value, int $scale = 0): string
+    {
+        $truncated = self::truncate($value, $scale);
+
+        if (bccomp($truncated, $value, self::SCALE) === 0) {
+            return $truncated;
+        }
+
+        $unit = $scale === 0 ? '1' : '0.'.str_repeat('0', $scale - 1).'1';
+
+        return self::isNegative($value)
+            ? bcsub($truncated, $unit, $scale)
+            : bcadd($truncated, $unit, $scale);
+    }
+
+    /** 比較。$a < $b で -1、等しければ 0、$a > $b で 1。 */
+    public static function compare(string $a, string $b, int $scale = self::SCALE): int
+    {
+        return bccomp($a, $b, $scale);
+    }
+
+    public static function isZero(string $value, int $scale = self::SCALE): bool
+    {
+        return bccomp($value, '0', $scale) === 0;
+    }
+
+    private static function isNegative(string $value): bool
+    {
+        return bccomp($value, '0', self::SCALE) < 0;
+    }
+}
+```
+
+使用例（明細小計は円未満切り捨て、消費税は円未満四捨五入）:
+
+```php
+use App\Utils\Decimal;
+
+// $line->unit_price / $line->quantity はモデルの casts() により文字列
+$lineTotals = array_map(
+    static fn (QuotationLine $line): string => Decimal::truncate(
+        Decimal::mul($line->unit_price, $line->quantity),
+        0,
+    ),
+    $lines,
+);
+
+$subtotal = Decimal::sum($lineTotals, 0);              // '1234567'
+$tax      = Decimal::round(Decimal::mul($subtotal, '0.10'), 0);
+$total    = Decimal::add($subtotal, $tax, 0);
+
+// 保存も文字列のまま（float に戻さない）
+$quotation->update(['subtotal' => $subtotal, 'tax' => $tax, 'total' => $total]);
+```
+
+### 5.5.6 テスト
+
+小数計算を含む Service は、**誤差が出るケース**を Unit テストで固定する。
+
+- `0.1 + 0.2` 系の丸め誤差
+- 消費税の端数（例: 税抜 `1,234` 円 × 10% = `123.4` → `123`）
+- 按分（明細に分配した金額の合計が総額と一致すること）
+- 境界値（`.5` の丸め、負数、`0`、除数 0）
+
+```php
+$this->assertSame('0.3', Decimal::add('0.1', '0.2', 1));
+$this->assertSame('123', Decimal::round('123.4', 0));
+$this->assertSame('124', Decimal::round('123.5', 0));
+```
+
 ## 6. Inertia レスポンス
 
 - 画面遷移を伴うレスポンスは `Inertia::render()` を返す。
-- ページ名はフロントの `resources/js/pages/` と 1:1 で対応させる。
+- ページ名はフロントの `resources/js/pages/` 配下の**スライスパス（kebab-case）**と 1:1 で対応させる（`frontend.md` 4.3.8 参照）。
+  例: `Inertia::render('quotation-management/quote-request')` → `resources/js/pages/quotation-management/quote-request/index.ts`
 
 ```php
 use Inertia\Inertia;
 
 public function index(): \Inertia\Response
 {
-    return Inertia::render('StatusManagement/Index', [
+    return Inertia::render('status-management', [
         'estimates' => EstimateResource::collection($estimates),
     ]);
 }
@@ -547,7 +795,7 @@ public function index(): \Inertia\Response
 ## 7. Wayfinder（型付きルート生成）
 
 - `laravel/wayfinder` を導入し、コントローラ/ルート定義からフロント向けの型付きアクションを生成する。
-- 生成物はフロント側 `resources/js/actions/` `resources/js/routes/` に出力され、`useForm` 等から利用する（`frontend.md` 4.5/4.6 参照）。
+- 生成物はフロント側 `resources/js/shared/api/actions/` `resources/js/shared/api/routes/` に出力され（Vite プラグインの `path` オプションで指定）、`useForm` 等から利用する（`frontend.md` 4.5/4.6 参照）。
 - ルート/コントローラの引数・メソッドを変更したら、Wayfinder の再生成を行う。
 
 ## 8. バリデーション
@@ -578,6 +826,7 @@ class StoreEstimateRequest extends FormRequest
     - Repository インターフェース `XxxRepositoryInterface`、実装 `XxxRepository`。
     - リソース `XxxResource`、共通関数クラスは責務名（`Format`, `DateHelper` 等）。
 - ControllerからRepositoryクラスは呼ばない。サービスクラスを経由すること。
+- 小数点が絡む計算は `float` 演算を使わず、`App\Utils\Decimal`（BCMath）を経由する（§5.5）。
 
 ## 10. テスト
 
@@ -587,7 +836,7 @@ class StoreEstimateRequest extends FormRequest
 ```php
 $this->get(route('estimates.index'))
     ->assertInertia(fn ($page) => $page
-        ->component('StatusManagement/Index')
+        ->component('status-management')
         ->has('estimates')
     );
 ```
@@ -602,3 +851,7 @@ $this->get(route('estimates.index'))
 - [ ] `Repositories/`（Contracts 含む）と `RepositoryServiceProvider` を整備し、モデル直アクセスを排除
 - [ ] `Http/Resources/`（JsonResource）でレスポンス整形を統一
 - [ ] `Support/`（共通関数クラス）に横断的ヘルパを集約
+- [ ] `composer.json` の `require` に `"ext-bcmath": "*"` を追加
+- [ ] `app/Utils/Decimal.php`（BCMath ラッパ）を実装し、Unit テストを追加
+- [ ] `Format::yen()` の `(int) round((float) $value)` を `Decimal` 経由に置き換え
+- [ ] 金額・数量カラムの型を `DECIMAL(p, s)` に揃え、モデルの `casts()` に `decimal:s` を定義

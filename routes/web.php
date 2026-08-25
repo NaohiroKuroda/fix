@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Billing\BillingCancelApprovalController;
+use App\Http\Controllers\Billing\BillingCancelRequestController;
+use App\Http\Controllers\Billing\BillingOrderConfirmationController;
+use App\Http\Controllers\Billing\BillingQuoteApprovalController;
+use App\Http\Controllers\Billing\BillingQuoteCreateController;
 use App\Http\Controllers\OrderDelivery\DeliveryApprovalController;
 use App\Http\Controllers\OrderDelivery\DeliveryReportController;
 use App\Http\Controllers\OrderDelivery\InvoiceApprovalController;
@@ -56,6 +61,26 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/quotation-management/cancel-approval', [CancelApprovalController::class, 'confirm'])
         ->name('quotation-management.cancel-approval.confirm');  // 部長取消承認（取消申請を承認）
 
+    // 見積管理（請求＝もらい）。もらいは相見積・業者選定が無く、FELIX 側で見積を代理作成する。
+    // ※ 現時点は**モック**（BillingMockService の固定データ。DB 未接続）。
+    // 詳細設計: docs/detailed-design/quotations/06〜09_請求_*_詳細設計.md
+    Route::get('/quotation-management/billing-quote-create', [BillingQuoteCreateController::class, 'index'])
+        ->name('quotation-management.billing-quote-create');       // 【請求】見積作成（担当→業者）
+    Route::post('/quotation-management/billing-quote-create', [BillingQuoteCreateController::class, 'store'])
+        ->name('quotation-management.billing-quote-create.store'); // 見積作成モーダルの保存
+    Route::get('/quotation-management/billing-quote-approval', [BillingQuoteApprovalController::class, 'index'])
+        ->name('quotation-management.billing-quote-approval');     // 【請求】見積承認（部長→業者）
+    Route::post('/quotation-management/billing-quote-approval', [BillingQuoteApprovalController::class, 'confirm'])
+        ->name('quotation-management.billing-quote-approval.confirm');
+    Route::get('/quotation-management/billing-cancel-request', [BillingCancelRequestController::class, 'index'])
+        ->name('quotation-management.billing-cancel-request');     // 【請求】見積取消申請（担当→部長）
+    Route::post('/quotation-management/billing-cancel-request', [BillingCancelRequestController::class, 'confirm'])
+        ->name('quotation-management.billing-cancel-request.confirm');
+    Route::get('/quotation-management/billing-cancel-approval', [BillingCancelApprovalController::class, 'index'])
+        ->name('quotation-management.billing-cancel-approval');    // 【請求】見積取消承認（部長→担当）
+    Route::post('/quotation-management/billing-cancel-approval', [BillingCancelApprovalController::class, 'confirm'])
+        ->name('quotation-management.billing-cancel-approval.confirm');
+
     // 見積先（t_cost_quotations）単位のやり取り（チャット）。業者選定（部下）⇔部長承認（部長）。
     Route::get('/quotation-management/quotations/{quotation}/messages', [QuotationMessageController::class, 'index'])
         ->name('quotation-management.quotation-messages.index');
@@ -90,6 +115,8 @@ Route::middleware('auth:admin')->group(function () {
         ->name('order-delivery.order-cancel-approval.confirm');
     Route::get('/order-delivery/order-acceptance', [OrderAcceptanceController::class, 'index'])
         ->name('order-delivery.order-acceptance');          // 業者承諾記録
+    Route::get('/order-delivery/billing-order-confirmation', [BillingOrderConfirmationController::class, 'index'])
+        ->name('order-delivery.billing-order-confirmation'); // 【請求】発注書確認（部長・モック）
     Route::post('/order-delivery/order-acceptance', [OrderAcceptanceController::class, 'record'])
         ->name('order-delivery.order-acceptance.record');
     Route::post('/order-delivery/order-acceptance/renotify', [OrderAcceptanceController::class, 'renotify'])

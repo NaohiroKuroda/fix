@@ -413,6 +413,87 @@ orderAcceptanceForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'g
 orderAcceptance.form = orderAcceptanceForm
 
 /**
+* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @route '/order-delivery/billing-order-confirmation'
+*/
+export const billingOrderConfirmation = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingOrderConfirmation.url(options),
+    method: 'get',
+})
+
+billingOrderConfirmation.definition = {
+    methods: ["get","head"],
+    url: '/order-delivery/billing-order-confirmation',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @route '/order-delivery/billing-order-confirmation'
+*/
+billingOrderConfirmation.url = (options?: RouteQueryOptions) => {
+    return billingOrderConfirmation.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @route '/order-delivery/billing-order-confirmation'
+*/
+billingOrderConfirmation.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingOrderConfirmation.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @route '/order-delivery/billing-order-confirmation'
+*/
+billingOrderConfirmation.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: billingOrderConfirmation.url(options),
+    method: 'head',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @route '/order-delivery/billing-order-confirmation'
+*/
+const billingOrderConfirmationForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingOrderConfirmation.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @route '/order-delivery/billing-order-confirmation'
+*/
+billingOrderConfirmationForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingOrderConfirmation.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @route '/order-delivery/billing-order-confirmation'
+*/
+billingOrderConfirmationForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingOrderConfirmation.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+billingOrderConfirmation.form = billingOrderConfirmationForm
+
+/**
 * @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::deliveryReport
 * @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:16
 * @route '/order-delivery/delivery-report'
@@ -661,6 +742,7 @@ const orderDelivery = {
     orderCancelRequest: Object.assign(orderCancelRequest, orderCancelRequestB63a4c),
     orderCancelApproval: Object.assign(orderCancelApproval, orderCancelApprovalF607e6),
     orderAcceptance: Object.assign(orderAcceptance, orderAcceptanceC65f40),
+    billingOrderConfirmation: Object.assign(billingOrderConfirmation, billingOrderConfirmation),
     deliveryReport: Object.assign(deliveryReport, deliveryReport0ef403),
     deliveryApproval: Object.assign(deliveryApproval, deliveryApproval3c1f0b),
     invoiceApproval: Object.assign(invoiceApproval, invoiceApproval4acfd2),

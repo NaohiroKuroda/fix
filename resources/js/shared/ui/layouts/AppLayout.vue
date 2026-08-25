@@ -42,11 +42,18 @@ const badges = computed(() => page.props.menuBadges ?? null);
 // ロールごとの表示可否（perms）で最終的に絞り込む。
 const quotationChildren = computed<NavChild[]>(() =>
     [
-        { key: 'quote-request', label: '見積依頼【FELIX→業者依頼前】', href: '/quotation-management/quote-request', active: path.value.startsWith('/quotation-management/quote-request'), badge: badges.value?.['quote-request'] },
-        { key: 'vendor-selection', label: '業者選定【業者→FELIX返答済】', href: '/quotation-management/vendor-selection', active: path.value.startsWith('/quotation-management/vendor-selection'), badge: badges.value?.['vendor-selection'], badge2: badges.value?.['vendor-selection-rejected'] },
-        { key: 'manager-approval', label: '部長承認【業者選定済→FELIX(建設部)】', href: '/quotation-management/manager-approval', active: path.value.startsWith('/quotation-management/manager-approval'), badge: badges.value?.['manager-approval'] },
-        { key: 'cancel-request', label: '部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/quotation-management/cancel-request', active: path.value.startsWith('/quotation-management/cancel-request') },
-        { key: 'cancel-approval', label: '部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/quotation-management/cancel-approval', active: path.value.startsWith('/quotation-management/cancel-approval'), badge: badges.value?.['cancel-approval'] },
+        // 【支払】＝はらい（FELIX が業者へ支払う側）。相見積・業者選定を伴う従来のフロー。
+        { key: 'quote-request', label: '【支払】見積依頼【FELIX→業者依頼前】', href: '/quotation-management/quote-request', active: path.value.startsWith('/quotation-management/quote-request'), badge: badges.value?.['quote-request'] },
+        { key: 'vendor-selection', label: '【支払】業者選定【業者→FELIX返答済】', href: '/quotation-management/vendor-selection', active: path.value.startsWith('/quotation-management/vendor-selection'), badge: badges.value?.['vendor-selection'], badge2: badges.value?.['vendor-selection-rejected'] },
+        { key: 'manager-approval', label: '【支払】部長承認【業者選定済→FELIX(建設部)】', href: '/quotation-management/manager-approval', active: path.value.startsWith('/quotation-management/manager-approval'), badge: badges.value?.['manager-approval'] },
+        { key: 'cancel-request', label: '【支払】部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/quotation-management/cancel-request', active: path.value.startsWith('/quotation-management/cancel-request') },
+        { key: 'cancel-approval', label: '【支払】部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/quotation-management/cancel-approval', active: path.value.startsWith('/quotation-management/cancel-approval'), badge: badges.value?.['cancel-approval'] },
+        // 【請求】＝もらい（FELIX が請求する側）。相見積・業者選定が無く、FELIX が見積を代理作成する。
+        // ※ 現時点はモック画面（docs/detailed-design/quotations/06〜09_請求_*_詳細設計.md）。
+        { key: 'billing-quote-create', label: '【請求】見積作成【FELIX(担当者)→業者】', href: '/quotation-management/billing-quote-create', active: path.value.startsWith('/quotation-management/billing-quote-create') },
+        { key: 'billing-quote-approval', label: '【請求】見積承認【FELIX(建設部部長)→業者】', href: '/quotation-management/billing-quote-approval', active: path.value.startsWith('/quotation-management/billing-quote-approval') },
+        { key: 'billing-cancel-request', label: '【請求】見積取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/quotation-management/billing-cancel-request', active: path.value.startsWith('/quotation-management/billing-cancel-request') },
+        { key: 'billing-cancel-approval', label: '【請求】見積取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/quotation-management/billing-cancel-approval', active: path.value.startsWith('/quotation-management/billing-cancel-approval') },
     ].filter((child) => canSee(child.key)),
 );
 // 配下メニューが1つも無いロールでは「見積管理」グループごと非表示にする。
@@ -62,28 +69,32 @@ const quotationBadgeTotal = computed(() => quotationChildren.value.reduce((sum, 
 // 発注管理（トグル）。業者承諾確認・発注取消承認の2画面のみ（取消申請は業者承諾確認画面内のボタンで行うため独立画面はメニューに出さない）。
 // 発注取消承認は見積管理の部長取消承認と同じ方針で建設部部長のみ表示。
 const orderChildren = computed<NavChild[]>(() => [
-    { label: '業者承諾確認【発注承認済み→承諾待ち】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance'), badge: badges.value?.['order-acceptance'] },
+    { key: 'order-acceptance', label: '【支払】業者承諾確認【発注承諾済み→FELIX(担当者)】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance'), badge: badges.value?.['order-acceptance'] },
     ...(isEstimateManager.value
-        ? [{ label: '発注取消承認【取消申請中→部長取消承認待ち】', href: '/order-delivery/order-cancel-approval', active: path.value.startsWith('/order-delivery/order-cancel-approval'), badge: badges.value?.['order-cancel-approval'] }]
+        ? [{ key: 'order-cancel-approval', label: '【支払】発注取消承認【取消申請中→部長取消承認待ち】', href: '/order-delivery/order-cancel-approval', active: path.value.startsWith('/order-delivery/order-cancel-approval'), badge: badges.value?.['order-cancel-approval'] }]
+        : []),
+    // 【請求】発注書確認（もらい）。業者が発注承諾すると承諾日が入る。※ 現時点はモック画面。
+    ...(isEstimateManager.value
+        ? [{ key: 'billing-order-confirmation', label: '【請求】発注書確認【FELIX(建設部部長)】', href: '/order-delivery/billing-order-confirmation', active: path.value.startsWith('/order-delivery/billing-order-confirmation') }]
         : []),
 ]);
 // 完了・納品管理（トグル）。完了確認（提出日・確認日・請求日）と部長完了承認。
 const deliveryChildren = computed<NavChild[]>(() => [
-    { label: '完了確認【業者承諾済み→提出・確認・請求】', href: '/order-delivery/delivery-report', active: path.value.startsWith('/order-delivery/delivery-report'), badge: badges.value?.['delivery-report-submission'] },
+    { key: 'delivery-report', label: '完了確認【業者承諾済み→提出・確認・請求】', href: '/order-delivery/delivery-report', active: path.value.startsWith('/order-delivery/delivery-report'), badge: badges.value?.['delivery-report-submission'] },
     // 部長完了承認は建設部部長のみ表示。
     ...(isEstimateManager.value
-        ? [{ label: '部長完了承認【報告書受領済み→部長承認待ち】', href: '/order-delivery/delivery-approval', active: path.value.startsWith('/order-delivery/delivery-approval'), badge: badges.value?.['delivery-approval'] }]
+        ? [{ key: 'delivery-approval', label: '部長完了承認【報告書受領済み→部長承認待ち】', href: '/order-delivery/delivery-approval', active: path.value.startsWith('/order-delivery/delivery-approval'), badge: badges.value?.['delivery-approval'] }]
         : []),
 ]);
 
 // 請求管理（トグル）。請求取消承認は建設部部長のみ表示のため、メニュー自体を部長限定にする。
 const billingChildren = computed<NavChild[]>(() => [
-    { label: '請求取消承認【請求書作成済み→取消確認】', href: '/order-delivery/invoice-approval', active: path.value.startsWith('/order-delivery/invoice-approval') },
+    { key: 'invoice-approval', label: '請求取消承認【請求書作成済み→取消確認】', href: '/order-delivery/invoice-approval', active: path.value.startsWith('/order-delivery/invoice-approval') },
 ]);
 const showBillingMenu = computed(() => isEstimateManager.value);
 
 // 現在地の判定（発注管理＝業者承諾確認・発注取消承認、完了・納品管理＝納品系、請求管理＝請求系）。
-const isOrderPath = (p: string): boolean => p.startsWith('/order-delivery/order-acceptance') || p.startsWith('/order-delivery/order-cancel-approval');
+const isOrderPath = (p: string): boolean => p.startsWith('/order-delivery/order-acceptance') || p.startsWith('/order-delivery/order-cancel-approval') || p.startsWith('/order-delivery/billing-order-confirmation');
 const isDeliveryPath = (p: string): boolean => p.startsWith('/order-delivery/delivery-');
 const isBillingPath = (p: string): boolean => p.startsWith('/order-delivery/invoice-');
 

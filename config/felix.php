@@ -48,6 +48,12 @@ return [
         'cancel-request'   => $staffRoleSlugs,
         'manager-approval' => $managerRoleSlugs,
         'cancel-approval'  => $managerRoleSlugs,
+        // 請求（もらい）系。支払側と同じ担当／部長の役割分担に合わせる。
+        'billing-quote-create'      => $staffRoleSlugs,
+        'billing-quote-approval'    => $managerRoleSlugs,
+        'billing-cancel-request'    => $staffRoleSlugs,
+        'billing-cancel-approval'   => $managerRoleSlugs,
+        'billing-order-confirmation' => $managerRoleSlugs,
         'order-management' => [],
     ],
 

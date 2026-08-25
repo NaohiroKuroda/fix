@@ -4,6 +4,10 @@ import vendorSelection5181af from './vendor-selection'
 import managerApproval3ec22d from './manager-approval'
 import cancelRequestD640cf from './cancel-request'
 import cancelApprovalB7fa4c from './cancel-approval'
+import billingQuoteCreate082e7f from './billing-quote-create'
+import billingQuoteApprovalD9abaa from './billing-quote-approval'
+import billingCancelRequest259496 from './billing-cancel-request'
+import billingCancelApprovalF8ce24 from './billing-cancel-approval'
 import quotationMessages from './quotation-messages'
 import commentAttachments from './comment-attachments'
 /**
@@ -411,12 +415,340 @@ cancelApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 
 cancelApproval.form = cancelApprovalForm
 
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @route '/quotation-management/billing-quote-create'
+*/
+export const billingQuoteCreate = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingQuoteCreate.url(options),
+    method: 'get',
+})
+
+billingQuoteCreate.definition = {
+    methods: ["get","head"],
+    url: '/quotation-management/billing-quote-create',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @route '/quotation-management/billing-quote-create'
+*/
+billingQuoteCreate.url = (options?: RouteQueryOptions) => {
+    return billingQuoteCreate.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @route '/quotation-management/billing-quote-create'
+*/
+billingQuoteCreate.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingQuoteCreate.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @route '/quotation-management/billing-quote-create'
+*/
+billingQuoteCreate.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: billingQuoteCreate.url(options),
+    method: 'head',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @route '/quotation-management/billing-quote-create'
+*/
+const billingQuoteCreateForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingQuoteCreate.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @route '/quotation-management/billing-quote-create'
+*/
+billingQuoteCreateForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingQuoteCreate.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @route '/quotation-management/billing-quote-create'
+*/
+billingQuoteCreateForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingQuoteCreate.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+billingQuoteCreate.form = billingQuoteCreateForm
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:16
+* @route '/quotation-management/billing-quote-approval'
+*/
+export const billingQuoteApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingQuoteApproval.url(options),
+    method: 'get',
+})
+
+billingQuoteApproval.definition = {
+    methods: ["get","head"],
+    url: '/quotation-management/billing-quote-approval',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:16
+* @route '/quotation-management/billing-quote-approval'
+*/
+billingQuoteApproval.url = (options?: RouteQueryOptions) => {
+    return billingQuoteApproval.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:16
+* @route '/quotation-management/billing-quote-approval'
+*/
+billingQuoteApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingQuoteApproval.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:16
+* @route '/quotation-management/billing-quote-approval'
+*/
+billingQuoteApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: billingQuoteApproval.url(options),
+    method: 'head',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:16
+* @route '/quotation-management/billing-quote-approval'
+*/
+const billingQuoteApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingQuoteApproval.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:16
+* @route '/quotation-management/billing-quote-approval'
+*/
+billingQuoteApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingQuoteApproval.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:16
+* @route '/quotation-management/billing-quote-approval'
+*/
+billingQuoteApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingQuoteApproval.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+billingQuoteApproval.form = billingQuoteApprovalForm
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @route '/quotation-management/billing-cancel-request'
+*/
+export const billingCancelRequest = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingCancelRequest.url(options),
+    method: 'get',
+})
+
+billingCancelRequest.definition = {
+    methods: ["get","head"],
+    url: '/quotation-management/billing-cancel-request',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @route '/quotation-management/billing-cancel-request'
+*/
+billingCancelRequest.url = (options?: RouteQueryOptions) => {
+    return billingCancelRequest.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @route '/quotation-management/billing-cancel-request'
+*/
+billingCancelRequest.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingCancelRequest.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @route '/quotation-management/billing-cancel-request'
+*/
+billingCancelRequest.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: billingCancelRequest.url(options),
+    method: 'head',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @route '/quotation-management/billing-cancel-request'
+*/
+const billingCancelRequestForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingCancelRequest.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @route '/quotation-management/billing-cancel-request'
+*/
+billingCancelRequestForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingCancelRequest.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @route '/quotation-management/billing-cancel-request'
+*/
+billingCancelRequestForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingCancelRequest.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+billingCancelRequest.form = billingCancelRequestForm
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:16
+* @route '/quotation-management/billing-cancel-approval'
+*/
+export const billingCancelApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingCancelApproval.url(options),
+    method: 'get',
+})
+
+billingCancelApproval.definition = {
+    methods: ["get","head"],
+    url: '/quotation-management/billing-cancel-approval',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:16
+* @route '/quotation-management/billing-cancel-approval'
+*/
+billingCancelApproval.url = (options?: RouteQueryOptions) => {
+    return billingCancelApproval.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:16
+* @route '/quotation-management/billing-cancel-approval'
+*/
+billingCancelApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: billingCancelApproval.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:16
+* @route '/quotation-management/billing-cancel-approval'
+*/
+billingCancelApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: billingCancelApproval.url(options),
+    method: 'head',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:16
+* @route '/quotation-management/billing-cancel-approval'
+*/
+const billingCancelApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingCancelApproval.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:16
+* @route '/quotation-management/billing-cancel-approval'
+*/
+billingCancelApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingCancelApproval.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:16
+* @route '/quotation-management/billing-cancel-approval'
+*/
+billingCancelApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: billingCancelApproval.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+billingCancelApproval.form = billingCancelApprovalForm
+
 const quotationManagement = {
     quoteRequest: Object.assign(quoteRequest, quoteRequestF3c656),
     vendorSelection: Object.assign(vendorSelection, vendorSelection5181af),
     managerApproval: Object.assign(managerApproval, managerApproval3ec22d),
     cancelRequest: Object.assign(cancelRequest, cancelRequestD640cf),
     cancelApproval: Object.assign(cancelApproval, cancelApprovalB7fa4c),
+    billingQuoteCreate: Object.assign(billingQuoteCreate, billingQuoteCreate082e7f),
+    billingQuoteApproval: Object.assign(billingQuoteApproval, billingQuoteApprovalD9abaa),
+    billingCancelRequest: Object.assign(billingCancelRequest, billingCancelRequest259496),
+    billingCancelApproval: Object.assign(billingCancelApproval, billingCancelApprovalF8ce24),
     quotationMessages: Object.assign(quotationMessages, quotationMessages),
     commentAttachments: Object.assign(commentAttachments, commentAttachments),
 }

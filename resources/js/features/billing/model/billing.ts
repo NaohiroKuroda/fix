@@ -45,6 +45,79 @@ export interface BillingRow {
     messageCount: number;
     hasComments: boolean;
     unreadCount: number;
+    /**
+     * 作成済みの請求見積（最新版）。未作成は null。
+     * 見積作成モーダルを「見積修正」で開いたときの初期値になる。
+     */
+    quotation: BillingQuotation | null;
+}
+
+/** 課税区分（t_billing_quotation_details.tax_type）。 */
+export type BillingTaxType = 'TAXABLE' | 'NON_TAXABLE';
+
+/**
+ * 請求見積の明細1行（t_billing_quotation_details）。
+ *
+ * 列は felix_total の業者マイページ「見積」タブを踏襲する
+ * （拠点 / 部門 / 依頼内容 / 数量 / 単位 / 税区分 / 税種類 / 単価 / 金額）。
+ * 金額系は BCMath 前提のため文字列で受け渡す（frontend.md §4.9）。
+ */
+export interface BillingQuotationDetail {
+    id: number | null;
+    /** メモ行（依頼内容だけを表示する行）。 */
+    isMemo: boolean;
+    /** 拠点コード（constant.branch_list）。 */
+    branchCode: number | null;
+    /** 部署ID（departments.id）。 */
+    departmentId: number | null;
+    /** 依頼内容（明細名）。 */
+    name: string;
+    /** 数量。 */
+    quantity: number | null;
+    /** 単位マスターID（master_units.id）。 */
+    unitId: number | null;
+    /** 単価。 */
+    unitPrice: string | null;
+    /** 課税区分。 */
+    taxType: BillingTaxType;
+    /** 消費税率（DECIMAL(3,2) をそのまま文字列で保持。例 "0.10"）。 */
+    taxRate: string;
+    /** 税込フラグ（felix_total の「税種類」＝税別/税込）。 */
+    isTaxInclusive: boolean;
+    /** 金額（数量 × 単価。手入力も可）。 */
+    price: string | null;
+    /**
+     * 使用中の行か（t_billing_quotation_details.is_changed）。
+     * felix_total の fix_flg と同じで、空の予備行は 0 で保存される。
+     * **画面には is_changed = true の行だけを表示する。**
+     */
+    isChanged: boolean;
+}
+
+/** 請求見積（t_billing_quotations）の最新版 ＋ 明細。 */
+export interface BillingQuotation {
+    id: number | null;
+    /** 見積日（`YYYY-MM-DD`。input[type=date] にそのまま入れる）。 */
+    quotationDate: string;
+    /** 税抜合計。 */
+    amountExcludingTax: string | null;
+    /** 消費税調整（端数調整・手入力調整の差分）。 */
+    taxAdjust: string | null;
+    /** 源泉所得及び復興特別所得税。 */
+    withholdingIncomeTax: string | null;
+    comment: string;
+    fileUrl: string;
+    details: BillingQuotationDetail[];
+}
+
+/** モーダルの選択肢（サーバから渡すマスタ）。 */
+export interface BillingMasters {
+    /** 拠点（constant.branch_list）。 */
+    branches: { code: number; name: string }[];
+    /** 部署（departments）。 */
+    departments: { id: number; name: string }[];
+    /** 単位（master_units）。 */
+    units: { id: number; name: string }[];
 }
 
 /** 案件（実行予算）1件。 */

@@ -31,6 +31,8 @@ abstract class AbstractBillingScreenController extends Controller
 
         return Inertia::render($page, [
             'projects' => $screen['projects'],
+            // 見積作成モーダルの選択肢（拠点 / 部署 / 単位）。
+            'masters' => $screen['masters'],
             'pagination' => $screen['pagination'],
             'filters' => $request->filtersForView(),
         ]);

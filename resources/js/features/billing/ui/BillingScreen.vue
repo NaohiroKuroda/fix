@@ -20,6 +20,7 @@ import BillingQuotationModal, { type BillingQuotationInput } from './BillingQuot
 import { BILLING_MODE_CONFIG } from '../model/billing-mode';
 import type {
     BillingFilters,
+    BillingMasters,
     BillingMode,
     BillingPagination,
     BillingProject,
@@ -33,7 +34,14 @@ const props = defineProps<{
     projects: BillingProject[];
     pagination: BillingPagination;
     filters: BillingFilters;
+    /** 見積作成モーダルの選択肢（拠点 / 部署 / 単位）。見積作成画面のみ渡る。 */
+    masters?: BillingMasters;
 }>();
+
+/** モーダルへ渡すマスタ（未指定の画面では空の選択肢にする）。 */
+const modalMasters = computed<BillingMasters>(
+    () => props.masters ?? { branches: [], departments: [], units: [] },
+);
 
 const isThemed = computed(() => props.glass === true);
 const config = computed(() => BILLING_MODE_CONFIG[props.mode]);
@@ -292,6 +300,7 @@ const goToPage = (page: number): void => {
         :open="quotationModalOpen"
         :row="quotationTarget"
         :building-name="quotationBuilding"
+        :masters="modalMasters"
         :processing="form.processing"
         @close="quotationModalOpen = false"
         @submit="submitQuotation"

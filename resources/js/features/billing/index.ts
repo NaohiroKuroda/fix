@@ -5,6 +5,10 @@ export { default as BillingScreen } from './ui/BillingScreen.vue';
 
 export type {
     BillingApprovalStatus,
+    BillingMasters,
+    BillingQuotation,
+    BillingQuotationDetail,
+    BillingTaxType,
     BillingFilters,
     BillingMode,
     BillingPagination,

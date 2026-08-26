@@ -67,6 +67,30 @@ const toggleAllProjects = (): void => {
 
 const allRows = computed<BillingRow[]>(() => props.projects.flatMap((p) => p.rows));
 
+// 区分（支払 / 請求）。請求系画面の初期値は「請求」。支払に切り替えると支払取引先を表示のみで参照する。
+type PartnerKind = 'payable' | 'billing';
+const kind = computed<PartnerKind>(() => (props.filters.kind === 'payable' ? 'payable' : 'billing'));
+const kindOptions: { value: PartnerKind; label: string }[] = [
+    { value: 'payable', label: '支払' },
+    { value: 'billing', label: '請求' },
+];
+/** 区分を切り替える。参照するテーブルが変わるためサーバから取り直す。 */
+const setKind = (value: PartnerKind): void => {
+    if (value === kind.value) {
+        return;
+    }
+    router.get(
+        window.location.pathname,
+        {
+            keyword: props.filters.keyword || undefined,
+            itemLabel: props.filters.itemLabel || undefined,
+            vendor: props.filters.vendor || undefined,
+            kind: value,
+        },
+        { preserveState: true, preserveScroll: true },
+    );
+};
+
 // 画面ごとの絞り込み（処理フロー I列）。初期値は I列の太字に合わせる。
 /** 【請求】見積作成：見積の有無（全て / 見積作成済み / 見積未作成）。初期＝全て。 */
 type QuotationFilter = 'all' | 'created' | 'not-created';
@@ -248,7 +272,7 @@ const openChat = (row: BillingRow): void => {
 
 // 絞り込み・ページ送り（サーバ側フィルタ）。
 const onSearch = (payload: ProjectFilters): void => {
-    router.get(window.location.pathname, { ...payload }, { preserveState: true, preserveScroll: true });
+    router.get(window.location.pathname, { ...payload, kind: kind.value }, { preserveState: true, preserveScroll: true });
 };
 const goToPage = (page: number): void => {
     router.get(
@@ -257,6 +281,7 @@ const goToPage = (page: number): void => {
             keyword: props.filters.keyword || undefined,
             itemLabel: props.filters.itemLabel || undefined,
             vendor: props.filters.vendor || undefined,
+            kind: kind.value,
             page,
         },
         { preserveState: true, preserveScroll: true },
@@ -307,6 +332,23 @@ const goToPage = (page: number): void => {
                         <button type="button" :class="pagerBtnClass" @click="toggleAllProjects">
                             {{ anyOpen ? '明細を全て閉じる' : '明細を全て開く' }}
                         </button>
+                        <!--
+                            区分（支払 / 請求）の切り替え。請求系画面の初期値は「請求」。
+                            「支払」に切り替えると支払取引先を表示のみで参照できる（操作は不可）。
+                        -->
+                        <div class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
+                            <button
+                                v-for="opt in kindOptions"
+                                :key="opt.value"
+                                type="button"
+                                class="rounded-md px-3 py-1.5 text-sm font-bold transition"
+                                :class="kind === opt.value ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-primary hover:bg-primary/10'"
+                                :title="opt.value === 'payable' ? '支払（はらい）の取引先を表示のみで確認する' : ''"
+                                @click="setKind(opt.value)"
+                            >
+                                {{ opt.label }}
+                            </button>
+                        </div>
                         <button v-if="config.kind === 'pick'" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
                             {{ bulkAllSelected ? config.bulkClearLabel : config.bulkSelectLabel }}
                         </button>

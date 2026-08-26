@@ -1,122 +1,190 @@
 <mxfile host="65bd71144e">
     <diagram id="payable-flow" name="支払 処理フロー">
-        <mxGraphModel dx="1772" dy="3277" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1980" pageHeight="1700" math="0" shadow="0">
+        <mxGraphModel dx="1809" dy="2587" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1980" pageHeight="1700" math="0" shadow="0">
             <root>
-                <mxCell id="0" />
-                <mxCell id="1" parent="0" />
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
                 <mxCell id="title" value="【支払】処理フロー　― 画面 / 操作 / データ更新先 ―" style="text;html=1;fontSize=20;fontStyle=1;align=left;verticalAlign=middle;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="-332" width="900" height="30" as="geometry" />
+                    <mxGeometry x="40" y="-332" width="900" height="30" as="geometry"/>
                 </mxCell>
                 <mxCell id="pre" value="&lt;b&gt;【前提】&lt;/b&gt;　支払（はらい）＝ FELIX が業者へ支払う側のフロー。業者へ相見積を依頼し、選定・部長承認を経て発注する。　見積先は 2026-08 のスキーマ改訂で &lt;b&gt;t_payable_partners&lt;/b&gt;（支払）に分離された。　請求（もらい）側は もらい_運用フロー.drawio を参照。" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;align=left;spacingLeft=10;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="-292" width="1400" height="40" as="geometry" />
+                    <mxGeometry x="40" y="-292" width="1400" height="40" as="geometry"/>
                 </mxCell>
                 <mxCell id="legendTitle" value="凡例（誰が操作するか）" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="960" y="-326" width="200" height="24" as="geometry" />
+                    <mxGeometry x="960" y="-326" width="200" height="24" as="geometry"/>
                 </mxCell>
                 <mxCell id="lg1" value="建設部担当者" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1090" y="-330" width="90" height="28" as="geometry" />
+                    <mxGeometry x="1090" y="-330" width="90" height="28" as="geometry"/>
                 </mxCell>
                 <mxCell id="lg2" value="松井部長" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1186" y="-330" width="80" height="28" as="geometry" />
+                    <mxGeometry x="1186" y="-330" width="80" height="28" as="geometry"/>
                 </mxCell>
                 <mxCell id="lg3" value="業者" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1272" y="-330" width="70" height="28" as="geometry" />
+                    <mxGeometry x="1272" y="-330" width="70" height="28" as="geometry"/>
                 </mxCell>
                 <mxCell id="lg4" value="システム" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1348" y="-330" width="92" height="28" as="geometry" />
+                    <mxGeometry x="1348" y="-330" width="92" height="28" as="geometry"/>
                 </mxCell>
                 <mxCell id="laneA" value="現行Fix（felix_total）　実行予算画面" style="swimlane;html=1;startSize=48;fontSize=15;fontStyle=1;fillColor=#FFF4E5;strokeColor=#D79B00;verticalAlign=middle;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="-230" width="380" height="1150" as="geometry" />
-                </mxCell>
-                <mxCell id="laneB" value="新Fix（new_felix_total）　見積管理【支払】" style="swimlane;html=1;startSize=48;fontSize=15;fontStyle=1;fillColor=#E3F2FD;strokeColor=#6C8EBF;verticalAlign=middle;" parent="1" vertex="1">
-                    <mxGeometry x="460" y="-230" width="520" height="1150" as="geometry" />
-                </mxCell>
-                <mxCell id="laneC" value="業者マイページ（felix_total）" style="swimlane;html=1;startSize=48;fontSize=15;fontStyle=1;fillColor=#E8F5E9;strokeColor=#82B366;verticalAlign=middle;" parent="1" vertex="1">
-                    <mxGeometry x="1020" y="-230" width="420" height="1150" as="geometry" />
+                    <mxGeometry x="40" y="-230" width="430" height="1150" as="geometry"/>
                 </mxCell>
                 <mxCell id="A1" value="&lt;b&gt;　実行予算をつくる&lt;/b&gt;&lt;br&gt;【建設部担当者】&lt;br&gt;・実行予算と項目（費用）を作成&lt;br&gt;・見積依頼ファイルをドライブに格納" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneA" vertex="1">
-                    <mxGeometry x="40" y="95" width="300" height="95" as="geometry" />
+                    <mxGeometry x="40" y="95" width="300" height="95" as="geometry"/>
                 </mxCell>
                 <mxCell id="A2" value="&lt;b&gt;　業者追加（iframe）&lt;/b&gt;&lt;br&gt;【建設部担当者】&lt;br&gt;・新Fixの一覧から iframe で開く&lt;br&gt;・「請求先にする」&lt;b&gt;OFF ＝ はらい（支払）&lt;/b&gt;　←本フロー&lt;br&gt;・ON ＝ もらい（請求）→ もらい_運用フロー" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneA" vertex="1">
-                    <mxGeometry x="40" y="240" width="300" height="115" as="geometry" />
+                    <mxGeometry x="40" y="200" width="300" height="115" as="geometry"/>
                 </mxCell>
                 <mxCell id="Anote" value="※ もらい／はらいの判定は現行 invoice_flg。&lt;br&gt;　 新スキーマではテーブルごと分離される：&lt;br&gt;　 支払 → t_payable_partners（本フロー）&lt;br&gt;　 請求 → t_billing_partners" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#D79B00;dashed=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=11;fontColor=#7A5C00;" parent="laneA" vertex="1">
-                    <mxGeometry x="40" y="400" width="300" height="95" as="geometry" />
+                    <mxGeometry x="40" y="560" width="300" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="&lt;b&gt;　業者確認（iframe）&lt;/b&gt;&lt;div&gt;見るだけ&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" vertex="1" parent="laneA">
+                    <mxGeometry x="40" y="330" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="業者確認" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=-0.01;entryY=0.843;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="laneA" target="P1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="340" y="353" as="sourcePoint"/>
+                        <mxPoint x="500" y="315" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="340" y="354"/>
+                            <mxPoint x="470" y="354"/>
+                            <mxPoint x="470" y="228"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="laneB" value="新Fix（new_felix_total）　見積管理【支払】" style="swimlane;html=1;startSize=48;fontSize=15;fontStyle=1;fillColor=#E3F2FD;strokeColor=#6C8EBF;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="-230" width="540" height="1150" as="geometry"/>
                 </mxCell>
                 <mxCell id="P1" value="&lt;b&gt;①【支払】見積依頼【FELIX→業者依頼前】&lt;/b&gt;&lt;br&gt;【建設部担当者】&lt;br&gt;&lt;b&gt;業者追加：&lt;/b&gt;&lt;br&gt;・支払取引先(t_payable_partners)に登録&lt;br&gt;&lt;b&gt;見積依頼（チェック→送信）：&lt;/b&gt;&lt;br&gt;・支払見積依頼履歴(t_payable_quotation_requests)に登録&lt;br&gt;・支払取引先(t_payable_partners)の承認ステータスを更新&lt;br&gt;・業者に見積依頼メールを送信" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneB" vertex="1">
-                    <mxGeometry x="60" y="80" width="400" height="175" as="geometry" />
+                    <mxGeometry x="60" y="80" width="400" height="175" as="geometry"/>
                 </mxCell>
                 <mxCell id="P2" value="&lt;b&gt;②【支払】業者選定【業者→FELIX返答済】&lt;/b&gt;&lt;br&gt;【建設部担当者】&lt;br&gt;&lt;b&gt;選定：&lt;/b&gt;&lt;br&gt;・業者が選定され、選定承認（部長承認）に表示&lt;br&gt;・支払取引先(t_payable_partners)の承認ステータスを更新&lt;br&gt;　UNSELECTED → STAFF_APPROVED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneB" vertex="1">
-                    <mxGeometry x="60" y="290" width="400" height="130" as="geometry" />
+                    <mxGeometry x="60" y="290" width="400" height="130" as="geometry"/>
                 </mxCell>
                 <mxCell id="P3" value="&lt;b&gt;③【支払】部長承認【業者選定済→FELIX(建設部)】&lt;/b&gt;&lt;br&gt;【松井部長】&lt;br&gt;&lt;b&gt;承認：&lt;/b&gt;&lt;br&gt;・発注書を作成し、業者マイページに表示&lt;br&gt;・支払発注(t_payable_orders)に登録　※テーブル未作成&lt;br&gt;・承認ステータスを更新　STAFF_APPROVED → APPROVED&lt;br&gt;&lt;b&gt;否認：&lt;/b&gt;&lt;br&gt;・選定が解除される（業者選定へ差し戻し）&lt;br&gt;・承認ステータスを更新　→ UNSELECTED&lt;br&gt;・コメント(t_comments)に登録" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneB" vertex="1">
-                    <mxGeometry x="60" y="455" width="400" height="200" as="geometry" />
+                    <mxGeometry x="60" y="455" width="400" height="200" as="geometry"/>
                 </mxCell>
                 <mxCell id="P4" value="&lt;b&gt;④【支払】部長取消申請【FELIX(担当者)→FELIX(建設部部長)】&lt;/b&gt;&lt;br&gt;【建設部担当者】&lt;br&gt;&lt;b&gt;取消申請：&lt;/b&gt;&lt;br&gt;・承認ステータスを更新　APPROVED → CANCEL_APPLIED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneB" vertex="1">
-                    <mxGeometry x="60" y="690" width="400" height="110" as="geometry" />
+                    <mxGeometry x="60" y="690" width="400" height="110" as="geometry"/>
                 </mxCell>
                 <mxCell id="P5" value="&lt;b&gt;⑤【支払】部長取消承認【FELIX(建設部部長)→FELIX(担当者)】&lt;/b&gt;&lt;br&gt;【松井部長】&lt;br&gt;&lt;b&gt;取消承認：&lt;/b&gt;&lt;br&gt;・承認ステータスを更新　CANCEL_APPLIED → CANCEL_APPROVED&lt;br&gt;&lt;b&gt;取消否認：&lt;/b&gt;&lt;br&gt;・承認ステータスを更新&lt;br&gt;・コメント(t_comments)に登録　※未実装" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneB" vertex="1">
-                    <mxGeometry x="60" y="835" width="400" height="155" as="geometry" />
+                    <mxGeometry x="60" y="835" width="400" height="155" as="geometry"/>
                 </mxCell>
                 <mxCell id="P6" value="完了（CANCEL_APPROVED）　以降どの画面にも出ない" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;align=left;verticalAlign=middle;spacingLeft=8;fontSize=12;" parent="laneB" vertex="1">
-                    <mxGeometry x="60" y="1030" width="400" height="45" as="geometry" />
+                    <mxGeometry x="60" y="1030" width="400" height="45" as="geometry"/>
                 </mxCell>
                 <mxCell id="noteCancel" value="発注する前に、選定を取り消す必要が出てきた場合" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" parent="laneB" vertex="1">
-                    <mxGeometry x="60" y="660" width="400" height="26" as="geometry" />
-                </mxCell>
-                <mxCell id="C1" value="&lt;b&gt;　見積を回答する&lt;/b&gt;&lt;br&gt;【業者】業者マイページ 見積タブ&lt;br&gt;・見積依頼メールのリンクから開く&lt;br&gt;・相見積の金額を入力&lt;br&gt;　→ 新Fixの業者選定に「回答あり」で表示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneC" vertex="1">
-                    <mxGeometry x="40" y="170" width="340" height="120" as="geometry" />
-                </mxCell>
-                <mxCell id="C2" value="&lt;b&gt;　発注書を確認する&lt;/b&gt;&lt;br&gt;【業者】業者マイページ 発注タブ&lt;br&gt;・部長承認で作成された発注書を確認&lt;br&gt;・以降（発注承諾〜納品）は別フロー" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneC" vertex="1">
-                    <mxGeometry x="40" y="480" width="340" height="100" as="geometry" />
-                </mxCell>
-                <mxCell id="eA1" value="実行予算・項目データ" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.4;" parent="1" source="A1" target="P1" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
-                </mxCell>
-                <mxCell id="eA2" value="業者追加（はらい）" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.8;" parent="1" source="A2" target="P1" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
-                </mxCell>
-                <mxCell id="eP1" value="見積依頼メール" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="P1" target="C1" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
-                </mxCell>
-                <mxCell id="eC1" value="業者の見積回答（相見積）" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0;exitY=0.9;entryX=1;entryY=0.4;" parent="1" source="C1" target="P2" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
+                    <mxGeometry x="60" y="660" width="400" height="26" as="geometry"/>
                 </mxCell>
                 <mxCell id="eP2" value="選定確定" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="laneB" source="P2" target="P3" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="eP3" value="承認済み" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="laneB" source="P3" target="P4" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
+                <mxCell id="eP3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="laneB" source="P3" target="P4" edge="1">
+                    <mxGeometry x="1" y="-423" relative="1" as="geometry">
+                        <mxPoint x="3" y="50" as="offset"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="eP4" value="申請" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="laneB" source="P4" target="P5" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="eP5" value="取消承認" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="laneB" source="P5" target="P6" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
-                </mxCell>
-                <mxCell id="eP3b" value="発注書を作成" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" parent="1" source="P3" target="C2" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="eDenyP" value="否認 → 業者選定へ差し戻し" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0;exitY=0.5;entryX=0;entryY=0.5;dashed=1;strokeColor=#B85450;fontColor=#B85450;" parent="laneB" source="P3" target="P2" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="eDenyP5" value="取消否認 → 差し戻し（※未実装）" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=1;entryY=0.8;dashed=1;strokeColor=#B85450;fontColor=#B85450;" parent="laneB" source="P5" target="P3" edge="1">
-                    <mxGeometry relative="1" as="geometry" />
+                <mxCell id="eDenyP5" value="取消否認 → 差し戻し（※未実装）" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=1.003;entryY=0.637;dashed=1;strokeColor=#B85450;fontColor=#B85450;entryDx=0;entryDy=0;entryPerimeter=0;" parent="laneB" source="P5" target="P1" edge="1">
+                    <mxGeometry x="-0.8004" y="-40" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="510" y="913"/>
+                            <mxPoint x="510" y="210"/>
+                            <mxPoint x="461" y="210"/>
+                        </Array>
+                        <mxPoint y="1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="5" value="&lt;span style=&quot;color: rgb(255, 0, 0); text-align: left;&quot;&gt;&amp;nbsp; DRAFT：未申請&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(255, 0, 0); text-align: left;&quot;&gt;&lt;span style=&quot;color: rgb(255, 0, 0);&quot;&gt;&amp;nbsp; CANCELLED：取消承認済（取消承認）&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FF3333;" vertex="1" parent="laneB">
+                    <mxGeometry x="225" y="225" width="230" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="&lt;span style=&quot;color: rgb(255, 0, 0); text-align: left;&quot;&gt;&amp;nbsp; DRAFT：未申請&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(255, 0, 0); text-align: left;&quot;&gt;&amp;nbsp; CANCELLED：取消承認済（取消承認）&lt;/span&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FF3333;" vertex="1" parent="laneB">
+                    <mxGeometry x="190" y="390" width="300" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="&lt;div style=&quot;color: rgb(0, 0, 0); text-align: left;&quot;&gt;&lt;span style=&quot;color: light-dark(rgb(255, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;color: rgb(255, 0, 0); background-color: transparent;&quot;&gt;APPLIED：申請中（&lt;/span&gt;&lt;span style=&quot;color: rgb(255, 0, 0); background-color: transparent;&quot;&gt;承認待ち）&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(255, 0, 0); background-color: transparent;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FF3333;" vertex="1" parent="laneB">
+                    <mxGeometry x="234" y="625" width="182" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="&lt;div style=&quot;color: rgb(0, 0, 0); text-align: left;&quot;&gt;&lt;span style=&quot;color: light-dark(rgb(255, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp; APPROVED：承認済（承認完了）&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 0, 0), rgb(255, 255, 255));&quot;&gt;※&lt;/span&gt;&lt;span style=&quot;color: rgb(255, 0, 0); text-align: left; background-color: transparent;&quot;&gt;※業者承諾日時にデータあり&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;color: rgb(0, 0, 0); text-align: left;&quot;&gt;&lt;div&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FF3333;" vertex="1" parent="laneB">
+                    <mxGeometry x="260" y="1075" width="222" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="&lt;div&gt;&lt;div&gt;&lt;font style=&quot;color: rgb(255, 51, 51);&quot;&gt;&amp;nbsp; CANCEL_APPLIED：取消申請中（取消承認待ち）&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FF3333;" vertex="1" parent="laneB">
+                    <mxGeometry x="240" y="970" width="300" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="&lt;div style=&quot;text-align: left;&quot;&gt;&lt;div style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251);&quot;&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251);&quot;&gt;&lt;font style=&quot;color: rgb(255, 51, 51);&quot;&gt;&amp;nbsp; APPROVED：承認済（承認完了）&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251);&quot;&gt;&lt;font style=&quot;color: rgb(255, 51, 51);&quot;&gt;※取引先承諾日時にデータなし&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FF3333;" vertex="1" parent="laneB">
+                    <mxGeometry x="234" y="770" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="laneC" value="業者マイページ（felix_total）" style="swimlane;html=1;startSize=48;fontSize=15;fontStyle=1;fillColor=#E8F5E9;strokeColor=#82B366;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="1030" y="-230" width="420" height="1150" as="geometry"/>
+                </mxCell>
+                <mxCell id="C1" value="&lt;b&gt;　見積を回答する&lt;/b&gt;&lt;br&gt;【業者】業者マイページ 見積タブ&lt;br&gt;・見積依頼メールのリンクから開く&lt;br&gt;・相見積の金額を入力&lt;br&gt;　→ 新Fixの業者選定に「回答あり」で表示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneC" vertex="1">
+                    <mxGeometry x="40" y="170" width="340" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="C2" value="&lt;b&gt;　発注書を確認する&lt;/b&gt;&lt;br&gt;【業者】業者マイページ 発注タブ&lt;br&gt;・部長承認で作成された発注書を確認&lt;br&gt;・以降（発注承諾〜納品）は別フロー&lt;div&gt;・請負承認ボタンを押し、確定とする。&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="laneC" vertex="1">
+                    <mxGeometry x="40" y="480" width="340" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="部長取消申請がされたら、&lt;div&gt;業者マイページ側の発注書のプレビューをキャンセル扱い&lt;/div&gt;&lt;div&gt;請負承認ボタンも表示させない&lt;/div&gt;&lt;div&gt;その旨の通知メールを送信するようにする&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#D79B00;dashed=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=11;fontColor=#7A5C00;" vertex="1" parent="laneC">
+                    <mxGeometry x="110" y="630" width="300" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="eA1" value="実行予算・項目データ" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.4;" parent="1" source="A1" target="P1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="eA2" value="業者追加（はらい）" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.8;" parent="1" source="A2" target="P1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="eP1" value="見積依頼メール" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="P1" target="C1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="eC1" value="業者の見積回答（相見積）" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0;exitY=0.9;entryX=1;entryY=0.4;" parent="1" source="C1" target="P2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="eP3b" value="発注書を作成" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" parent="1" source="P3" target="C2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="stTitle" value="承認ステータス（t_payable_partners.approval_status）の遷移" style="text;html=1;align=left;verticalAlign=middle;fontSize=15;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="990" width="700" height="28" as="geometry" />
+                    <mxGeometry x="40" y="990" width="700" height="28" as="geometry"/>
                 </mxCell>
                 <mxCell id="stBox" value="UNSELECTED　─見積依頼→　UNSELECTED（状態は変えず依頼履歴を積む）&lt;br&gt;　　│&lt;br&gt;　　├─選定→　STAFF_APPROVED　─部長承認→　APPROVED&lt;br&gt;　　│　　　　　　　　　　　　　　　　　└─取消申請→　CANCEL_APPLIED　─取消承認→　CANCEL_APPROVED（完了）&lt;br&gt;　　│&lt;br&gt;　　└←─ 部長承認の否認で UNSELECTED へ差し戻し（理由は t_comments に「【否認】」で記録）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="1030" width="900" height="150" as="geometry" />
+                    <mxGeometry x="40" y="1030" width="900" height="150" as="geometry"/>
                 </mxCell>
                 <mxCell id="todoTitle" value="未実装・未決事項" style="text;html=1;align=left;verticalAlign=middle;fontSize=15;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="980" y="990" width="500" height="28" as="geometry" />
+                    <mxGeometry x="980" y="990" width="500" height="28" as="geometry"/>
                 </mxCell>
                 <mxCell id="todoBox" value="1. &lt;b&gt;支払発注 t_payable_orders はテーブル未作成&lt;/b&gt;。部長承認での発注書作成・発注登録が未実装&lt;br&gt;2. &lt;b&gt;取消否認が未実装&lt;/b&gt;。否認時に戻すステータスが未確定&lt;br&gt;3. &lt;b&gt;見積依頼の履歴登録が未実装&lt;/b&gt;。現行は felix_total の order_estimate を呼ぶのみで&lt;br&gt;　 t_payable_quotation_requests へ書いていないため、送信回数・最終依頼日時が 0 のまま&lt;br&gt;4. 否認理由の専用列が新スキーマに無いため、&lt;b&gt;t_comments の「【否認】」投稿が唯一の記録&lt;/b&gt;&lt;br&gt;　 コメントは項目単位のため、同一項目の見積先はまとめて否認扱いになる" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="980" y="1030" width="900" height="150" as="geometry" />
+                    <mxGeometry x="980" y="1030" width="900" height="150" as="geometry"/>
                 </mxCell>
                 <mxCell id="refBox" value="&lt;b&gt;関連ドキュメント&lt;/b&gt;&lt;br&gt;・請求（もらい）側のフロー … もらい_運用フロー.drawio&lt;br&gt;・画面ごとの詳細設計 … docs/detailed-design/quotations/01〜05（支払）&lt;br&gt;・旧→新スキーマの対応 … docs/architecture/backend.md §3.7" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#D79B00;dashed=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=11;fontColor=#7A5C00;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="1210" width="900" height="100" as="geometry" />
+                    <mxGeometry x="40" y="1210" width="900" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="自動発注" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=0.441;exitY=1.01;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="C2" target="P6">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="540" y="400" as="sourcePoint"/>
+                        <mxPoint x="536" y="836" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="1210" y="380"/>
+                            <mxPoint x="1130" y="380"/>
+                            <mxPoint x="1130" y="823"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="15" value="業者確認" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=11;exitX=1;exitY=0.5;entryX=-0.007;entryY=0.358;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="P2">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="390" y="133" as="sourcePoint"/>
+                        <mxPoint x="546" y="8" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="380" y="133"/>
+                            <mxPoint x="380" y="134"/>
+                            <mxPoint x="520" y="134"/>
+                            <mxPoint x="520" y="80"/>
+                            <mxPoint x="537" y="80"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
             </root>
         </mxGraphModel>

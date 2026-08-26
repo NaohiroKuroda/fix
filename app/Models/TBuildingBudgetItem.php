@@ -47,12 +47,16 @@ class TBuildingBudgetItem extends Model
         return $this->belongsTo(TBuilding::class, 'building_id');
     }
 
-    /**
-     * 支払取引先（もらい＝請求は t_billing_partners に分離されたため、ここには含まれない）。
-     */
+    /** 支払取引先（はらい）。 */
     public function payablePartners()
     {
         return $this->hasMany(TPayablePartner::class, 'building_budget_item_id');
+    }
+
+    /** 請求取引先（もらい）。支払系画面では「表示のみ」で参照する。 */
+    public function billingPartners()
+    {
+        return $this->hasMany(TBillingPartner::class, 'building_budget_item_id');
     }
 
     // コメント（やり取り）。項目（明細）単位で1スレッド。ポリモーフィック（commentable）。

@@ -193,6 +193,14 @@ const toggleProvisional = (row: QuotationManagementRow): void => {
 // 一覧の表示切替フィルタ（見積依頼画面）。クライアント側で行を絞り込む。
 // - 仮選定のみ表示：チェックした仮選定の行だけ（仮選定はローカル状態）。
 // - 未依頼のみ表示：まだ見積依頼を送っていない行だけ（送信回数 0 = requested=false）。
+// 区分（支払 / 請求）。支払系画面の初期値は「支払」。請求に切り替えると請求取引先を表示のみで参照する。
+type PartnerKind = 'payable' | 'billing';
+const kind = computed<PartnerKind>(() => (props.filters.kind === 'billing' ? 'billing' : 'payable'));
+const kindOptions: { value: PartnerKind; label: string }[] = [
+    { value: 'payable', label: '支払' },
+    { value: 'billing', label: '請求' },
+];
+
 const provisionalOnly = ref(false);
 // 業者選定：既に選定済み（未申請でない）行だけに絞る。初期 OFF。
 const selectedOnly = ref(false);
@@ -619,6 +627,7 @@ const onSearch = (payload: QuotationManagementFilters): void => {
             vendor: payload.vendor || undefined,
             answer: answerParam(answer.value),
             comment: commentParam(commentFilter.value),
+            kind: kind.value,
         },
         { preserveState: true, preserveScroll: true, replace: true },
     );
@@ -632,6 +641,7 @@ const goToPage = (pageNumber: number): void => {
             vendor: props.filters.vendor || undefined,
             answer: answerParam(answer.value),
             comment: commentParam(commentFilter.value),
+            kind: kind.value,
             page: pageNumber,
         },
         { preserveState: true },
@@ -650,10 +660,31 @@ const setAnswer = (value: AnswerFilter): void => {
             vendor: props.filters.vendor || undefined,
             answer: answerParam(value),
             comment: commentParam(commentFilter.value),
+            kind: kind.value,
         },
         { preserveState: true, preserveScroll: true },
     );
 };
+// 区分（支払 / 請求）を切り替える。参照するテーブルが変わるためサーバから取り直す。
+// 逆区分の取引先は「表示のみ」で並び、操作はできない（サーバが operable=false を返す）。
+const setKind = (value: PartnerKind): void => {
+    if (value === kind.value) {
+        return;
+    }
+    router.get(
+        window.location.pathname,
+        {
+            keyword: props.filters.keyword || undefined,
+            itemLabel: props.filters.itemLabel || undefined,
+            vendor: props.filters.vendor || undefined,
+            answer: answerParam(answer.value),
+            comment: commentParam(commentFilter.value),
+            kind: value,
+        },
+        { preserveState: true, preserveScroll: true },
+    );
+};
+
 // コメント有無フィルタを切り替える（ページは1に戻す）。
 const setComment = (value: CommentFilter): void => {
     if (value === commentFilter.value) {
@@ -667,6 +698,7 @@ const setComment = (value: CommentFilter): void => {
             vendor: props.filters.vendor || undefined,
             answer: answerParam(answer.value),
             comment: commentParam(value),
+            kind: kind.value,
         },
         { preserveState: true, preserveScroll: true },
     );
@@ -716,6 +748,23 @@ const setComment = (value: CommentFilter): void => {
                         <button type="button" :class="pagerBtnClass" @click="toggleAllProjects">
                             {{ anyOpen ? '明細を全て閉じる' : '明細を全て開く' }}
                         </button>
+                        <!--
+                            区分（支払 / 請求）の切り替え。支払系画面の初期値は「支払」。
+                            「請求」に切り替えると請求取引先を表示のみで参照できる（操作は不可）。
+                        -->
+                        <div class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
+                            <button
+                                v-for="opt in kindOptions"
+                                :key="opt.value"
+                                type="button"
+                                class="rounded-md px-3 py-1.5 text-sm font-bold transition"
+                                :class="kind === opt.value ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-primary hover:bg-primary/10'"
+                                :title="opt.value === 'billing' ? '請求（もらい）の取引先を表示のみで確認する' : ''"
+                                @click="setKind(opt.value)"
+                            >
+                                {{ opt.label }}
+                            </button>
+                        </div>
                         <button v-if="!isPerRowAction" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
                             {{ bulkAllSelected ? config.bulkClearLabel : config.bulkSelectLabel }}
                         </button>

@@ -120,25 +120,19 @@ const rowButtonLabel = (row: BillingRow): string =>
             <table class="w-full min-w-[960px] table-fixed text-[15px]" :class="cellTextClass">
                 <!-- 全案件カードで列位置を揃えるため、固定レイアウト＋共通の列幅を指定する。 -->
                 <colgroup>
-                    <col style="width: 22%" />
-                    <col style="width: 7%" />
-                    <col style="width: 23%" />
-                    <col style="width: 12%" />
-                    <col style="width: 12%" />
-                    <col style="width: 14%" />
-                    <col style="width: 8%" />
-                    <col v-if="config.showAcceptedAt" style="width: 12%" />
-                    <col style="width: 15%" />
+                    <col style="width: 30%" />
+                    <col style="width: 9%" />
+                    <col style="width: 27%" />
+                    <col style="width: 17%" />
+                    <col v-if="config.showAcceptedAt" style="width: 14%" />
+                    <col style="width: 17%" />
                 </colgroup>
                 <thead class="text-center" :class="tableHeadClass">
                     <tr class="border-b-2 border-slate-300 text-[15px] font-bold uppercase tracking-wider">
                         <th class="px-3 py-2.5">項目</th>
                         <th class="px-3 py-2.5">区分</th>
                         <th class="px-3 py-2.5">パートナー</th>
-                        <th class="px-3 py-2.5">標準単価<br />(税抜)</th>
-                        <th class="px-3 py-2.5">予算単価<br />(税抜)</th>
                         <th class="px-3 py-2.5">{{ config.amountColumnLabel }}<br />(税抜)</th>
-                        <th class="px-3 py-2.5">仮選定</th>
                         <th v-if="config.showAcceptedAt" class="px-3 py-2.5">承諾日</th>
                         <th class="px-3 py-2.5">{{ config.columnLabel }}</th>
                     </tr>
@@ -147,7 +141,7 @@ const rowButtonLabel = (row: BillingRow): string =>
                     <tr
                         v-for="{ row, isUnitFirstRow, unitRowSpan, isUnitBoundary } in displayRows"
                         :key="row.partnerId"
-                        :class="[rowBorderClass, isUnitBoundary ? 'border-t-4 border-slate-300' : 'border-t', 'bg-sky-50/70']"
+                        :class="[rowBorderClass, isUnitBoundary ? 'border-t-4 border-slate-300' : 'border-t', row.billingTarget ? 'bg-sky-50/70' : '']"
                     >
                         <!-- 項目名：同一項目の行数ぶん rowspan で1回だけ出す。 -->
                         <td v-if="isUnitFirstRow" :rowspan="unitRowSpan" class="px-3 py-2 font-medium" :class="cardBgClass">
@@ -180,9 +174,9 @@ const rowButtonLabel = (row: BillingRow): string =>
                                 </div>
                             </div>
                         </td>
-                        <!-- 区分：請求（もらい）固定。 -->
+                        <!-- 区分：区分トグルで選んだ側の取引先が並ぶ（請求 / 支払）。 -->
                         <td class="px-3 py-2 text-center">
-                            <BillingKindBadge billing-target />
+                            <BillingKindBadge :billing-target="row.billingTarget" />
                         </td>
                         <!-- パートナー（見積先）。詳細は iframe で開く。 -->
                         <td class="px-3 py-2">
@@ -196,14 +190,14 @@ const rowButtonLabel = (row: BillingRow): string =>
                             </button>
                             <span v-else>{{ row.vendorName }}</span>
                         </td>
-                        <!-- 標準単価 / 予算単価 / 仮選定：もらいは使わないため「—」固定。 -->
-                        <td class="px-3 py-2 text-center" :class="mutedTextClass">—</td>
-                        <td class="px-3 py-2 text-center" :class="mutedTextClass">—</td>
+                        <!--
+                            もらいは相見積・業者選定が無いため、標準単価 / 予算単価 / 仮選定の列は持たない
+                            （docs/detailed-design/quotations/06_請求_見積作成_詳細設計.md §5）。
+                        -->
                         <td class="px-3 py-2 text-right tabular-nums">
                             {{ yenString(row.quotationAmount) }}
                             <span v-if="row.quotationDate" class="block text-xs" :class="mutedTextClass">{{ row.quotationDate }}</span>
                         </td>
-                        <td class="px-3 py-2 text-center" :class="mutedTextClass">—</td>
                         <td v-if="config.showAcceptedAt" class="px-3 py-2 text-center tabular-nums">
                             <span v-if="row.acceptedAt">{{ row.acceptedAt }}</span>
                             <span v-else :class="mutedTextClass">—</span>

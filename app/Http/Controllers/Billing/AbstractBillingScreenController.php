@@ -25,16 +25,19 @@ abstract class AbstractBillingScreenController extends Controller
      * @param  string  $mode  画面モード（billing-quote-create など）
      * @param  string  $page  Inertia ページ名（例: quotation-management/billing-quote-create）
      */
+    /** 請求系画面の既定の区分（処理フロー H列「区分が請求」）。 */
+    private const DEFAULT_KIND = 'billing';
+
     protected function renderScreen(QuotationManagementRequest $request, string $mode, string $page): Response
     {
-        $screen = $this->service->screen($mode, $request->filters());
+        $screen = $this->service->screen($mode, $request->filters(self::DEFAULT_KIND));
 
         return Inertia::render($page, [
             'projects' => $screen['projects'],
             // 見積作成モーダルの選択肢（拠点 / 部署 / 単位）。
             'masters' => $screen['masters'],
             'pagination' => $screen['pagination'],
-            'filters' => $request->filtersForView(),
+            'filters' => $request->filtersForView(self::DEFAULT_KIND),
         ]);
     }
 }

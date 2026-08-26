@@ -49,6 +49,13 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     ];
 
     /**
+     * 画面の既定の区分（処理フロー H列「区分が支払」）。
+     * 支払系5画面はいずれも既定 `payable`。画面上のトグルで `billing`（請求）へ切り替えると
+     * **請求取引先を表示のみで参照**できる（操作は不可）。
+     */
+    private const DEFAULT_KIND = 'payable';
+
+    /**
      * mode → 一覧から**除外する**（表示すらしない）画面。
      *
      * 【支払】部長取消承認だけは K列が「以外のステータスのデータは表示しない」のため、
@@ -67,18 +74,22 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $vendor = $this->nonEmpty($filters['vendor'] ?? null);       // 見積先（company_name）
         $answer = (string) ($filters['answer'] ?? 'all');            // 業者選定の回答状態（既定=全て）
         $comment = (string) ($filters['comment'] ?? 'all');          // コメント有無（all/has/none）
-        $isQuoteRequest = $mode === 'quote-request';                 // 見積依頼は移行済みのみ対象
+        // 区分（支払 / 請求）。請求を選ぶと請求取引先を表示のみで参照する（操作不可）。
+        $kind = ($filters['kind'] ?? self::DEFAULT_KIND) === 'billing' ? 'billing' : 'payable';
+        $isBilling = $kind === 'billing';
+        $relation = $isBilling ? 'billingPartners' : 'payablePartners';
+        $isQuoteRequest = $mode === 'quote-request' && ! $isBilling; // 見積依頼は移行済みのみ対象（支払のみ）
         $operable = self::MODE_OPERABLE_STATUS[$mode] ?? null;
         $empty = $operable === null;                                 // 未知の mode は空
         // 一覧を操作対象のステータスだけに絞る画面か（部長取消承認のみ true）。
         $hidesOther = in_array($mode, self::MODE_HIDES_OTHER_STATUS, true);
 
         // 見積先（t_payable_partners）の絞り込み：初期表示条件 ＋ 業者名 ＋（業者選定の）回答状態。
-        $quotationFilter = function (Builder $q) use ($operable, $hidesOther, $vendor, $answer, $mode, $isQuoteRequest): void {
+        $quotationFilter = function (Builder $q) use ($operable, $hidesOther, $vendor, $answer, $mode, $isQuoteRequest, $isBilling): void {
             if ($hidesOther && $operable !== null) {
                 $q->whereIn('approval_status', $operable);
             }
-            if ($mode === 'vendor-selection') {
+            if ($mode === 'vendor-selection' && ! $isBilling) {
                 // 初期表示条件：業者側から見積回答されている（支払見積にデータがある）ものだけ。
                 $q->whereHas('quotations');
             }
@@ -91,7 +102,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             if ($vendor !== false) {
                 $q->whereHas('company', fn (Builder $c) => $c->where('company_name', 'like', "%{$vendor}%"));
             }
-            if ($mode === 'vendor-selection' || $mode === 'quote-request') {
+            if (($mode === 'vendor-selection' || $mode === 'quote-request') && ! $isBilling) {
                 // 回答あり＝相見積額（最新の相見積履歴 is_latest）を持つ。回答なし＝持たない。
                 $hasLatest = fn (Builder $h) => $h->whereNotNull('is_latest');
                 if ($answer === 'answered') {
@@ -105,11 +116,11 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $paginator = TBuilding::query()
             ->when($empty, fn (Builder $q) => $q->whereRaw('1 = 0'))
             ->when($keyword, fn (Builder $q, string $kw) => $q->where('name', 'like', "%{$kw}%"))
-            ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $quotationFilter))
-            ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $comment, $quotationFilter, $isQuoteRequest): void {
-                $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $quotationFilter);
+            ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $quotationFilter, $relation))
+            ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $comment, $quotationFilter, $isQuoteRequest, $relation): void {
+                $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $quotationFilter, $relation);
                 $i->orderBy('sort')->orderBy('id')
-                    ->with(['payablePartners' => function (HasMany $q) use ($quotationFilter, $isQuoteRequest): void {
+                    ->with([$relation => function (HasMany $q) use ($quotationFilter, $isQuoteRequest): void {
                         $quotationFilter($q->getQuery());
                         $q->orderBy('id')->with(['company:id,company_name', 'latestQuotation']);
                         // 見積依頼：送信回数（requests_count）を一覧表示・未依頼判定に使う。
@@ -128,12 +139,19 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $useLatestQuote = in_array($mode, ['quote-request', 'vendor-selection'], true);
         foreach ($paginator as $building) {
             foreach ($building->budgetItems as $item) {
-                foreach ($item->payablePartners as $quotation) {
+                // Resource が区分に依らず同じ名前で読めるよう、表示対象を display_partners に寄せる。
+                $partners = $item->getRelation($relation);
+                $item->setRelation('displayPartners', $partners);
+                foreach ($partners as $quotation) {
                     $quotation->setAttribute('display_quote', $useLatestQuote
                         ? optional($quotation->latestQuotation)->amount_excluding_tax
                         : $item->quotation_amount);
+                    // 区分（請求＝もらい / 支払＝はらい）。行の地色・バッジに使う。
+                    $quotation->setAttribute('billing_target', $isBilling);
                     // 操作できる行か（処理フロー J列）。false の行は一覧に出すが操作させない（K列）。
-                    $quotation->setAttribute('operable', in_array((string) $quotation->approval_status, $operable ?? [], true));
+                    // **選択中の区分と逆の取引先は常に表示のみ**（操作させない）。
+                    $quotation->setAttribute('operable', ! $isBilling
+                        && in_array((string) $quotation->approval_status, $operable ?? [], true));
                 }
             }
         }
@@ -170,7 +188,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         foreach ($paginator as $building) {
             foreach ($building->budgetItems as $item) {
                 $itemIds[(int) $item->id] = true;
-                foreach ($item->payablePartners as $quotation) {
+                foreach ($item->displayPartners as $quotation) {
                     $quotations[] = $quotation;
                 }
             }
@@ -227,7 +245,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /** 項目（明細）の絞り込み：項目名 ＋ コメント有無 ＋ mode に合う見積先を持つこと。 */
-    private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, callable $quotationFilter): Builder
+    private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, callable $quotationFilter, string $relation = 'payablePartners'): Builder
     {
         if ($itemLabel !== false) {
             $i->where('name', 'like', "%{$itemLabel}%");
@@ -240,7 +258,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             $i->whereDoesntHave('comments');
         }
 
-        return $i->whereHas('payablePartners', fn (Builder $q) => $quotationFilter($q));
+        return $i->whereHas($relation, fn (Builder $q) => $quotationFilter($q));
     }
 
     /**

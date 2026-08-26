@@ -32,6 +32,8 @@ export interface BillingRow {
     /** 「業者を追加」リンク先（iframe）。項目単位。見積作成画面のみ使う。 */
     addVendorUrl: string | null;
     approvalStatus: BillingApprovalStatus;
+    /** 区分（true=請求／もらい、false=支払／はらい）。区分トグルで選んだ側が並ぶ。 */
+    billingTarget: boolean;
     /**
      * 請求見積の税抜合計（t_billing_quotations.amount_excluding_tax の最新版）。
      * 金額は BCMath 前提のため **文字列**で受け取る（frontend.md §4.9）。未作成は null。
@@ -145,6 +147,11 @@ export interface BillingProject {
 export interface BillingFilters extends ProjectFilters {
     /** コメント有無フィルタ（全て / コメントあり / コメントなし）。サーバから常に渡る。 */
     comment?: 'all' | 'has' | 'none';
+    /**
+     * 区分（支払 / 請求）。請求系画面の初期値は `billing`。
+     * `payable` に切り替えると支払取引先を**表示のみ**で参照する（操作は不可）。
+     */
+    kind?: 'payable' | 'billing';
 }
 
 /** 画面モード（列の出し分け / アクション）。 */

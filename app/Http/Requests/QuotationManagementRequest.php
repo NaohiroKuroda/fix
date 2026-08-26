@@ -33,6 +33,8 @@ class QuotationManagementRequest extends FormRequest
             'answer' => ['nullable', 'in:all,answered,unanswered'],
             // コメント有無フィルタ（全て / コメントあり / コメントなし）。全画面共通。
             'comment' => ['nullable', 'in:all,has,none'],
+            // 区分（支払 / 請求）。逆区分は表示のみ（操作不可）。全画面共通。
+            'kind' => ['nullable', 'in:payable,billing'],
         ];
     }
 
@@ -41,7 +43,7 @@ class QuotationManagementRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-    public function filters(): array
+    public function filters(string $defaultKind = 'payable'): array
     {
         return [
             'keyword' => $this->nullIfEmpty($this->input('keyword')),
@@ -49,6 +51,7 @@ class QuotationManagementRequest extends FormRequest
             'vendor' => $this->nullIfEmpty($this->input('vendor')),
             'answer' => (string) $this->input('answer', 'all'),
             'comment' => (string) $this->input('comment', 'all'),
+            'kind' => $this->kind($defaultKind),
         ];
     }
 
@@ -57,7 +60,7 @@ class QuotationManagementRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-    public function filtersForView(): array
+    public function filtersForView(string $defaultKind = 'payable'): array
     {
         return [
             'keyword' => (string) $this->input('keyword', ''),
@@ -65,7 +68,19 @@ class QuotationManagementRequest extends FormRequest
             'vendor' => (string) $this->input('vendor', ''),
             'answer' => (string) $this->input('answer', 'all'),
             'comment' => (string) $this->input('comment', 'all'),
+            'kind' => $this->kind($defaultKind),
         ];
+    }
+
+    /**
+     * 区分（支払 / 請求）。未指定なら画面の既定値を使う。
+     * 支払系画面は `payable`、請求系画面は `billing` を既定にする（処理フロー H列「区分が支払 / 請求」）。
+     */
+    private function kind(string $default): string
+    {
+        $value = (string) $this->input('kind', '');
+
+        return in_array($value, ['payable', 'billing'], true) ? $value : $default;
     }
 
     /**

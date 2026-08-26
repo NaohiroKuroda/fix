@@ -97,6 +97,11 @@ export interface QuotationManagementFilters extends ProjectFilters {
     answer?: 'all' | 'answered' | 'unanswered';
     /** コメント有無フィルタ（全て / コメントあり / コメントなし）。全画面共通。サーバから常に渡る。 */
     comment?: 'all' | 'has' | 'none';
+    /**
+     * 区分（支払 / 請求）。支払系画面の初期値は `payable`。
+     * `billing` に切り替えると請求取引先を**表示のみ**で参照する（操作は不可）。
+     */
+    kind?: 'payable' | 'billing';
 }
 
 /**

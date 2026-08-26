@@ -43,6 +43,9 @@ final class BillingMockService
     public function screen(string $mode, array $filters): array
     {
         $operable = self::MODE_OPERABLE_STATUSES[$mode] ?? [];
+        // 区分（請求 / 支払）。請求系画面の初期値は請求。
+        // 支払に切り替えると支払取引先を**表示のみ**で参照する（操作不可）。
+        $isPayable = ($filters['kind'] ?? 'billing') === 'payable';
         $projects = [];
 
         foreach ($this->buildings() as $building) {
@@ -54,8 +57,11 @@ final class BillingMockService
                 if (! $this->matches($building['name'], $row, $filters)) {
                     continue;
                 }
+                // 区分（請求＝もらい / 支払＝はらい）。行の地色・バッジに使う。
+                $row['billingTarget'] = ! $isPayable;
                 // 操作できる行か（J列）。false の行も一覧には出すが操作させない（K列）。
-                $row['operable'] = in_array($row['approvalStatus'], $operable, true);
+                // **選択中の区分と逆の取引先は常に表示のみ**（操作させない）。
+                $row['operable'] = ! $isPayable && in_array($row['approvalStatus'], $operable, true);
                 $rows[] = $row;
             }
 

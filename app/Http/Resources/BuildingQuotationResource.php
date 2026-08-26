@@ -40,7 +40,8 @@ class BuildingQuotationResource extends JsonResource
         $rows = [];
 
         foreach ($items as $item) {
-            $partners = $item->relationLoaded('payablePartners') ? $item->payablePartners : collect();
+            // 表示対象（区分に応じて支払 or 請求）はリポジトリが displayPartners に寄せている。
+            $partners = $item->relationLoaded('displayPartners') ? $item->displayPartners : collect();
 
             if ($partners->isEmpty()) {
                 $rows[] = $this->row($item, null);
@@ -108,9 +109,8 @@ class BuildingQuotationResource extends JsonResource
             'cancelApproved' => $status === 'CANCELLED',
             // 仮選定（t_payable_partners.is_drafted）。
             'provisional' => $quotation !== null && (int) $quotation->is_drafted === 1,
-            // 区分（請求／支払）。2026-08 のスキーマ改訂で請求（もらい）は t_billing_partners へ
-            // 分離されたため、本画面（支払）に並ぶ行は全て支払。請求は【請求】系画面が扱う。
-            'billingTarget' => false,
+            // 区分（請求／支払）。絞り込みの区分トグルで選んだ側の取引先が並ぶ。
+            'billingTarget' => (bool) ($quotation?->billing_target ?? false),
             // 部長承認で否認され業者選定へ差し戻された。新スキーマに否認理由の列が無いため、
             // 項目のコメントに「【否認】」の投稿があるかで判定する（リポジトリが付与）。
             'denied' => (bool) ($quotation?->denied ?? false),

@@ -34,13 +34,27 @@ use Illuminate\Support\Facades\DB;
  */
 class BuildingQuotationRepository implements QuotationRepositoryInterface
 {
-    /** mode → 表示対象の approval_status。見積依頼（quote-request）は status 非依存で別途扱う。 */
-    private const MODE_STATUS = [
-        'vendor-selection' => 'UNSELECTED',       // 業者未選定
-        'manager-approval' => 'STAFF_APPROVED',   // 担当承認済（部長承認待ち）
-        'cancel-request' => 'APPROVED',           // 部長承認済
-        'cancel-approval' => 'CANCEL_APPLIED',    // 取消申請中
+    /**
+     * mode → **操作できる** approval_status（処理フロー J列「表示承認ステータス」）。
+     *
+     * 一覧にはこれ以外のステータスも出す（K列「ステータス外表示形式」＝出すが操作させない）。
+     * 操作可否は Resource の `operable` としてフロントへ渡す。
+     */
+    private const MODE_OPERABLE_STATUS = [
+        'quote-request' => ['DRAFT', 'CANCELLED'],   // 未申請 / 取消承認済
+        'vendor-selection' => ['DRAFT'],             // 未申請（かつ業者回答あり）
+        'manager-approval' => ['APPLIED'],           // 申請中（承認待ち）
+        'cancel-request' => ['APPROVED'],            // 承認済
+        'cancel-approval' => ['CANCEL_APPLIED'],     // 取消申請中
     ];
+
+    /**
+     * mode → 一覧から**除外する**（表示すらしない）画面。
+     *
+     * 【支払】部長取消承認だけは K列が「以外のステータスのデータは表示しない」のため、
+     * 操作対象のステータスで一覧そのものを絞る。
+     */
+    private const MODE_HIDES_OTHER_STATUS = ['cancel-approval'];
 
     public function __construct(
         private readonly FelixTotalQuoteRequestGateway $felix,
@@ -53,14 +67,20 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $vendor = $this->nonEmpty($filters['vendor'] ?? null);       // 見積先（company_name）
         $answer = (string) ($filters['answer'] ?? 'all');            // 業者選定の回答状態（既定=全て）
         $comment = (string) ($filters['comment'] ?? 'all');          // コメント有無（all/has/none）
-        $isQuoteRequest = $mode === 'quote-request';                 // 見積依頼は status 非依存
-        $status = self::MODE_STATUS[$mode] ?? null;
-        $empty = $status === null && ! $isQuoteRequest;              // 見積依頼以外で条件未定は空
+        $isQuoteRequest = $mode === 'quote-request';                 // 見積依頼は移行済みのみ対象
+        $operable = self::MODE_OPERABLE_STATUS[$mode] ?? null;
+        $empty = $operable === null;                                 // 未知の mode は空
+        // 一覧を操作対象のステータスだけに絞る画面か（部長取消承認のみ true）。
+        $hidesOther = in_array($mode, self::MODE_HIDES_OTHER_STATUS, true);
 
-        // 見積先（t_payable_partners）の絞り込み：approval_status ＋ 業者名 ＋（業者選定の）回答状態。
-        $quotationFilter = function (Builder $q) use ($status, $vendor, $answer, $mode, $isQuoteRequest): void {
-            if ($status !== null) {
-                $q->where('approval_status', $status);
+        // 見積先（t_payable_partners）の絞り込み：初期表示条件 ＋ 業者名 ＋（業者選定の）回答状態。
+        $quotationFilter = function (Builder $q) use ($operable, $hidesOther, $vendor, $answer, $mode, $isQuoteRequest): void {
+            if ($hidesOther && $operable !== null) {
+                $q->whereIn('approval_status', $operable);
+            }
+            if ($mode === 'vendor-selection') {
+                // 初期表示条件：業者側から見積回答されている（支払見積にデータがある）ものだけ。
+                $q->whereHas('quotations');
             }
             if ($isQuoteRequest) {
                 // 見積依頼：依頼可能な移行済み（source_id あり）の見積先を、未依頼・依頼済みともに並べる。
@@ -112,6 +132,8 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                     $quotation->setAttribute('display_quote', $useLatestQuote
                         ? optional($quotation->latestQuotation)->amount_excluding_tax
                         : $item->quotation_amount);
+                    // 操作できる行か（処理フロー J列）。false の行は一覧に出すが操作させない（K列）。
+                    $quotation->setAttribute('operable', in_array((string) $quotation->approval_status, $operable ?? [], true));
                 }
             }
         }
@@ -261,35 +283,35 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
-     * 発注業者選定の確定：新テーブルの承認状態を UNSELECTED → STAFF_APPROVED へ進めたうえで、
+     * 発注業者選定の確定：新テーブルの承認状態を DRAFT → APPLIED へ進めたうえで、
      * felix_total の採用（update_adoption_flg）をサーバ間 HTTP で呼ぶ。
      *
      * @param  list<int>  $companyIds  見積先（t_payable_partners.id）
-     * @return int UNSELECTED → STAFF_APPROVED へ実際に遷移した見積先の件数
+     * @return int DRAFT → APPLIED へ実際に遷移した見積先の件数
      */
     public function recordVendorSelections(array $companyIds): int
     {
         return $this->syncWithFelixTotal(
             $companyIds,
-            'UNSELECTED',
-            'STAFF_APPROVED',
+            'DRAFT',
+            'APPLIED',
             // no_competitive_flg は現行 estimate_units に列が無いため 0（相見積あり＝単一採用）で渡す。
             fn (int $unit, int $company) => $this->felix->adoptCompany($unit, $company),
         );
     }
 
     /**
-     * 部長承認：新テーブルの承認状態を STAFF_APPROVED → APPROVED へ進めたうえで、
+     * 部長承認：新テーブルの承認状態を APPLIED → APPROVED へ進めたうえで、
      * felix_total の建設部選定（update_tmp_company_select_flg）をサーバ間 HTTP で呼ぶ。
      *
      * @param  list<int>  $companyIds  見積先（t_payable_partners.id）
-     * @return int STAFF_APPROVED → APPROVED へ実際に遷移した見積先の件数
+     * @return int APPLIED → APPROVED へ実際に遷移した見積先の件数
      */
     public function recordManagerApprovals(array $companyIds): int
     {
         return $this->syncWithFelixTotal(
             $companyIds,
-            'STAFF_APPROVED',
+            'APPLIED',
             'APPROVED',
             fn (int $unit, int $company) => $this->felix->tmpSelectCompany($unit, $company),
         );
@@ -357,28 +379,28 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
-     * 部長承認の否認（業者選定へ差し戻し）：担当承認済（STAFF_APPROVED）→ 未選定（UNSELECTED）。
+     * 部長承認の否認（業者選定へ差し戻し）：担当承認済（APPLIED）→ 未選定（DRAFT）。
      * felix_total の採用取消（update_adoption_flg / mode=false）
      * をサーバ間 HTTP で呼び、現行側も業者選定前の状態（adoption_flg=0）へ戻す。
      *
      * 選定・承認（{@see syncWithFelixTotal}）と同様、felix_total 側が失敗した場合は
-     * 新テーブルの更新をロールバックする。STAFF_APPROVED 以外は更新しない。
+     * 新テーブルの更新をロールバックする。APPLIED 以外は更新しない。
      *
      * @return int 実際に差し戻した件数
      */
     public function rejectManagerApproval(int $companyId, string $reason): int
     {
         // 移行元（source_id）が無い見積先は felix_total を呼べないため、新テーブルのみ差し戻す。
-        $targets = $this->filterByStatus($this->mapSourceIds([$companyId]), 'STAFF_APPROVED');
+        $targets = $this->filterByStatus($this->mapSourceIds([$companyId]), 'APPLIED');
 
         return DB::transaction(function () use ($companyId, $targets): int {
             $count = TPayablePartner::query()
                 ->where('id', $companyId)
-                ->where('approval_status', 'STAFF_APPROVED')
+                ->where('approval_status', 'APPLIED')
                 // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
                 // 否認理由は新スキーマに列が無いため、項目単位のコメントスレッド
                 // （t_comments に「【否認】{理由}」で投稿）を唯一の記録とする。投稿は Service 側で行う。
-                ->update(Blame::stampUpdate(['approval_status' => 'UNSELECTED']));
+                ->update(Blame::stampUpdate(['approval_status' => 'DRAFT']));
 
             if ($count === 0) {
                 return 0;
@@ -435,7 +457,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         return $this->syncWithFelixTotal(
             $companyIds,
             'CANCEL_APPLIED',
-            'CANCEL_APPROVED',
+            'CANCELLED',
             function (int $unit, int $company): void {
                 // 承認の段を逆順に戻す（建設部選定 → 採用の順で解除）。
                 $this->felix->cancelTmpSelection($unit, $company);
@@ -515,21 +537,21 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                     ->from('t_payable_quotation_requests')
                     ->whereColumn('t_payable_quotation_requests.payable_partner_id', 't_payable_partners.id'))
                 ->count(),
-            // 業者選定：未選定（UNSELECTED）かつ業者回答あり（最新の相見積履歴を持つ）。
+            // 業者選定：未選定（DRAFT）かつ業者回答あり（最新の相見積履歴を持つ）。
             'vendor-selection' => TPayablePartner::query()
-                ->where('approval_status', 'UNSELECTED')
+                ->where('approval_status', 'DRAFT')
                 ->whereHas('quotations', fn (Builder $h) => $h->whereNotNull('is_latest'))
                 ->count(),
             // 業者選定（差し戻し）：部長承認で否認され業者選定へ戻った。
             // 新スキーマに否認理由の列が無いため、項目のコメントに「【否認】」で始まる投稿が
             // あることをもって否認済みと判定する（{@see denialItemIds}）。
             'vendor-selection-rejected' => TPayablePartner::query()
-                ->where('approval_status', 'UNSELECTED')
+                ->where('approval_status', 'DRAFT')
                 ->whereIn('building_budget_item_id', $this->denialItemIds())
                 ->count(),
-            // 部長承認：担当承認済（STAFF_APPROVED）で部長承認待ち。
+            // 部長承認：担当承認済（APPLIED）で部長承認待ち。
             'manager-approval' => TPayablePartner::query()
-                ->where('approval_status', 'STAFF_APPROVED')
+                ->where('approval_status', 'APPLIED')
                 ->count(),
             // 部長取消承認：取消申請中（CANCEL_APPLIED）で承認待ち。
             'cancel-approval' => TPayablePartner::query()

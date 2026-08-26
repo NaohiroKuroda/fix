@@ -57,7 +57,7 @@ const isOpen = (id: number): boolean => collapsed[id] !== true;
 const toggle = (id: number): void => {
     collapsed[id] = isOpen(id);
 };
-const anyOpen = computed(() => props.projects.some((p) => isOpen(p.id)));
+const anyOpen = computed(() => displayProjects.value.some((p) => isOpen(p.id)));
 const toggleAllProjects = (): void => {
     const close = anyOpen.value;
     props.projects.forEach((p) => {
@@ -67,18 +67,60 @@ const toggleAllProjects = (): void => {
 
 const allRows = computed<BillingRow[]>(() => props.projects.flatMap((p) => p.rows));
 
+// 画面ごとの絞り込み（処理フロー I列）。初期値は I列の太字に合わせる。
+/** 【請求】見積作成：見積の有無（全て / 見積作成済み / 見積未作成）。初期＝全て。 */
+type QuotationFilter = 'all' | 'created' | 'not-created';
+const quotationFilter = ref<QuotationFilter>('all');
+const quotationFilterOptions: { value: QuotationFilter; label: string }[] = [
+    { value: 'all', label: '全て' },
+    { value: 'created', label: '見積作成済み' },
+    { value: 'not-created', label: '見積未作成' },
+];
+/** 【請求】見積承認：見積作成ずみ（初期 ON）。 */
+const createdOnly = ref(props.mode === 'billing-quote-approval');
+/** 【請求】見積承認：未承認（＝この画面で承認できる行）。初期 ON。 */
+const unapprovedOnly = ref(props.mode === 'billing-quote-approval');
+
+/** 画面に出す案件（クライアント側の行フィルタを適用したもの）。 */
+const displayProjects = computed(() => {
+    const rowFilters: ((row: BillingRow) => boolean)[] = [];
+    if (quotationFilter.value === 'created') {
+        rowFilters.push((r) => r.quotationAmount !== null);
+    } else if (quotationFilter.value === 'not-created') {
+        rowFilters.push((r) => r.quotationAmount === null);
+    }
+    if (createdOnly.value) {
+        rowFilters.push((r) => r.quotationAmount !== null);
+    }
+    if (unapprovedOnly.value) {
+        rowFilters.push((r) => r.operable);
+    }
+    if (rowFilters.length === 0) {
+        return props.projects;
+    }
+    return props.projects
+        .map((p) => ({ ...p, rows: p.rows.filter((r) => rowFilters.every((f) => f(r))) }))
+        .filter((p) => p.rows.length > 0);
+});
+
 // pick モード（見積承認）の選択。1つの真実は checked（partnerId → 真偽）。
 const checked = reactive<Record<number, boolean>>({});
 const checkedKeys = computed(() => new Set(allRows.value.map((r) => r.partnerId).filter((id) => checked[id])));
 const toggleRow = (row: BillingRow): void => {
+    // operable = 処理フロー J列の対象ステータスか。false の行は一覧に出すが操作させない（K列）。
+    if (!row.operable) {
+        return;
+    }
     checked[row.partnerId] = !checked[row.partnerId];
 };
+/** 一括選択の対象（操作できる行だけ）。 */
+const bulkSelectableRows = computed(() => allRows.value.filter((r) => r.operable));
 const bulkAllSelected = computed(
-    () => allRows.value.length > 0 && allRows.value.every((r) => checkedKeys.value.has(r.partnerId)),
+    () => bulkSelectableRows.value.length > 0 && bulkSelectableRows.value.every((r) => checkedKeys.value.has(r.partnerId)),
 );
 const toggleSelectAll = (): void => {
     const select = !bulkAllSelected.value;
-    allRows.value.forEach((r) => {
+    bulkSelectableRows.value.forEach((r) => {
         checked[r.partnerId] = select;
     });
 };
@@ -168,6 +210,9 @@ const openOrderDoc = (row: BillingRow): void => {
 
 /** 行ボタン（pick 以外）の押下。モードごとに開くモーダルを振り分ける。 */
 const onRowAction = (row: BillingRow, buildingName: string): void => {
+    if (!row.operable) {
+        return;
+    }
     switch (config.value.kind) {
         case 'modal':
             openQuotationModal(row, buildingName);
@@ -265,12 +310,49 @@ const goToPage = (page: number): void => {
                         <button v-if="config.kind === 'pick'" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
                             {{ bulkAllSelected ? config.bulkClearLabel : config.bulkSelectLabel }}
                         </button>
+                        <!-- 【請求】見積作成：見積の有無（処理フロー I列・初期＝全て）。 -->
+                        <div
+                            v-if="mode === 'billing-quote-create'"
+                            class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md"
+                        >
+                            <button
+                                v-for="opt in quotationFilterOptions"
+                                :key="opt.value"
+                                type="button"
+                                class="rounded-md px-3 py-1.5 text-sm font-bold transition"
+                                :class="quotationFilter === opt.value ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-primary hover:bg-primary/10'"
+                                @click="quotationFilter = opt.value"
+                            >
+                                {{ opt.label }}
+                            </button>
+                        </div>
+                        <!-- 【請求】見積承認：見積作成ずみ / 未承認（処理フロー I列・どちらも初期 ON）。 -->
+                        <label
+                            v-if="mode === 'billing-quote-approval'"
+                            class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
+                            :class="createdOnly
+                                ? 'border-[#c4a35b] bg-[#c4a35b]/15 text-[#8a6d2f]'
+                                : 'border-primary/20 bg-white/70 text-primary hover:bg-primary/10'"
+                        >
+                            <input type="checkbox" v-model="createdOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
+                            見積作成ずみ
+                        </label>
+                        <label
+                            v-if="mode === 'billing-quote-approval'"
+                            class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
+                            :class="unapprovedOnly
+                                ? 'border-[#c4a35b] bg-[#c4a35b]/15 text-[#8a6d2f]'
+                                : 'border-primary/20 bg-white/70 text-primary hover:bg-primary/10'"
+                        >
+                            <input type="checkbox" v-model="unapprovedOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
+                            未承認
+                        </label>
                     </div>
                     <Pager :pagination="pagination" :glass="glass" @change="goToPage" />
                 </div>
 
                 <BillingProjectCard
-                    v-for="project in projects"
+                    v-for="project in displayProjects"
                     :key="project.id"
                     :project="project"
                     :mode="mode"
@@ -284,7 +366,7 @@ const goToPage = (page: number): void => {
                     @open-iframe="openIframe"
                 />
 
-                <div v-if="!projects.length" class="p-8 text-center" :class="[glassPanelClass, onGlassTextClass]">
+                <div v-if="!displayProjects.length" class="p-8 text-center" :class="[glassPanelClass, onGlassTextClass]">
                     対象の請求先がありません。
                 </div>
 

@@ -3,6 +3,8 @@
 // スライス外からは必ずこのファイル経由で参照すること（内部ファイルへの直接 import は禁止）。
 export { default as BillingScreen } from './ui/BillingScreen.vue';
 
+export { BILLING_STATUS_LABEL } from './model/billing';
+
 export type {
     BillingApprovalStatus,
     BillingMasters,

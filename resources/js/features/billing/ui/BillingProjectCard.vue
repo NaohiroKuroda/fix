@@ -10,6 +10,7 @@ import { useFelixTheme } from '@/shared/lib/felix-theme';
 import { yenString } from '@/shared/lib/format-money';
 import { BillingKindBadge } from '@/shared/ui/billing-kind-badge';
 import { BILLING_MODE_CONFIG } from '../model/billing-mode';
+import { BILLING_STATUS_LABEL } from '../model/billing';
 import type { BillingMode, BillingProject, BillingRow } from '../model/billing';
 
 const props = defineProps<{
@@ -40,6 +41,9 @@ const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellText
     useFelixTheme(isThemed);
 
 const isActive = (row: BillingRow): boolean => props.selectedKeys.has(row.partnerId);
+/** 状態バッジの文言（操作できない行に出す）。処理フロー K列「ステータス外表示形式」。 */
+const statusLabel = (row: BillingRow): string => BILLING_STATUS_LABEL[row.approvalStatus];
+
 /** 見積が作成済みか（見積作成画面のボタン文言の出し分けに使う）。 */
 const hasQuotation = (row: BillingRow): boolean => row.quotationAmount !== null;
 
@@ -206,7 +210,19 @@ const rowButtonLabel = (row: BillingRow): string =>
                         </td>
                         <!-- 操作列：pick はトグル選択、それ以外は押下で親がモーダルを開く。 -->
                         <td class="px-3 py-2 text-center">
+                            <!--
+                                操作できない行（処理フロー K列）。一覧には出すが操作させず、
+                                現在の承認ステータスをバッジで示す。
+                            -->
+                            <span
+                                v-if="!row.operable"
+                                class="mx-auto inline-flex h-9 w-28 items-center justify-center whitespace-nowrap rounded-xl border border-slate-300 bg-slate-100 px-2 text-sm font-semibold text-slate-500"
+                                :title="`${statusLabel(row)}のため、この画面では操作できません`"
+                            >
+                                {{ statusLabel(row) }}
+                            </span>
                             <button
+                                v-else
                                 type="button"
                                 :class="actionBtnClass(isPick ? isActive(row) : hasQuotation(row) && isQuoteCreate)"
                                 @click="isPick ? emit('row-toggle', row) : emit('row-action', row)"

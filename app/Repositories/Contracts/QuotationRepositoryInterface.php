@@ -44,8 +44,8 @@ interface QuotationRepositoryInterface
     public function recordManagerApprovals(array $companyIds): int;
 
     /**
-     * 部長承認の否認（業者選定へ差し戻し）。対象の見積先（担当承認済＝STAFF_APPROVED）を
-     * 未選定（UNSELECTED）へ戻し、否認理由（deny_comment）を記録する。
+     * 部長承認の否認（業者選定へ差し戻し）。対象の見積先（担当承認済＝APPLIED）を
+     * 未選定（DRAFT）へ戻し、否認理由（deny_comment）を記録する。
      *
      * @param  int  $companyId  見積先 ID（新スキーマ=t_payable_partners.id）
      * @param  string  $reason  否認理由
@@ -91,8 +91,8 @@ interface QuotationRepositoryInterface
     /**
      * サイドメニューのバッヂ用：各画面の未処理件数（見積先=t_payable_partners 単位）。
      * - quote-request    : まだ見積依頼を出していない数（t_payable_quotation_requests が無い）
-     * - vendor-selection : まだ選定していない数（UNSELECTED かつ業者回答あり）
-     * - manager-approval : まだ部長承認していない数（STAFF_APPROVED）
+     * - vendor-selection : まだ選定していない数（DRAFT かつ業者回答あり）
+     * - manager-approval : まだ部長承認していない数（APPLIED）
      * - cancel-approval  : 取消申請されており未承認の数（CANCEL_REQUESTED）
      *
      * @return array<string, int>

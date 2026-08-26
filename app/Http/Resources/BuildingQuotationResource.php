@@ -99,13 +99,13 @@ class BuildingQuotationResource extends JsonResource
             // やり取りの未読数（ログインユーザーの最終既読より新しい他者コメント）。0=未読なし。
             'unreadCount' => (int) ($quotation?->unread_count ?? 0),
             // 選定済み（業者未選定でない）。
-            'selected' => $status !== null && $status !== 'UNSELECTED',
+            'selected' => $status !== null && $status !== 'DRAFT',
             // 部長承認済み（APPROVED 以降）。
-            'approved' => in_array($status, ['APPROVED', 'CANCEL_APPLIED', 'CANCEL_APPROVED'], true),
+            'approved' => in_array($status, ['APPROVED', 'CANCEL_APPLIED', 'CANCELLED'], true),
             // 取消申請中。
             'cancelRequested' => $status === 'CANCEL_APPLIED',
             // 取消承認済み（完了）。
-            'cancelApproved' => $status === 'CANCEL_APPROVED',
+            'cancelApproved' => $status === 'CANCELLED',
             // 仮選定（t_payable_partners.is_drafted）。
             'provisional' => $quotation !== null && (int) $quotation->is_drafted === 1,
             // 区分（請求／支払）。2026-08 のスキーマ改訂で請求（もらい）は t_billing_partners へ
@@ -114,6 +114,11 @@ class BuildingQuotationResource extends JsonResource
             // 部長承認で否認され業者選定へ差し戻された。新スキーマに否認理由の列が無いため、
             // 項目のコメントに「【否認】」の投稿があるかで判定する（リポジトリが付与）。
             'denied' => (bool) ($quotation?->denied ?? false),
+            // 承認ステータス（DRAFT / APPLIED / APPROVED / CANCEL_APPLIED / CANCELLED）。
+            // 一覧に状態バッジを出すために渡す。
+            'approvalStatus' => $status === null ? null : (string) $status,
+            // この画面で操作できる行か（処理フロー J列）。false は一覧に出すが操作させない（K列）。
+            'operable' => (bool) ($quotation?->operable ?? false),
         ];
     }
 

@@ -96,7 +96,8 @@ const isApplied = (row: QuotationManagementRow): boolean =>
 const checked = reactive<Record<string, boolean>>({});
 const checkedKeys = computed(() => new Set(Object.keys(checked).filter((k) => checked[k])));
 const toggleRow = (row: QuotationManagementRow): void => {
-    if (row.companyId == null || isApplied(row)) {
+    // operable = 処理フロー J列の対象ステータスか。false の行は一覧に出すが操作させない（K列）。
+    if (row.companyId == null || isApplied(row) || !row.operable) {
         return;
     }
     const key = quotationRowKey(row);
@@ -104,7 +105,7 @@ const toggleRow = (row: QuotationManagementRow): void => {
 };
 // 選べるのは「見積先（業者）が紐づき、かつ未処理」の行だけ（処理済みは再操作不可）。
 const selectableRows = computed<QuotationManagementRow[]>(() =>
-    allRows.value.filter((r) => r.companyId != null && !isApplied(r)),
+    allRows.value.filter((r) => r.companyId != null && !isApplied(r) && r.operable),
 );
 const anyChecked = computed(() => checkedKeys.value.size > 0);
 
@@ -120,7 +121,7 @@ const isRowSelected = (row: QuotationManagementRow): boolean => {
     return key in selectionOverride ? selectionOverride[key] : serverSelected(row);
 };
 const toggleSelect = (row: QuotationManagementRow): void => {
-    if (row.companyId == null || !hasQuoteAnswer(row)) {
+    if (row.companyId == null || !hasQuoteAnswer(row) || !row.operable) {
         return;
     }
     const key = quotationRowKey(row);
@@ -193,6 +194,10 @@ const toggleProvisional = (row: QuotationManagementRow): void => {
 // - 仮選定のみ表示：チェックした仮選定の行だけ（仮選定はローカル状態）。
 // - 未依頼のみ表示：まだ見積依頼を送っていない行だけ（送信回数 0 = requested=false）。
 const provisionalOnly = ref(false);
+// 業者選定：既に選定済み（未申請でない）行だけに絞る。初期 OFF。
+const selectedOnly = ref(false);
+// 部長承認：未承認（この画面で承認できる行＝operable）だけに絞る。初期 ON。
+const unapprovedOnly = ref(props.mode === 'manager-approval');
 // 見積依頼画面は初期表示で「未依頼のみ表示」をチェック済みにする（未依頼の見積先から着手できるように）。
 const unrequestedOnly = ref(props.mode === 'quote-request');
 const displayProjects = computed<QuotationManagementProject[]>(() => {
@@ -202,6 +207,12 @@ const displayProjects = computed<QuotationManagementProject[]>(() => {
     }
     if (unrequestedOnly.value) {
         rowFilters.push((r) => r.sendCount === 0);
+    }
+    if (selectedOnly.value) {
+        rowFilters.push((r) => r.selected);
+    }
+    if (unapprovedOnly.value) {
+        rowFilters.push((r) => r.operable);
     }
     if (rowFilters.length === 0) {
         return props.projects;
@@ -245,7 +256,9 @@ const submitBillingSend = (row: QuotationManagementRow): void => {
 // 一括「全て選択」（全モード共通）。
 // toggle（業者選定）= 見積回答ありの業者行、pick（見積依頼 / 部長承認 / 取消申請 / 取消承認）= 未処理の業者行が対象。
 const bulkSelectableRows = computed<QuotationManagementRow[]>(() =>
-    isToggleMode.value ? allRows.value.filter((r) => r.companyId != null && hasQuoteAnswer(r)) : selectableRows.value,
+    isToggleMode.value
+        ? allRows.value.filter((r) => r.companyId != null && hasQuoteAnswer(r) && r.operable)
+        : selectableRows.value,
 );
 // 対象行がすべて選択状態か（ボタン表示名の出し分けに使う）。
 const bulkAllSelected = computed(() => {
@@ -351,7 +364,7 @@ const actionBtnClass = computed(() => {
         : 'h-9 cursor-not-allowed rounded-xl border border-[#c4a35b]/40 bg-[#c4a35b]/10 px-4 text-sm font-semibold text-[#8a6a25]/60 backdrop-blur-md';
 });
 
-// 否認（部長承認画面）：理由入力モーダル → 業者選定へ差し戻し（approval_status を UNSELECTED に戻す）。
+// 否認（部長承認画面）：理由入力モーダル → 業者選定へ差し戻し（approval_status を DRAFT に戻す）。
 const rejectForm = useForm<{ companyId: number | null; reason: string }>({ companyId: null, reason: '' });
 const rejectTarget = ref<QuotationManagementRow | null>(null);
 const rejectModalOpen = ref(false);
@@ -587,7 +600,14 @@ const answerOptions: { value: AnswerFilter; label: string }[] = [
     { value: 'unanswered', label: '見積回答なし' },
 ];
 // この回答状態フィルタを出す画面（相見積額の有無で絞れる画面）。
-const showAnswerFilter = computed(() => props.mode === 'vendor-selection' || props.mode === 'quote-request');
+// 回答状態フィルタを出す画面（処理フロー I列「全て・見積回答あり・見積回答なし」）。
+const showAnswerFilter = computed(() =>
+    ['quote-request', 'vendor-selection', 'manager-approval'].includes(props.mode),
+);
+// 仮選定のみ表示を出す画面（同上）。
+const showProvisionalFilter = computed(() =>
+    ['quote-request', 'vendor-selection', 'manager-approval'].includes(props.mode),
+);
 // answer は既定（all）のとき URL から省く。
 const answerParam = (value: AnswerFilter): AnswerFilter | undefined => (value === 'all' ? undefined : value);
 const onSearch = (payload: QuotationManagementFilters): void => {
@@ -717,7 +737,7 @@ const setComment = (value: CommentFilter): void => {
                         </div>
                         <!-- 見積依頼のみ：仮選定した見積先だけにクライアント側で絞り込むトグル（チェックON/OFFが一目で分かる）。 -->
                         <label
-                            v-if="mode === 'quote-request'"
+                            v-if="showProvisionalFilter"
                             class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
                             :class="provisionalOnly
                                 ? 'border-[#c4a35b] bg-[#c4a35b]/15 text-[#8a6d2f]'
@@ -744,6 +764,28 @@ const setComment = (value: CommentFilter): void => {
                                 class="size-4 cursor-pointer accent-[#c4a35b]"
                             />
                             未依頼のみ表示
+                        </label>
+                        <!-- 業者選定のみ：既に選定済みの行だけに絞る（処理フロー I列・初期 OFF）。 -->
+                        <label
+                            v-if="mode === 'vendor-selection'"
+                            class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
+                            :class="selectedOnly
+                                ? 'border-[#c4a35b] bg-[#c4a35b]/15 text-[#8a6d2f]'
+                                : 'border-primary/20 bg-white/70 text-primary hover:bg-primary/10'"
+                        >
+                            <input type="checkbox" v-model="selectedOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
+                            業者選定済み
+                        </label>
+                        <!-- 部長承認のみ：この画面で承認できる行だけに絞る（処理フロー I列・初期 ON）。 -->
+                        <label
+                            v-if="mode === 'manager-approval'"
+                            class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
+                            :class="unapprovedOnly
+                                ? 'border-[#c4a35b] bg-[#c4a35b]/15 text-[#8a6d2f]'
+                                : 'border-primary/20 bg-white/70 text-primary hover:bg-primary/10'"
+                        >
+                            <input type="checkbox" v-model="unapprovedOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
+                            未承認
                         </label>
                         <!-- コメントのやり取りの有無フィルタ（全画面共通）。 -->
                         <div class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
@@ -782,11 +824,15 @@ const setComment = (value: CommentFilter): void => {
                 />
 
                 <div v-if="!displayProjects.length" class="p-8 text-center" :class="[glassPanelClass, onGlassTextClass]">
-                    {{ unrequestedOnly && !provisionalOnly
-                        ? '未依頼の見積先がありません。'
-                        : provisionalOnly
-                            ? '仮選定された見積先がありません。'
-                            : '対象の案件がありません。' }}
+                    {{ unapprovedOnly
+                        ? '未承認の見積先がありません。'
+                        : selectedOnly
+                            ? '選定済みの見積先がありません。'
+                            : unrequestedOnly && !provisionalOnly
+                                ? '未依頼の見積先がありません。'
+                                : provisionalOnly
+                                    ? '仮選定された見積先がありません。'
+                                    : '対象の案件がありません。' }}
                 </div>
 
                 <!-- ページネーション（下） -->

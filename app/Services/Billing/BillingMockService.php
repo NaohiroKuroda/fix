@@ -18,17 +18,19 @@ final class BillingMockService
     private const PER_PAGE = 10;
 
     /**
-     * 画面モード → 表示対象の承認ステータス。
-     * 値はテーブル定義書（t_billing_partners.approval_status）に準拠する。
+     * 画面モード → **操作できる** 承認ステータス（処理フロー J列「表示承認ステータス」）。
+     *
+     * 一覧にはこれ以外のステータスも出す（K列「ステータス外表示形式」＝出すが操作させない）。
+     * 操作可否は `operable` としてフロントへ渡す。
      *
      * @var array<string, list<string>>
      */
-    private const MODE_STATUSES = [
-        'billing-quote-create' => ['UNSELECTED'],
-        'billing-quote-approval' => ['STAFF_APPROVED'],
-        'billing-cancel-request' => ['APPROVED'],
-        'billing-cancel-approval' => ['CANCEL_APPLIED'],
-        'billing-order-confirmation' => ['APPROVED'],
+    private const MODE_OPERABLE_STATUSES = [
+        'billing-quote-create' => ['DRAFT', 'CANCELLED'],   // 未申請 / 取消承認済
+        'billing-quote-approval' => ['APPLIED'],            // 申請中（承認待ち）
+        'billing-cancel-request' => ['APPROVED'],           // 承認済（かつ業者承諾日時なし）
+        'billing-cancel-approval' => ['CANCEL_APPLIED'],    // 取消申請中
+        'billing-order-confirmation' => ['APPROVED'],       // 承認済（かつ業者承諾日時あり）
     ];
 
     /**
@@ -40,18 +42,20 @@ final class BillingMockService
      */
     public function screen(string $mode, array $filters): array
     {
-        $statuses = self::MODE_STATUSES[$mode] ?? [];
+        $operable = self::MODE_OPERABLE_STATUSES[$mode] ?? [];
         $projects = [];
 
         foreach ($this->buildings() as $building) {
             $rows = [];
             foreach ($building['rows'] as $row) {
-                if (! in_array($row['approvalStatus'], $statuses, true)) {
+                if (! $this->inScope($mode, $row)) {
                     continue;
                 }
                 if (! $this->matches($building['name'], $row, $filters)) {
                     continue;
                 }
+                // 操作できる行か（J列）。false の行も一覧には出すが操作させない（K列）。
+                $row['operable'] = in_array($row['approvalStatus'], $operable, true);
                 $rows[] = $row;
             }
 
@@ -77,6 +81,27 @@ final class BillingMockService
                 'to' => $projects === [] ? null : count($projects),
             ],
         ];
+    }
+
+    /**
+     * 画面の初期表示条件（処理フロー H列）に合致するか。
+     *
+     * ステータスでは絞らない（K列のとおり他ステータスも一覧に出す）。ただし
+     * 【請求】見積承認・見積取消申請・発注書確認は「見積の有無」「業者承諾日時の有無」で対象が変わる。
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function inScope(string $mode, array $row): bool
+    {
+        return match ($mode) {
+            // 見積が作成されているもの（未作成は対象外）。
+            'billing-quote-approval' => $row['quotationAmount'] !== null,
+            // 承認済みで、まだ業者が承諾していないもの（承諾後は取消できない）。
+            'billing-cancel-request' => $row['acceptedAt'] === null,
+            // 承認済みで、業者が承諾済みのもの。
+            'billing-order-confirmation' => $row['acceptedAt'] !== null,
+            default => true,
+        };
     }
 
     /**
@@ -110,10 +135,10 @@ final class BillingMockService
                 'no' => 1,
                 'name' => '（モック）レジデンス青葉台 新築工事',
                 'rows' => [
-                    $this->row(1, '外構工事', '青葉ランドスケープ株式会社', 'UNSELECTED', null, null, null, 2, 1),
+                    $this->row(1, '外構工事', '青葉ランドスケープ株式会社', 'DRAFT', null, null, null, 2, 1),
                     // 下書き保存済み（見積はあるが承認申請していない）。ボタンは「見積修正」になる。
-                    $this->row(2, '外構工事', '緑化サービス株式会社', 'UNSELECTED', '740000', '2026/08/22', null, 0, 0),
-                    $this->row(3, '電気設備工事', '東邦電設株式会社', 'STAFF_APPROVED', '1850000', '2026/08/18', null, 3, 0),
+                    $this->row(2, '外構工事', '緑化サービス株式会社', 'DRAFT', '740000', '2026/08/22', null, 0, 0),
+                    $this->row(3, '電気設備工事', '東邦電設株式会社', 'APPLIED', '1850000', '2026/08/18', null, 3, 0),
                     $this->row(4, '給排水衛生設備工事', '大栄設備工業株式会社', 'APPROVED', '2460000', '2026/08/12', '2026/08/20', 1, 0),
                 ],
             ],
@@ -122,7 +147,7 @@ final class BillingMockService
                 'no' => 2,
                 'name' => '（モック）パークサイド中央 大規模修繕',
                 'rows' => [
-                    $this->row(5, '足場仮設工事', '中央仮設工業株式会社', 'STAFF_APPROVED', '980000', '2026/08/19', null, 0, 0),
+                    $this->row(5, '足場仮設工事', '中央仮設工業株式会社', 'APPLIED', '980000', '2026/08/19', null, 0, 0),
                     $this->row(6, '防水工事', '日新防水株式会社', 'APPROVED', '3120000', '2026/08/05', null, 2, 1),
                     $this->row(7, '塗装工事', '彩光塗装株式会社', 'CANCEL_APPLIED', '1740000', '2026/08/01', null, 4, 2),
                 ],
@@ -132,7 +157,7 @@ final class BillingMockService
                 'no' => 3,
                 'name' => '（モック）グランメゾン港南 内装工事',
                 'rows' => [
-                    $this->row(8, '内装仕上工事', '港南インテリア株式会社', 'UNSELECTED', null, null, null, 0, 0),
+                    $this->row(8, '内装仕上工事', '港南インテリア株式会社', 'DRAFT', null, null, null, 0, 0),
                     $this->row(9, '建具工事', '湘南建具製作所', 'CANCEL_APPLIED', '640000', '2026/07/28', null, 1, 1),
                 ],
             ],

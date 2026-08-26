@@ -6,6 +6,7 @@ import { useFelixTheme } from '@/shared/lib/felix-theme';
 import { yen } from '@/shared/lib/format-money';
 import { BillingKindBadge } from '@/shared/ui/billing-kind-badge';
 import { quotationRowKey, QUOTATION_MODE_CONFIG } from '../model/quotation-mode';
+import { QUOTATION_STATUS_LABEL } from '../model/quotation';
 import type { QuotationManagementMode, QuotationManagementProject, QuotationManagementRow } from '../model/quotation';
 
 const props = defineProps<{
@@ -71,6 +72,20 @@ const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellText
     useFelixTheme(isThemed);
 
 const isActive = (row: QuotationManagementRow): boolean => props.selectedKeys.has(quotationRowKey(row));
+// 状態バッジの文言（操作できない行に出す）。処理フロー K列「ステータス外表示形式」。
+const statusLabel = (row: QuotationManagementRow): string =>
+    row.approvalStatus === null ? '—' : QUOTATION_STATUS_LABEL[row.approvalStatus];
+// 操作できない理由（ツールチップ）。画面ごとに文言を変える。
+const notOperableHint = (row: QuotationManagementRow): string => {
+    const state = statusLabel(row);
+    if (props.mode === 'quote-request') {
+        return `${state}のため、見積依頼を送信できません`;
+    }
+    if (props.mode === 'vendor-selection') {
+        return `${state}のため、この見積先は選定できません（他の見積先は選定できます）`;
+    }
+    return `${state}のため、この画面では操作できません`;
+};
 // 仮選定（DB保存は将来。現状はフロントのローカル状態）。
 const isProvisional = (row: QuotationManagementRow): boolean => props.provisionalKeys?.has(quotationRowKey(row)) ?? false;
 // 見積回答あり（相見積に金額が入っている）。無い業者は業者選定を不可にする。
@@ -349,8 +364,19 @@ const chatBtnClass = (row: QuotationManagementRow): string => {
                             <span v-else :class="mutedTextClass">—</span>
                         </td>
                         <td class="px-3 py-2 text-center">
+                            <!--
+                                操作できない行（処理フロー K列「ステータス外表示形式」）。
+                                一覧には出すが操作させず、現在の承認ステータスをバッジで示す。
+                            -->
+                            <span
+                                v-if="row.companyId != null && !row.operable"
+                                class="mx-auto inline-flex h-9 w-28 items-center justify-center whitespace-nowrap rounded-xl border border-slate-300 bg-slate-100 px-2 text-sm font-semibold text-slate-500"
+                                :title="notOperableHint(row)"
+                            >
+                                {{ statusLabel(row) }}
+                            </span>
                             <!-- 業者選定（toggle）：サーバ状態を初期値に押下でトグル（業者の選び替え）。 -->
-                            <template v-if="isToggleButton">
+                            <template v-else-if="isToggleButton">
                                 <button
                                     v-if="row.companyId != null"
                                     type="button"

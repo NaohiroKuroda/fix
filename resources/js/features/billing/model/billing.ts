@@ -13,11 +13,11 @@ export type { Pagination as BillingPagination } from '@/shared/api';
  * 値はテーブル定義書に準拠する（支払側の実装が使う MANAGER_APPROVED / CANCEL_REQUESTED とは異なる）。
  */
 export type BillingApprovalStatus =
-    | 'UNSELECTED'
-    | 'STAFF_APPROVED'
+    | 'DRAFT'
+    | 'APPLIED'
     | 'APPROVED'
     | 'CANCEL_APPLIED'
-    | 'CANCEL_APPROVED';
+    | 'CANCELLED';
 
 /** 案件 → 項目 → 請求取引先 を展開した1行。 */
 export interface BillingRow {
@@ -50,7 +50,21 @@ export interface BillingRow {
      * 見積作成モーダルを「見積修正」で開いたときの初期値になる。
      */
     quotation: BillingQuotation | null;
+    /**
+     * この画面で操作できる行か（処理フロー J列「表示承認ステータス」）。
+     * false の行も一覧には出すが、操作は不可にする（K列「ステータス外表示形式」）。
+     */
+    operable: boolean;
 }
+
+/** 状態バッジの表示名（支払側と共通の語彙）。 */
+export const BILLING_STATUS_LABEL: Record<BillingApprovalStatus, string> = {
+    DRAFT: '未申請',
+    APPLIED: '申請中',
+    APPROVED: '承認済',
+    CANCEL_APPLIED: '取消申請中',
+    CANCELLED: '取消承認済',
+};
 
 /** 課税区分（t_billing_quotation_details.tax_type）。 */
 export type BillingTaxType = 'TAXABLE' | 'NON_TAXABLE';

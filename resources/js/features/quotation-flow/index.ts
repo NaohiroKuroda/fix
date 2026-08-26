@@ -3,7 +3,10 @@
 // スライス外からは必ずこのファイル経由で参照すること（内部ファイルへの直接 import は禁止）。
 export { default as QuotationManagementScreen } from './ui/QuotationManagementScreen.vue';
 
+export { QUOTATION_STATUS_LABEL } from './model/quotation';
+
 export type {
+    QuotationApprovalStatus,
     QuotationManagementFilters,
     QuotationManagementMode,
     QuotationManagementPagination,

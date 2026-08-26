@@ -66,13 +66,13 @@ const quotationMenuOpen = ref(true);
 // 親「見積管理」に出す合計バッジ。
 const quotationBadgeTotal = computed(() => quotationChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 
-// 発注管理（トグル）。業者承諾確認・発注取消承認の2画面のみ（取消申請は業者承諾確認画面内のボタンで行うため独立画面はメニューに出さない）。
-// 発注取消承認は見積管理の部長取消承認と同じ方針で建設部部長のみ表示。
+// 発注管理（トグル）。メニューに出すのは【支払】業者承諾確認と【請求】発注書確認のみ。
+// 発注実行・発注承認・発注取消申請・発注取消承認は画面・ルートを残したままメニューには出さない
+// （取消は業者承諾確認画面内のボタンから行う）。
 const orderChildren = computed<NavChild[]>(() => [
     { key: 'order-acceptance', label: '【支払】業者承諾確認【発注承諾済み→FELIX(担当者)】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance'), badge: badges.value?.['order-acceptance'] },
-    ...(isEstimateManager.value
-        ? [{ key: 'order-cancel-approval', label: '【支払】発注取消承認【取消申請中→部長取消承認待ち】', href: '/order-delivery/order-cancel-approval', active: path.value.startsWith('/order-delivery/order-cancel-approval'), badge: badges.value?.['order-cancel-approval'] }]
-        : []),
+    // 【支払】発注取消承認はメニューに出さない（画面・ルートは残す）。
+    // 発注取消は業者承諾確認画面のボタンから申請するため、独立メニューを置かない方針。
     // 【請求】発注書確認（もらい）。業者が発注承諾すると承諾日が入る。※ 現時点はモック画面。
     ...(isEstimateManager.value
         ? [{ key: 'billing-order-confirmation', label: '【請求】発注書確認【FELIX(建設部部長)】', href: '/order-delivery/billing-order-confirmation', active: path.value.startsWith('/order-delivery/billing-order-confirmation') }]

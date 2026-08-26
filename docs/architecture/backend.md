@@ -410,15 +410,20 @@ return TCostQuotation::query()
 | `t_cost_quotation_histories` | `t_payable_quotations` / `t_billing_quotations` | `cost_quotation_id` → `payable_partner_id` / `billing_partner_id` |
 | `t_cost_quotation_details` | `t_payable_quotation_details` / `t_billing_quotation_details` | `tax_class` → `tax_type`、`is_tax_included` → `is_tax_inclusive` |
 
-承認ステータス（`approval_status`）も改訂された。
+承認ステータス（`approval_status`）も改訂された。**値は 2 度変わっている**ため、
+どの世代の値かを確認して扱うこと。
 
-| 旧 | 新 | 意味 |
-| --- | --- | --- |
-| `UNSELECTED` | `UNSELECTED` | 未選定（承認申請なし） |
-| `STAFF_APPROVED` | `STAFF_APPROVED` | 担当者承認済（部長承認待ち） |
-| `MANAGER_APPROVED` | **`APPROVED`** | 部長承認済（承認完了） |
-| `CANCEL_REQUESTED` | **`CANCEL_APPLIED`** | 取消申請中（部長承認待ち） |
-| `APPROVED`（取消承認＝完了） | **`CANCEL_APPROVED`** | 取消承認済 |
+| ① 現行実装 | ② テーブル定義書 | ③ **見積管理_処理フロー（最新・仕様の正）** | 意味 |
+| --- | --- | --- | --- |
+| `UNSELECTED` | `UNSELECTED` | **`DRAFT`** | 未申請 |
+| `STAFF_APPROVED` | `STAFF_APPROVED` | **`APPLIED`** | 申請中（承認待ち） |
+| `MANAGER_APPROVED` | `APPROVED` | `APPROVED` | 承認済（承認完了） |
+| `CANCEL_REQUESTED` | `CANCEL_APPLIED` | `CANCEL_APPLIED` | 取消申請中（取消承認待ち） |
+| `APPROVED`（取消承認＝完了） | `CANCEL_APPROVED` | **`CANCELLED`** | 取消承認済（取消承認） |
+
+> **未反映**: ③ は詳細設計（`docs/detailed-design/quotations/01〜09`）に反映済みだが、
+> **コードと DB は ② のまま**である（`t_payable_partners` / `t_billing_partners` の
+> `approval_status` はデフォルト `UNSELECTED`）。実装時は ② → ③ の移行が必要になる。
 
 > `t_orders` / `t_delivery_reports` / `t_invoices` の `*_status` は**改訂対象外**。値はそのまま
 > （`STAFF_APPROVED` / `APPROVED` / `CANCEL_REQUESTED`）である点に注意する。

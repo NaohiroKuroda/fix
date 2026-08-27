@@ -33,8 +33,8 @@ class QuotationManagementRequest extends FormRequest
             'answer' => ['nullable', 'in:all,answered,unanswered'],
             // コメント有無フィルタ（全て / コメントあり / コメントなし）。全画面共通。
             'comment' => ['nullable', 'in:all,has,none'],
-            // 区分（支払 / 請求）。逆区分は表示のみ（操作不可）。全画面共通。
-            'kind' => ['nullable', 'in:payable,billing'],
+            // 区分。all＝両区分を並べる（自区分以外は表示のみ）／payable＝支払のみ／billing＝請求のみ。
+            'kind' => ['nullable', 'in:all,payable,billing'],
         ];
     }
 
@@ -73,14 +73,18 @@ class QuotationManagementRequest extends FormRequest
     }
 
     /**
-     * 区分（支払 / 請求）。未指定なら画面の既定値を使う。
-     * 支払系画面は `payable`、請求系画面は `billing` を既定にする（処理フロー H列「区分が支払 / 請求」）。
+     * 区分。未指定なら画面の既定値を使う。
+     *
+     * - `payable` / `billing` … その区分の取引先だけを表示する。画面の既定値。
+     * - `all` … 両区分を同じ一覧に並べる。自区分以外は表示のみ（操作不可）。
+     *
+     * 支払系画面の既定は `payable`、請求系画面の既定は `billing`（処理フロー H列「区分が支払 / 請求」）。
      */
     private function kind(string $default): string
     {
         $value = (string) $this->input('kind', '');
 
-        return in_array($value, ['payable', 'billing'], true) ? $value : $default;
+        return in_array($value, ['all', 'payable', 'billing'], true) ? $value : $default;
     }
 
     /**

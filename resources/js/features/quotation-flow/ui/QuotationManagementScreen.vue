@@ -193,12 +193,12 @@ const toggleProvisional = (row: QuotationManagementRow): void => {
 // 一覧の表示切替フィルタ（見積依頼画面）。クライアント側で行を絞り込む。
 // - 仮選定のみ表示：チェックした仮選定の行だけ（仮選定はローカル状態）。
 // - 未依頼のみ表示：まだ見積依頼を送っていない行だけ（送信回数 0 = requested=false）。
-// 区分（支払 / 請求）。支払系画面の初期値は「支払」。請求に切り替えると請求取引先を表示のみで参照する。
-type PartnerKind = 'payable' | 'billing';
-const kind = computed<PartnerKind>(() => (props.filters.kind === 'billing' ? 'billing' : 'payable'));
+// 区分。支払系画面の初期値は「支払」。「全て」にすると請求取引先も同じ一覧に並ぶ（表示のみ）。
+type PartnerKind = 'all' | 'payable' | 'billing';
+const kind = computed<PartnerKind>(() => (props.filters.kind === 'all' ? 'all' : 'payable'));
 const kindOptions: { value: PartnerKind; label: string }[] = [
+    { value: 'all', label: '全て' },
     { value: 'payable', label: '支払' },
-    { value: 'billing', label: '請求' },
 ];
 
 const provisionalOnly = ref(false);
@@ -261,35 +261,23 @@ const submitBillingSend = (row: QuotationManagementRow): void => {
     billingSendForm.submit(sendQuoteRequestRoute(), { preserveScroll: true });
 };
 
-// 一括「全て選択」（全モード共通）。
-// toggle（業者選定）= 見積回答ありの業者行、pick（見積依頼 / 部長承認 / 取消申請 / 取消承認）= 未処理の業者行が対象。
-const bulkSelectableRows = computed<QuotationManagementRow[]>(() =>
-    isToggleMode.value
-        ? allRows.value.filter((r) => r.companyId != null && hasQuoteAnswer(r) && r.operable)
-        : selectableRows.value,
-);
+// 一括「全て選択」。対象は未処理の業者行（見積依頼 / 部長承認）。
+// 業者選定は案件ごとに 1 業者を選ぶ画面のため一括選択は用意せず、config にラベルを持たない。
+const bulkSelectableRows = computed<QuotationManagementRow[]>(() => selectableRows.value);
 // 対象行がすべて選択状態か（ボタン表示名の出し分けに使う）。
 const bulkAllSelected = computed(() => {
     const rows = bulkSelectableRows.value;
     if (rows.length === 0) {
         return false;
     }
-    return isToggleMode.value
-        ? rows.every((r) => isRowSelected(r))
-        : rows.every((r) => checkedKeys.value.has(quotationRowKey(r)));
+    return rows.every((r) => checkedKeys.value.has(quotationRowKey(r)));
 });
 // 全て選択 / 全て解除（現在の状態を反転）。
 const toggleSelectAll = (): void => {
     const select = !bulkAllSelected.value;
-    if (isToggleMode.value) {
-        bulkSelectableRows.value.forEach((r) => {
-            selectionOverride[quotationRowKey(r)] = select;
-        });
-    } else {
-        bulkSelectableRows.value.forEach((r) => {
-            checked[quotationRowKey(r)] = select;
-        });
-    }
+    bulkSelectableRows.value.forEach((r) => {
+        checked[quotationRowKey(r)] = select;
+    });
 };
 
 // 送信は Inertia useForm（processing 統合）+ Wayfinder アクションで行う。
@@ -299,6 +287,8 @@ const form = useForm<{ companyIds: number[]; reason: string }>({ companyIds: [],
 // 取消申請 / 取消承認 は「1レコードごとに理由入力モーダル → OK で単体実行」にする（否認と同様）。
 // これらの画面ではヘッダーの一括アクションボタン・一括選択は出さない。
 const isPerRowAction = computed(() => props.mode === 'cancel-request' || props.mode === 'cancel-approval');
+// 一括選択ボタンの表示可否。取消系（1件ずつ処理）と、ラベルを持たない業者選定では出さない。
+const showBulkSelect = computed(() => !isPerRowAction.value && config.value.bulkSelectLabel != null);
 const actionModalOpen = ref(false);
 const actionTarget = ref<QuotationManagementRow | null>(null);
 const closeActionModal = (): void => {
@@ -759,13 +749,13 @@ const setComment = (value: CommentFilter): void => {
                                 type="button"
                                 class="rounded-md px-3 py-1.5 text-sm font-bold transition"
                                 :class="kind === opt.value ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-primary hover:bg-primary/10'"
-                                :title="opt.value === 'billing' ? '請求（もらい）の取引先を表示のみで確認する' : ''"
+                                :title="opt.value === 'all' ? '請求（もらい）の取引先も表示のみで並べる' : ''"
                                 @click="setKind(opt.value)"
                             >
                                 {{ opt.label }}
                             </button>
                         </div>
-                        <button v-if="!isPerRowAction" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
+                        <button v-if="showBulkSelect" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
                             {{ bulkAllSelected ? config.bulkClearLabel : config.bulkSelectLabel }}
                         </button>
                         <!-- 業者選定・見積依頼：回答状態フィルタ（全て / 回答あり / 回答なし）。相見積額の有無で絞る。 -->

@@ -44,10 +44,13 @@ export interface QuotationModeConfig {
     processingLabel: string;
     /** ヘッダー確定ボタンが非活性のときのツールチップ。 */
     hint: string;
-    /** 一括選択ボタンの表示名（未選択時）。例: 「全て選定」「全て承認」。 */
-    bulkSelectLabel: string;
-    /** 一括選択ボタンの表示名（全選択済み＝解除時）。例: 「全ての選定を解除」。 */
-    bulkClearLabel: string;
+    /**
+     * 一括選択ボタンの表示名（未選択時）。例: 「全て依頼」「全て承認」。
+     * 未指定の場合は一括選択ボタン自体を出さない（業者選定は 1 業者を選ぶ画面のため未指定）。
+     */
+    bulkSelectLabel?: string;
+    /** 一括選択ボタンの表示名（全選択済み＝解除時）。例: 「全ての依頼を解除」。 */
+    bulkClearLabel?: string;
 }
 
 /**
@@ -81,8 +84,7 @@ export const QUOTATION_MODE_CONFIG: Record<QuotationManagementMode, QuotationMod
         appliedLabel: '選定済',
         processingLabel: '確定中…',
         hint: '発注業者を選定してください',
-        bulkSelectLabel: '全て選定',
-        bulkClearLabel: '全ての選定を解除',
+        // 業者選定は案件ごとに 1 業者を選ぶ画面のため、一括選択（全て選定）は用意しない。
     },
     'manager-approval': {
         kind: 'pick-button',

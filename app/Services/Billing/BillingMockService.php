@@ -43,9 +43,12 @@ final class BillingMockService
     public function screen(string $mode, array $filters): array
     {
         $operable = self::MODE_OPERABLE_STATUSES[$mode] ?? [];
-        // 区分（請求 / 支払）。請求系画面の初期値は請求。
-        // 支払に切り替えると支払取引先を**表示のみ**で参照する（操作不可）。
-        $isPayable = ($filters['kind'] ?? 'billing') === 'payable';
+        // 区分。billing=請求のみ / payable=支払のみ / all=両方を同じ一覧に並べる。
+        // 請求系画面の既定は billing。all のとき支払行は表示のみ（操作不可）。
+        $kind = (string) ($filters['kind'] ?? 'billing');
+        if (! in_array($kind, ['all', 'payable', 'billing'], true)) {
+            $kind = 'billing';
+        }
         $projects = [];
 
         foreach ($this->buildings() as $building) {
@@ -57,11 +60,16 @@ final class BillingMockService
                 if (! $this->matches($building['name'], $row, $filters)) {
                     continue;
                 }
+                // 区分で除外する（all は両方出す）。
+                if ($kind !== 'all' && $row['kind'] !== $kind) {
+                    continue;
+                }
+                $isBilling = $row['kind'] === 'billing';
                 // 区分（請求＝もらい / 支払＝はらい）。行の地色・バッジに使う。
-                $row['billingTarget'] = ! $isPayable;
+                $row['billingTarget'] = $isBilling;
                 // 操作できる行か（J列）。false の行も一覧には出すが操作させない（K列）。
-                // **選択中の区分と逆の取引先は常に表示のみ**（操作させない）。
-                $row['operable'] = ! $isPayable && in_array($row['approvalStatus'], $operable, true);
+                // **請求系画面なので、支払の取引先は常に表示のみ**（操作させない）。
+                $row['operable'] = $isBilling && in_array($row['approvalStatus'], $operable, true);
                 $rows[] = $row;
             }
 
@@ -146,6 +154,9 @@ final class BillingMockService
                     $this->row(2, '外構工事', '緑化サービス株式会社', 'DRAFT', '740000', '2026/08/22', null, 0, 0),
                     $this->row(3, '電気設備工事', '東邦電設株式会社', 'APPLIED', '1850000', '2026/08/18', null, 3, 0),
                     $this->row(4, '給排水衛生設備工事', '大栄設備工業株式会社', 'APPROVED', '2460000', '2026/08/12', '2026/08/20', 1, 0),
+                    // 支払（はらい）の取引先。区分「全て」のときだけ表示のみで並ぶ。
+                    $this->row(101, '外構工事', '（支払）丸和土木株式会社', 'APPLIED', '1120000', '2026/08/17', null, 0, 0, 'payable'),
+                    $this->row(102, '電気設備工事', '（支払）明星電機工業株式会社', 'APPROVED', '1980000', '2026/08/10', null, 1, 0, 'payable'),
                 ],
             ],
             [
@@ -156,6 +167,7 @@ final class BillingMockService
                     $this->row(5, '足場仮設工事', '中央仮設工業株式会社', 'APPLIED', '980000', '2026/08/19', null, 0, 0),
                     $this->row(6, '防水工事', '日新防水株式会社', 'APPROVED', '3120000', '2026/08/05', null, 2, 1),
                     $this->row(7, '塗装工事', '彩光塗装株式会社', 'CANCEL_APPLIED', '1740000', '2026/08/01', null, 4, 2),
+                    $this->row(103, '防水工事', '（支払）高砂防水工業株式会社', 'DRAFT', null, null, null, 0, 0, 'payable'),
                 ],
             ],
             [
@@ -189,9 +201,12 @@ final class BillingMockService
         ?string $acceptedAt,
         int $messageCount,
         int $unreadCount,
+        string $kind = 'billing',
     ): array {
         return [
             'partnerId' => $partnerId,
+            // 区分（billing＝請求／もらい、payable＝支払／はらい）。
+            'kind' => $kind,
             'itemName' => $itemName,
             'vendorName' => $vendorName,
             // モックのためリンク先は持たせない（実装時は config('felix.vendor_detail_url') を使う）。

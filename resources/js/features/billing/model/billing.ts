@@ -148,10 +148,10 @@ export interface BillingFilters extends ProjectFilters {
     /** コメント有無フィルタ（全て / コメントあり / コメントなし）。サーバから常に渡る。 */
     comment?: 'all' | 'has' | 'none';
     /**
-     * 区分（支払 / 請求）。請求系画面の初期値は `billing`。
-     * `payable` に切り替えると支払取引先を**表示のみ**で参照する（操作は不可）。
+     * 区分。請求系画面の初期値は `billing`。
+     * `all` にすると支払取引先も同じ一覧に並ぶ（支払行は**表示のみ**で操作不可）。
      */
-    kind?: 'payable' | 'billing';
+    kind?: 'all' | 'payable' | 'billing';
 }
 
 /** 画面モード（列の出し分け / アクション）。 */

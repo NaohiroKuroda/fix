@@ -67,11 +67,11 @@ const toggleAllProjects = (): void => {
 
 const allRows = computed<BillingRow[]>(() => props.projects.flatMap((p) => p.rows));
 
-// 区分（支払 / 請求）。請求系画面の初期値は「請求」。支払に切り替えると支払取引先を表示のみで参照する。
-type PartnerKind = 'payable' | 'billing';
-const kind = computed<PartnerKind>(() => (props.filters.kind === 'payable' ? 'payable' : 'billing'));
+// 区分。請求系画面の初期値は「請求」。「全て」にすると支払取引先も同じ一覧に並ぶ（表示のみ）。
+type PartnerKind = 'all' | 'payable' | 'billing';
+const kind = computed<PartnerKind>(() => (props.filters.kind === 'all' ? 'all' : 'billing'));
 const kindOptions: { value: PartnerKind; label: string }[] = [
-    { value: 'payable', label: '支払' },
+    { value: 'all', label: '全て' },
     { value: 'billing', label: '請求' },
 ];
 /** 区分を切り替える。参照するテーブルが変わるためサーバから取り直す。 */
@@ -343,7 +343,7 @@ const goToPage = (page: number): void => {
                                 type="button"
                                 class="rounded-md px-3 py-1.5 text-sm font-bold transition"
                                 :class="kind === opt.value ? 'bg-[#c4a35b] text-white shadow-sm' : 'text-primary hover:bg-primary/10'"
-                                :title="opt.value === 'payable' ? '支払（はらい）の取引先を表示のみで確認する' : ''"
+                                :title="opt.value === 'all' ? '支払（はらい）の取引先も表示のみで並べる' : ''"
                                 @click="setKind(opt.value)"
                             >
                                 {{ opt.label }}

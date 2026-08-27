@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repositories\Contracts;
+namespace App\Repositories\Contracts\Comment;
 
 use App\Models\TComment;
 use Illuminate\Support\Carbon;

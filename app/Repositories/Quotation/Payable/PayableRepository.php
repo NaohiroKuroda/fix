@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Quotation\Payable;
 
 use App\Models\AdminUser;
 use App\Models\TBuilding;
 use App\Models\TBuildingBudgetItem;
 use App\Models\TPayablePartner;
-use App\Repositories\Contracts\PayableRepositoryInterface;
+use App\Repositories\Contracts\Quotation\Payable\PayableRepositoryInterface;
 use App\Services\FelixTotal\FelixTotalQuoteRequestGateway;
 use App\Utils\Blame;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\DB;
  * 有無で未依頼を判定し、送信は felix_total の order_estimate をサーバ間 HTTP で実行する
  * （{@see FelixTotalQuoteRequestGateway} / docs/architecture/backend.md「3.5 外部システム連携」）。
  */
-class PayableQuotationRepository implements PayableRepositoryInterface
+class PayableRepository implements PayableRepositoryInterface
 {
     /**
      * mode → **操作できる** approval_status（処理フロー J列「表示承認ステータス」）。

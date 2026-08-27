@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Quotation\Billing;
 
 use App\Models\AdminUser;
 use App\Models\TBillingPartner;
@@ -8,7 +8,7 @@ use App\Models\TBillingQuotation;
 use App\Models\TBillingQuotationDetail;
 use App\Models\TBuilding;
 use App\Models\TBuildingBudgetItem;
-use App\Repositories\Contracts\BillingRepositoryInterface;
+use App\Repositories\Contracts\Quotation\Billing\BillingRepositoryInterface;
 use App\Utils\Blame;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,14 +19,14 @@ use Illuminate\Support\Facades\DB;
 /**
  * 請求（もらい）系画面のデータ取得・更新。
  *
- * 支払（はらい）系の {@see PayableQuotationRepository} と対になる。共通の約束事
+ * 支払（はらい）系の {@see PayableRepository} と対になる。共通の約束事
  * （区分「全て」のときの絞り込み適用範囲・行キー・コメントメタ）は
  * docs/detailed-design/quotations/00_共通仕様_詳細設計.md を参照。
  *
  * 起点は `t_billing_partners`。見積額は `t_billing_quotations`（`is_latest`）の
  * `amount_excluding_tax`、業者の承諾日時は同テーブルの `accepted_at`。
  */
-class BillingQuotationRepository implements BillingRepositoryInterface
+class BillingRepository implements BillingRepositoryInterface
 {
     /**
      * 画面モード → **操作できる** 承認ステータス（処理フロー J列「表示承認ステータス」）。
@@ -206,7 +206,7 @@ class BillingQuotationRepository implements BillingRepositoryInterface
 
     /**
      * ページ内の各取引先に、コメント（t_comments）のメタ情報を付与する。
-     * 支払側（{@see PayableQuotationRepository::attachCommentMeta()}）と同じ項目単位スレッド。
+     * 支払側（{@see PayableRepository::attachCommentMeta()}）と同じ項目単位スレッド。
      *
      * @param  LengthAwarePaginator<int, TBuilding>  $paginator
      */

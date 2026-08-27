@@ -181,12 +181,18 @@ app/
 │   ├── Requests/           # FormRequest（バリデーション）
 │   ├── Resources/          # JsonResource（レスポンス整形）
 │   └── Middleware/
-├── Repositories/           # データアクセス層
-│   ├── Contracts/          # Repository インターフェース
-│   │   ├── PayableRepositoryInterface.php
-│   │   └── BillingRepositoryInterface.php
-│   ├── PayableQuotationRepository.php
-│   └── BillingQuotationRepository.php
+├── Repositories/           # データアクセス層。Controllers / Services と同じ分け方
+│   ├── Contracts/          # Repository インターフェース（実装と同じ階層で対応させる）
+│   │   ├── Quotation/
+│   │   │   ├── Payable/PayableRepositoryInterface.php
+│   │   │   └── Billing/BillingRepositoryInterface.php
+│   │   ├── Order/Payable/OrderDeliveryRepositoryInterface.php
+│   │   └── Comment/CommentRepositoryInterface.php
+│   ├── Quotation/
+│   │   ├── Payable/PayableRepository.php
+│   │   └── Billing/BillingRepository.php
+│   ├── Order/Payable/OrderDeliveryRepository.php
+│   └── Comment/CommentRepository.php
 ├── Actions/                # 単一目的のドメイン処理（任意）
 ├── Services/               # ドメインロジック（Controller の単一の入口・必須経路）
 │   ├── Quotation/          # 見積管理（Controllers と同じ Payable / Billing の分け方）
@@ -224,15 +230,17 @@ Controller / Service / Action / FormRequest など、Repository 以外の層か�
 - 上位層（Controller / Service）を永続化の詳細（Eloquent / クエリ）から切り離す。
 - 各 Repository は **インターフェース（Contract）** を定義し、Service Provider で実装をバインドする。これにより差し替え・モック化を可能にする。
 - 1 集約（≒テーブル / 主要モデル）につき 1 Repository を基本とする。
+- 配置は Controllers / Services と同じ「業務（Quotation / Order）× 区分（Payable / Billing）」で分ける。
+  インターフェース（Contracts）も**実装と同じ階層**に置いて対応させる（下の例は説明用の簡略形）。
 
 ### 3.2 インターフェース
 
-`app/Repositories/Contracts/EstimateRepositoryInterface.php`:
+`app/Repositories/Contracts/Quotation/Payable/EstimateRepositoryInterface.php`:
 
 ```php
 <?php
 
-namespace App\Repositories\Contracts;
+namespace App\Repositories\Contracts\Quotation\Payable;
 
 use App\Models\Estimate;
 use Illuminate\Support\Collection;
@@ -250,15 +258,15 @@ interface EstimateRepositoryInterface
 
 ### 3.3 実装
 
-`app/Repositories/EstimateRepository.php`:
+`app/Repositories/Quotation/Payable/EstimateRepository.php`:
 
 ```php
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Quotation\Payable;
 
 use App\Models\Estimate;
-use App\Repositories\Contracts\EstimateRepositoryInterface;
+use App\Repositories\Contracts\Quotation\Payable\EstimateRepositoryInterface;
 use Illuminate\Support\Collection;
 
 class EstimateRepository implements EstimateRepositoryInterface
@@ -340,7 +348,7 @@ class StatusManagementController extends Controller
 
 ### 3.5 外部システム連携（felix_total の見積依頼）
 
-新スキーマ（`PayableQuotationRepository`）には、見積依頼の履歴を保存するテーブルが存在しない
+新スキーマ（`PayableRepository`）には、見積依頼の履歴を保存するテーブルが存在しない
 （旧スキーマの `estimate_order_histories` 相当が無い）。また見積依頼は **トークン発行・依頼履歴作成・
 業者へのメール送信** を伴う複合処理であり、その実体は現行 felix_total（laravel-admin）の
 `EstimateCustomDetailController@order_estimate` が唯一の正である。
@@ -350,7 +358,7 @@ class StatusManagementController extends Controller
 `app/Services/FelixTotal/FelixTotalQuoteRequestGateway.php`（concrete・自動解決）に集約する。
 
 - **永続化境界としての位置づけ**: 新スキーマでは「見積依頼を記録する」＝「felix_total を呼ぶ」である。
-  そのため Repository（`PayableQuotationRepository::recordQuoteRequests`）からゲートウェイを呼ぶ。
+  そのため Repository（`PayableRepository::recordQuoteRequests`）からゲートウェイを呼ぶ。
   ゲートウェイ自身は Eloquent に触れず、HTTP と認証のみを担う（モデルアクセスは Repository に限る方針を維持）。
 - **ID 写像**: チェックされた `t_payable_partners.id` を、`source_id`（旧 `estimate_unit_companies.id`）と
   その費用 `t_building_budget_items.source_id`（旧 `estimate_units.id`）へ写像し、

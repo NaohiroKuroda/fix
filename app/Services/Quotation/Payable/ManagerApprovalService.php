@@ -4,7 +4,7 @@ namespace App\Services\Quotation\Payable;
 
 use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
-use App\Repositories\Contracts\PayableRepositoryInterface;
+use App\Repositories\Contracts\Quotation\Payable\PayableRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 

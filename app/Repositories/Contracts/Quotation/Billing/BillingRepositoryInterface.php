@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repositories\Contracts;
+namespace App\Repositories\Contracts\Quotation\Billing;
 
 use App\Models\TBuilding;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;

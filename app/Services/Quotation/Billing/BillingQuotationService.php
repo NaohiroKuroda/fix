@@ -4,7 +4,7 @@ namespace App\Services\Quotation\Billing;
 
 use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
-use App\Repositories\Contracts\BillingRepositoryInterface;
+use App\Repositories\Contracts\Quotation\Billing\BillingRepositoryInterface;
 use App\Services\Comment\CommentService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;

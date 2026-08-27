@@ -6,7 +6,7 @@ use App\Exceptions\ServiceException;
 use App\Models\AdminUser;
 use App\Models\TBuildingBudgetItem;
 use App\Models\TComment;
-use App\Repositories\Contracts\CommentRepositoryInterface;
+use App\Repositories\Contracts\Comment\CommentRepositoryInterface;
 use App\Services\Image\ImageCompressor;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;

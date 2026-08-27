@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Comment;
 
 use App\Models\TComment;
 use App\Models\TCommentReadTimestamp;
-use App\Repositories\Contracts\CommentRepositoryInterface;
+use App\Repositories\Contracts\Comment\CommentRepositoryInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 

@@ -2,7 +2,7 @@
 
 namespace App\Services\Order\Payable;
 
-use App\Repositories\Contracts\OrderDeliveryRepositoryInterface;
+use App\Repositories\Contracts\Order\Payable\OrderDeliveryRepositoryInterface;
 use App\Services\Comment\CommentService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 

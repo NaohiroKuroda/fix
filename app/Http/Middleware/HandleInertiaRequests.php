@@ -3,9 +3,9 @@
 namespace App\Http\Middleware;
 
 use App\Models\AdminUser;
-use App\Repositories\Contracts\BillingRepositoryInterface;
-use App\Repositories\Contracts\OrderDeliveryRepositoryInterface;
-use App\Repositories\Contracts\PayableRepositoryInterface;
+use App\Repositories\Contracts\Order\Payable\OrderDeliveryRepositoryInterface;
+use App\Repositories\Contracts\Quotation\Billing\BillingRepositoryInterface;
+use App\Repositories\Contracts\Quotation\Payable\PayableRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;

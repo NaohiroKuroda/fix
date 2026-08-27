@@ -15,9 +15,9 @@ interface NavChild {
     /** 未実装（プレースホルダ）の場合は href を持たない。 */
     href?: string;
     active?: boolean;
-    /** 未対応件数バッジ（LINE の未読数風）。0/未指定なら非表示。※現状はダミー値。 */
+    /** 未処理件数バッジ（緑）。0/未指定なら非表示。集計は各 Repository の pendingCounts()。 */
     badge?: number;
-    /** 2つ目のバッジ（赤以外）。例：業者選定の「差し戻し」件数。0/未指定なら非表示。 */
+    /** 2つ目のバッジ（赤）。否認で差し戻された件数。0/未指定なら非表示。 */
     badge2?: number;
 }
 
@@ -38,7 +38,8 @@ const badges = computed(() => page.props.menuBadges ?? null);
 
 // 見積管理（トグル）。配下はシート名（業務（状態））をそのままメニュー名にする。
 // href 付き＝実装済み（リンク）。href 無し＝未実装（プレースホルダ「準備中」）。
-// badge は各画面の未処理件数（部長取消申請はバッヂ対象外）。
+// badge は各画面の未処理件数（取消申請の2画面はバッヂ対象外）。
+// 仕様は docs/detailed-design/サイドメニュー_バッヂ_詳細設計.md が唯一の正。
 // ロールごとの表示可否（perms）で最終的に絞り込む。
 const quotationChildren = computed<NavChild[]>(() =>
     [
@@ -262,7 +263,7 @@ const logout = () => router.post('/logout');
                             >
                                 <span class="block translate-y-[0.5px] leading-none">{{ child.badge > 99 ? '99+' : child.badge }}</span>
                             </span>
-                            <!-- 2つ目のバッジ（赤以外）：業者選定の差し戻し件数。現状の赤バッジの右隣。 -->
+                            <!-- 2つ目のバッジ（赤）：否認で差し戻された件数。緑バッジの右隣に並べる。 -->
                             <span
                                 v-if="child.badge2"
                                 class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"

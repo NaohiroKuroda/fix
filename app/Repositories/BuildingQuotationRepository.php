@@ -120,8 +120,9 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                 $q->whereHas('company', fn (Builder $c) => $c->where('company_name', 'like', "%{$vendor}%"));
             }
             if (($mode === 'vendor-selection' || $mode === 'quote-request') && ! $isBilling) {
-                // 回答あり＝相見積額（最新の相見積履歴 is_latest）を持つ。回答なし＝持たない。
-                $hasLatest = fn (Builder $h) => $h->whereNotNull('is_latest');
+                // 回答あり＝最新の相見積履歴（is_latest = 1）を持つ。回答なし＝持たない。
+                // ※ is_latest は NOT NULL 列なので whereNotNull では常に真になる。値で判定すること。
+                $hasLatest = fn (Builder $h) => $h->where('is_latest', true);
                 if ($answer === 'answered') {
                     $q->whereHas('quotations', $hasLatest);
                 } elseif ($answer === 'unanswered') {
@@ -674,10 +675,10 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                     ->from('t_payable_quotation_requests')
                     ->whereColumn('t_payable_quotation_requests.payable_partner_id', 't_payable_partners.id'))
                 ->count(),
-            // 業者選定：未選定（DRAFT）かつ業者回答あり（最新の相見積履歴を持つ）。
+            // 業者選定：未選定（DRAFT）かつ業者回答あり（最新の相見積履歴 is_latest = 1 を持つ）。
             'vendor-selection' => TPayablePartner::query()
                 ->where('approval_status', 'DRAFT')
-                ->whereHas('quotations', fn (Builder $h) => $h->whereNotNull('is_latest'))
+                ->whereHas('quotations', fn (Builder $h) => $h->where('is_latest', true))
                 ->count(),
             // 業者選定（差し戻し）：部長承認で否認され業者選定へ戻った。
             // 新スキーマに否認理由の列が無いため、項目のコメントに「【否認】」で始まる投稿が

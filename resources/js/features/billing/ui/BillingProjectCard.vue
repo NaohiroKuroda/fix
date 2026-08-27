@@ -206,10 +206,8 @@ const rowButtonLabel = (row: BillingRow): string =>
                             もらいは相見積・業者選定が無いため、標準単価 / 予算単価 / 仮選定の列は持たない
                             （docs/detailed-design/quotations/06_請求_見積作成_詳細設計.md §5）。
                         -->
-                        <td class="px-3 py-2 text-right tabular-nums">
-                            {{ yenString(row.quotationAmount) }}
-                            <span v-if="row.quotationDate" class="block text-xs" :class="mutedTextClass">{{ row.quotationDate }}</span>
-                        </td>
+                        <!-- 見積額（税抜）。見積日は一覧には出さない（見積モーダルで確認する）。 -->
+                        <td class="px-3 py-2 text-right tabular-nums">{{ yenString(row.quotationAmount) }}</td>
                         <td v-if="config.showAcceptedAt" class="px-3 py-2 text-center tabular-nums">
                             <span v-if="row.acceptedAt">{{ row.acceptedAt }}</span>
                             <span v-else :class="mutedTextClass">—</span>

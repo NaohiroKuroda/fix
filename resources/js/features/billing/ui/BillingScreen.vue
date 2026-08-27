@@ -415,7 +415,7 @@ const goToPage = (page: number): void => {
                                 : 'border-primary/20 bg-white/70 text-primary hover:bg-primary/10'"
                         >
                             <input type="checkbox" v-model="createdOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
-                            見積作成ずみ
+                            見積作成済み
                         </label>
                         <!--
                             この画面で操作できる行だけに絞る（処理フロー I列・初期 ON）。

@@ -54,6 +54,15 @@ interface QuotationRepositoryInterface
     public function rejectManagerApproval(int $companyId, string $reason): int;
 
     /**
+     * 部長取消承認の否認（取消申請の却下）。取消を認めず、部長承認済み（APPROVED）のまま据え置く。
+     *
+     * @param  int  $companyId  見積先 ID（新スキーマ=t_payable_partners.id）
+     * @param  string  $reason  否認理由（記録は項目のコメントスレッド。Service が投稿する）
+     * @return int 実際に却下した件数（0=対象外）
+     */
+    public function rejectCancelApproval(int $companyId, string $reason): int;
+
+    /**
      * 見積先（t_payable_partners.id）が属する建物予算項目（t_building_budget_items.id）を返す。
      * コメント（項目単位）を紐づける際の commentable_id 解決に使う。
      *

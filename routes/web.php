@@ -60,6 +60,8 @@ Route::middleware('auth:admin')->group(function () {
         ->name('quotation-management.cancel-request.confirm');   // 部長取消申請（選定の取消を申請）
     Route::post('/quotation-management/cancel-approval', [CancelApprovalController::class, 'confirm'])
         ->name('quotation-management.cancel-approval.confirm');  // 部長取消承認（取消申請を承認）
+    Route::post('/quotation-management/cancel-approval/reject', [CancelApprovalController::class, 'reject'])
+        ->name('quotation-management.cancel-approval.reject');   // 取消申請の否認（却下して承認済みへ据え置き）
 
     // 見積管理（請求＝もらい）。もらいは相見積・業者選定が無く、FELIX 側で見積を代理作成する。
     // ※ 現時点は**モック**（BillingMockService の固定データ。DB 未接続）。
@@ -80,6 +82,8 @@ Route::middleware('auth:admin')->group(function () {
         ->name('quotation-management.billing-cancel-approval');    // 【請求】見積取消承認（部長→担当）
     Route::post('/quotation-management/billing-cancel-approval', [BillingCancelApprovalController::class, 'confirm'])
         ->name('quotation-management.billing-cancel-approval.confirm');
+    Route::post('/quotation-management/billing-cancel-approval/reject', [BillingCancelApprovalController::class, 'reject'])
+        ->name('quotation-management.billing-cancel-approval.reject'); // 取消申請の否認（却下して承認済みへ戻す）
 
     // 見積先（t_cost_quotations）単位のやり取り（チャット）。業者選定（部下）⇔部長承認（部長）。
     Route::get('/quotation-management/quotations/{quotation}/messages', [QuotationMessageController::class, 'index'])

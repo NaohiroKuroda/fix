@@ -480,6 +480,21 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
+     * 部長取消承認の否認（取消申請の却下）：取消申請中（CANCEL_APPLIED）→ 部長承認済（APPROVED）。
+     *
+     * 取消申請（{@see recordCancelRequests}）は felix_total を呼ばず新テーブルの状態を進めるだけなので、
+     * その却下である本処理も新テーブルの状態を戻すだけでよい（現行側は承認済みのまま触らない）。
+     * 否認理由は新スキーマに列が無いため、項目単位のコメントスレッド
+     * （t_comments に「【否認】{理由}」で投稿）を唯一の記録とする。投稿は Service 側で行う。
+     *
+     * @return int 実際に却下した件数（0=対象外）
+     */
+    public function rejectCancelApproval(int $companyId, string $reason): int
+    {
+        return $this->advanceStatus([$companyId], 'CANCEL_APPLIED', 'APPROVED');
+    }
+
+    /**
      * 見積先（t_payable_partners.id）が属する建物予算項目（t_building_budget_items.id）を返す。
      */
     public function itemIdForQuotation(int $quotationId): ?int

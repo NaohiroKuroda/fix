@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Quotation;
 
 use App\Http\Requests\EstimateCompanyActionRequest;
 use App\Http\Requests\QuotationManagementRequest;
-use App\Http\Requests\RejectManagerApprovalRequest;
+use App\Http\Requests\RejectQuotationRequest;
 use App\Services\Quotation\ManagerApprovalService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
@@ -53,10 +53,10 @@ class ManagerApprovalController extends AbstractQuotationScreenController
     /**
      * 否認（業者選定へ差し戻し）。対象の見積先を未選定へ戻し、否認理由を記録する。
      *
-     * @param  RejectManagerApprovalRequest  $request  対象の見積先 ID ＋ 否認理由
+     * @param  RejectQuotationRequest  $request  対象の見積先 ID ＋ 否認理由
      * @return RedirectResponse 元画面へ戻し、成功 / エラーのフラッシュメッセージを表示
      */
-    public function reject(RejectManagerApprovalRequest $request): RedirectResponse
+    public function reject(RejectQuotationRequest $request): RedirectResponse
     {
         // 否認（差し戻し）＋否認理由のコメント記録は Service が担う。
         $count = $this->service->reject($request->companyId(), $request->reason());

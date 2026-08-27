@@ -5,10 +5,12 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * 部長承認画面の「否認」（業者選定へ差し戻し）の入力。
- * 対象の見積先（t_payable_partners.id）1件と否認理由を受け取る。
+ * 見積管理の「否認」共通の入力。対象の見積先（t_payable_partners.id）1件と否認理由を受け取る。
+ *
+ * - 部長承認の否認 … 業者選定へ差し戻す（APPLIED → DRAFT）
+ * - 部長取消承認の否認 … 取消を却下し、承認済みのまま据え置く（CANCEL_APPLIED → APPROVED）
  */
-class RejectManagerApprovalRequest extends FormRequest
+class RejectQuotationRequest extends FormRequest
 {
     public function authorize(): bool
     {

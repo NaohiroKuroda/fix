@@ -10,7 +10,7 @@
 // ※ 現時点は**モック**。一覧はサーバの固定データ、送信は成功トーストを返すだけ。
 import { computed, inject, reactive, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { X } from 'lucide-vue-next';
+import { X, Ban } from 'lucide-vue-next';
 import { SIDEBAR_COLLAPSED } from '@/shared/ui/layouts';
 import { FilterBar } from '@/shared/ui/filter-bar';
 import { Pager } from '@/shared/ui/pager';
@@ -211,6 +211,32 @@ const submitWithReason = (): void => {
     form.post(config.value.actionUrl, {
         preserveScroll: true,
         onSuccess: () => closeReasonModal(),
+    });
+};
+
+// 否認（【請求】見積取消承認のみ）：理由入力モーダル → 取消を却下し、承認済みのまま据え置く。
+const rejectUrl = computed(() => config.value.rejectUrl ?? null);
+const rejectForm = useForm<{ partnerIds: number[]; reason: string }>({ partnerIds: [], reason: '' });
+const rejectTarget = ref<BillingRow | null>(null);
+const rejectModalOpen = ref(false);
+const openReject = (row: BillingRow): void => {
+    rejectForm.reset();
+    rejectForm.clearErrors();
+    rejectForm.partnerIds = [row.partnerId];
+    rejectTarget.value = row;
+    rejectModalOpen.value = true;
+};
+const closeReject = (): void => {
+    rejectModalOpen.value = false;
+    rejectTarget.value = null;
+};
+const submitReject = (): void => {
+    if (!rejectForm.reason.trim() || rejectForm.processing || rejectUrl.value === null) {
+        return;
+    }
+    rejectForm.post(rejectUrl.value, {
+        preserveScroll: true,
+        onSuccess: () => closeReject(),
     });
 };
 
@@ -420,6 +446,7 @@ const goToPage = (page: number): void => {
                     @toggle="toggle(project.id)"
                     @row-toggle="toggleRow"
                     @row-action="(row) => onRowAction(row, project.name)"
+                    @reject="openReject"
                     @open-chat="openChat"
                     @open-iframe="openIframe"
                 />
@@ -483,6 +510,53 @@ const goToPage = (page: number): void => {
                     @click="submitWithReason"
                 >
                     {{ form.processing ? config.processingLabel : 'OK' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 否認モーダル（【請求】見積取消承認）：理由を入力して取消を却下する（承認済みのまま据え置き）。 -->
+    <div v-if="rejectModalOpen && rejectTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="closeReject">
+        <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-center gap-2 border-b px-4 py-3">
+                <Ban class="size-5 text-red-600" />
+                <span class="text-sm font-semibold text-slate-800">否認（取消を却下）</span>
+            </div>
+            <div class="space-y-3 px-4 py-4">
+                <p class="text-sm text-slate-600">
+                    請求先「<span class="font-semibold text-slate-800">{{ rejectTarget.vendorName }}</span>」の取消申請を否認します。
+                    ステータスは承認済みのまま据え置かれます。
+                </p>
+                <div>
+                    <label class="mb-1 block text-xs font-semibold text-slate-500">否認理由<span class="text-red-500">（必須）</span></label>
+                    <textarea
+                        v-model="rejectForm.reason"
+                        rows="4"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#c4a35b] focus:outline-none focus:ring-2 focus:ring-[#c4a35b]/30"
+                        placeholder="取消を認めない理由を入力してください"
+                    />
+                    <p v-if="rejectForm.errors.reason" class="mt-1 text-xs text-red-600">{{ rejectForm.errors.reason }}</p>
+                </div>
+                <p class="text-xs text-slate-500">入力した理由は、この項目のやり取り（コメント）に記録されます。</p>
+            </div>
+            <div class="flex justify-end gap-2 border-t px-4 py-3">
+                <button
+                    type="button"
+                    class="h-9 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    @click="closeReject"
+                >
+                    キャンセル
+                </button>
+                <button
+                    type="button"
+                    class="h-9 rounded-xl px-4 text-sm font-semibold text-white transition"
+                    :class="rejectForm.reason.trim() && !rejectForm.processing
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'cursor-not-allowed bg-red-300'"
+                    :disabled="!rejectForm.reason.trim() || rejectForm.processing"
+                    @click="submitReject"
+                >
+                    {{ rejectForm.processing ? '否認中…' : '否認する' }}
                 </button>
             </div>
         </div>

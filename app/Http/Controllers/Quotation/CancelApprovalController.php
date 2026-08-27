@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Quotation;
 
 use App\Http\Requests\CancelActionRequest;
 use App\Http\Requests\QuotationManagementRequest;
+use App\Http\Requests\RejectQuotationRequest;
 use App\Services\Quotation\CancelApprovalService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
@@ -47,5 +48,23 @@ class CancelApprovalController extends AbstractQuotationScreenController
         }
 
         return back()->with('success', "取消承認を実行しました。（{$count}件）");
+    }
+
+    /**
+     * 否認（取消申請の却下）。取消を認めず、部長承認済み（APPROVED）のまま据え置く。
+     *
+     * @param  RejectQuotationRequest  $request  対象の見積先 ID ＋ 否認理由
+     * @return RedirectResponse 元画面へ戻し、成功 / エラーのフラッシュメッセージを表示
+     */
+    public function reject(RejectQuotationRequest $request): RedirectResponse
+    {
+        // 却下＋否認理由のコメント記録は Service が担う。
+        $count = $this->service->reject($request->companyId(), $request->reason());
+
+        if ($count === 0) {
+            return back()->with('error', '否認できませんでした。対象の見積先をご確認ください。');
+        }
+
+        return back()->with('success', '否認しました。取消申請を却下し、承認済みのまま据え置きます。');
     }
 }

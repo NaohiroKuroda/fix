@@ -52,7 +52,8 @@ const showSendCount = computed(() => props.mode === 'quote-request');
 // 「最終依頼日時」列も見積依頼画面のみ（右端）。t_cost_quotation_requests.requested_at の最大値。
 const showLastRequestedAt = computed(() => props.mode === 'quote-request');
 // 「否認」列は部長承認画面のみ（右端）。否認＝業者選定へ差し戻し。
-const showReject = computed(() => props.mode === 'manager-approval');
+// 否認列を出すか（config に否認設定を持つ画面＝部長承認 / 部長取消承認）。
+const showReject = computed(() => config.value.reject != null);
 // やり取り（チャット）は全画面で行う。
 // 列は設けず、項目名の右隣に吹き出しボタンとして表示する。
 const showChat = computed(() => true);
@@ -455,13 +456,17 @@ const chatBtnClass = (row: QuotationManagementRow): string => {
                             </span>
                             <span v-else :class="mutedTextClass">—</span>
                         </td>
-                        <!-- 否認（右端・部長承認画面のみ）。押下で理由入力モーダル→業者選定へ差し戻し。 -->
+                        <!--
+                            否認（右端・部長承認 / 部長取消承認）。押下で理由入力モーダルを開く。
+                            部長承認＝業者選定へ差し戻し／部長取消承認＝取消を却下して承認済みのまま据え置き。
+                            操作できない行（K列）は否認もできないため「—」にする。
+                        -->
                         <td v-if="showReject" class="px-3 py-2 text-center">
                             <button
-                                v-if="row.companyId != null"
+                                v-if="row.companyId != null && row.operable"
                                 type="button"
                                 class="relative mx-auto flex h-9 w-24 items-center justify-center gap-1 whitespace-nowrap rounded-xl border border-red-400/60 bg-red-50 px-2 text-sm font-semibold text-red-600 shadow-sm transition hover:border-red-500 hover:bg-red-100"
-                                title="否認して業者選定へ差し戻す"
+                                :title="config.reject?.hint"
                                 @click="emit('reject', row)"
                             >
                                 <Ban class="size-4" />否認

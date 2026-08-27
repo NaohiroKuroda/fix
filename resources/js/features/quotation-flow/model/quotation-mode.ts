@@ -63,6 +63,18 @@ export interface QuotationModeConfig {
      * 未指定の画面では出さない（見積依頼は専用の 2 フィルタ、部長取消承認は一覧自体を対象ステータスで絞るため）。
      */
     operableFilterLabel?: string;
+    /**
+     * 否認（却下）ボタンの設定。未指定＝否認列を出さない。
+     * 部長承認（業者選定へ差し戻し）と部長取消承認（取消を却下して据え置き）だけが持つ。
+     */
+    reject?: {
+        /** 行の否認ボタンの `title`。 */
+        hint: string;
+        /** 否認モーダルの見出し。 */
+        modalTitle: string;
+        /** 否認モーダルの説明文（「見積先「〇〇」」に続ける文）。 */
+        description: string;
+    };
 }
 
 /**
@@ -113,6 +125,11 @@ export const QUOTATION_MODE_CONFIG: Record<QuotationManagementMode, QuotationMod
         bulkSelectLabel: '全て承認',
         bulkClearLabel: '全ての承認を解除',
         operableFilterLabel: '未承認',
+        reject: {
+            hint: '否認して業者選定へ差し戻す',
+            modalTitle: '否認（業者選定へ差し戻し）',
+            description: 'を否認し、業者選定へ差し戻します。',
+        },
     },
     'cancel-request': {
         kind: 'pick-button',
@@ -142,5 +159,10 @@ export const QUOTATION_MODE_CONFIG: Record<QuotationManagementMode, QuotationMod
         hint: '取消承認する見積先を選択してください',
         bulkSelectLabel: '全て取消承認',
         bulkClearLabel: '全ての取消承認を解除',
+        reject: {
+            hint: '否認して取消を却下する（承認済みのまま据え置き）',
+            modalTitle: '否認（取消を却下）',
+            description: 'の取消申請を否認します。承認済みのまま据え置かれます。',
+        },
     },
 };

@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * 部長取消申請 / 部長取消承認の入力。
  * 選択された見積先（t_payable_partners.id）の配列と、理由（必須）を受け取る。
- * 否認（RejectManagerApprovalRequest）と同様、理由入力を必須にする。
+ * 否認（RejectQuotationRequest）と同様、理由入力を必須にする。
  */
 class CancelActionRequest extends FormRequest
 {

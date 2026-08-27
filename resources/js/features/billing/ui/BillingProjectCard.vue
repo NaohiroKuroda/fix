@@ -5,7 +5,7 @@
 //   - 区分は常に「請求」
 //   - 操作列は mode（BILLING_MODE_CONFIG.kind）で出し分ける
 import { computed } from 'vue';
-import { ChevronDown, MessageSquare, Plus, FileText } from 'lucide-vue-next';
+import { ChevronDown, MessageSquare, Plus, FileText, Ban } from 'lucide-vue-next';
 import { useFelixTheme } from '@/shared/lib/felix-theme';
 import { yenString } from '@/shared/lib/format-money';
 import { BillingKindBadge } from '@/shared/ui/billing-kind-badge';
@@ -27,6 +27,8 @@ const emit = defineEmits<{
     (e: 'row-toggle', row: BillingRow): void;
     /** modal / per-row / view モード：行ボタンの押下。 */
     (e: 'row-action', row: BillingRow): void;
+    /** 否認（却下）ボタンの押下。否認列を出す画面（【請求】見積取消承認）のみ。 */
+    (e: 'reject', row: BillingRow): void;
     (e: 'open-chat', row: BillingRow, buildingName: string): void;
     (e: 'open-iframe', payload: { url: string | null; title: string }): void;
 }>();
@@ -36,6 +38,8 @@ const isThemed = computed(() => props.glass === true);
 const cardBgClass = computed(() => (isThemed.value ? 'bg-white' : 'bg-card'));
 const config = computed(() => BILLING_MODE_CONFIG[props.mode]);
 const isPick = computed(() => config.value.kind === 'pick');
+// 否認列を出すか（config に否認 URL を持つ画面＝【請求】見積取消承認のみ）。
+const showReject = computed(() => (config.value.rejectUrl ?? null) !== null);
 const isQuoteCreate = computed(() => props.mode === 'billing-quote-create');
 const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellTextClass, mutedTextClass } =
     useFelixTheme(isThemed);
@@ -132,6 +136,7 @@ const rowButtonLabel = (row: BillingRow): string =>
                     <col style="width: 17%" />
                     <col v-if="config.showAcceptedAt" style="width: 14%" />
                     <col style="width: 17%" />
+                    <col v-if="showReject" style="width: 13%" />
                 </colgroup>
                 <thead class="text-center" :class="tableHeadClass">
                     <tr class="border-b-2 border-slate-300 text-[15px] font-bold uppercase tracking-wider">
@@ -141,6 +146,7 @@ const rowButtonLabel = (row: BillingRow): string =>
                         <th class="px-3 py-2.5">{{ config.amountColumnLabel }}<br />(税抜)</th>
                         <th v-if="config.showAcceptedAt" class="px-3 py-2.5">承諾日</th>
                         <th class="px-3 py-2.5">{{ config.columnLabel }}</th>
+                        <th v-if="showReject" class="px-3 py-2.5">否認</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -230,6 +236,19 @@ const rowButtonLabel = (row: BillingRow): string =>
                                 <FileText v-if="config.kind === 'view'" class="size-4" />
                                 {{ isPick && isActive(row) ? config.activeLabel : rowButtonLabel(row) }}
                             </button>
+                        </td>
+                        <!-- 否認（右端・【請求】見積取消承認のみ）。押下で理由入力モーダル→取消を却下する。 -->
+                        <td v-if="showReject" class="px-3 py-2 text-center">
+                            <button
+                                v-if="row.operable"
+                                type="button"
+                                class="relative mx-auto flex h-9 w-24 items-center justify-center gap-1 whitespace-nowrap rounded-xl border border-red-400/60 bg-red-50 px-2 text-sm font-semibold text-red-600 shadow-sm transition hover:border-red-500 hover:bg-red-100"
+                                title="否認して取消を却下する（承認済みのまま据え置き）"
+                                @click="emit('reject', row)"
+                            >
+                                <Ban class="size-4" />否認
+                            </button>
+                            <span v-else :class="mutedTextClass">—</span>
                         </td>
                     </tr>
                 </tbody>

@@ -16,7 +16,7 @@ import { send as sendQuoteRequestRoute } from '@/shared/api/routes/quotation-man
 import { confirm as confirmVendorSelectionRoute, provisional as provisionalRoute } from '@/shared/api/routes/quotation-management/vendor-selection';
 import { confirm as confirmManagerApprovalRoute, reject as rejectManagerApprovalRoute } from '@/shared/api/routes/quotation-management/manager-approval';
 import { confirm as confirmCancelRequestRoute } from '@/shared/api/routes/quotation-management/cancel-request';
-import { confirm as confirmCancelApprovalRoute } from '@/shared/api/routes/quotation-management/cancel-approval';
+import { confirm as confirmCancelApprovalRoute, reject as rejectCancelApprovalRoute } from '@/shared/api/routes/quotation-management/cancel-approval';
 import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/shared/api/routes/quotation-management/quotation-messages';
 import { SIDEBAR_COLLAPSED } from '@/shared/ui/layouts';
 import { FilterBar } from '@/shared/ui/filter-bar';
@@ -369,7 +369,14 @@ const actionBtnClass = computed(() => {
         : 'h-9 cursor-not-allowed rounded-xl border border-[#c4a35b]/40 bg-[#c4a35b]/10 px-4 text-sm font-semibold text-[#8a6a25]/60 backdrop-blur-md';
 });
 
-// 否認（部長承認画面）：理由入力モーダル → 業者選定へ差し戻し（approval_status を DRAFT に戻す）。
+// 否認（部長承認 / 部長取消承認）：理由入力モーダル → 差し戻し or 却下。
+// - 部長承認 …… APPLIED → DRAFT（業者選定へ差し戻し）
+// - 部長取消承認 … CANCEL_APPLIED → APPROVED（取消を却下して承認済みのまま据え置き）
+// いずれも否認理由は項目のコメントへ `【否認】{理由}` として残る（サーバ側）。
+const rejectConfig = computed(() => config.value.reject ?? null);
+const rejectRoute = computed<RouteDefinition<'post'>>(() =>
+    props.mode === 'cancel-approval' ? rejectCancelApprovalRoute() : rejectManagerApprovalRoute(),
+);
 const rejectForm = useForm<{ companyId: number | null; reason: string }>({ companyId: null, reason: '' });
 const rejectTarget = ref<QuotationManagementRow | null>(null);
 const rejectModalOpen = ref(false);
@@ -391,7 +398,7 @@ const submitReject = (): void => {
     if (!rejectForm.reason.trim() || rejectForm.processing) {
         return;
     }
-    rejectForm.post(rejectManagerApprovalRoute().url, {
+    rejectForm.post(rejectRoute.value.url, {
         preserveScroll: true,
         onSuccess: () => closeReject(),
     });
@@ -1044,11 +1051,11 @@ const setComment = (value: CommentFilter): void => {
             <div class="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
                 <div class="flex items-center gap-2 border-b px-4 py-3">
                     <Ban class="size-5 text-red-600" />
-                    <span class="text-sm font-semibold text-slate-800">否認（業者選定へ差し戻し）</span>
+                    <span class="text-sm font-semibold text-slate-800">{{ rejectConfig?.modalTitle }}</span>
                 </div>
                 <div class="space-y-3 px-4 py-4">
                     <p class="text-sm text-slate-600">
-                        見積先「<span class="font-semibold text-slate-800">{{ rejectTarget?.vendorName }}</span>」を否認し、業者選定へ差し戻します。
+                        見積先「<span class="font-semibold text-slate-800">{{ rejectTarget?.vendorName }}</span>」{{ rejectConfig?.description }}
                     </p>
                     <div>
                         <label class="mb-1 block text-xs font-semibold text-slate-500">否認理由<span class="text-red-500">（必須）</span></label>
@@ -1056,7 +1063,7 @@ const setComment = (value: CommentFilter): void => {
                             v-model="rejectForm.reason"
                             rows="4"
                             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#c4a35b] focus:outline-none focus:ring-2 focus:ring-[#c4a35b]/30"
-                            placeholder="差し戻しの理由を入力してください"
+                            placeholder="否認の理由を入力してください"
                         />
                         <p v-if="rejectForm.errors.reason" class="mt-1 text-xs text-red-600">{{ rejectForm.errors.reason }}</p>
                     </div>

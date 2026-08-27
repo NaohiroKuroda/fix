@@ -80,4 +80,37 @@ class CancelApprovalService
             throw new ServiceException(previous: $e);
         }
     }
+
+    /**
+     * 取消承認の否認（取消申請の却下）。取消を認めず、部長承認済み（APPROVED）のまま据え置く。
+     * 併せて、否認理由を項目のやり取り（コメント）へ `【否認】{理由}` として残す。
+     *
+     * @return int 実際に却下した件数（0=対象外）
+     */
+    public function reject(int $companyId, string $reason): int
+    {
+        try {
+            $count = $this->estimates->rejectCancelApproval($companyId, $reason);
+
+            if ($count > 0) {
+                // 否認理由を項目単位のコメントスレッドへ残す（投稿者＝操作した部長）。
+                $itemId = $this->estimates->itemIdForQuotation($companyId);
+                if ($itemId !== null) {
+                    $this->comments->post($itemId, '【否認】'.$reason, []);
+                }
+            }
+
+            return $count;
+        } catch (\Exception $e) {
+            Log::error('部長取消承認の否認（却下）に失敗しました', [
+                'message' => $e->getMessage(),
+                'companyId' => $companyId,
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new ServiceException(previous: $e);
+        }
+    }
 }

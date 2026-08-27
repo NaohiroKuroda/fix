@@ -50,6 +50,11 @@ export interface BillingModeConfig {
      * 支払系（`QuotationModeConfig.operableFilterLabel`）と同じ考え方。
      */
     operableFilterLabel?: string;
+    /**
+     * 否認（却下）ボタンの送信先 URL。null＝否認列を出さない。
+     * 【請求】見積取消承認だけが承認／否認の2択（取消を認めない場合は否認して承認済みのまま据え置く）。
+     */
+    rejectUrl?: string | null;
     /** 承諾日列を出すか（発注書確認のみ）。 */
     showAcceptedAt: boolean;
     /** 理由入力を必須にするか（取消系）。 */
@@ -130,6 +135,9 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         hint: '取消承認する請求先を選択してください',
         bulkSelectLabel: '全て取消承認',
         bulkClearLabel: '全ての取消承認を解除',
+        operableFilterLabel: '承認可能',
+        // 取消承認だけは承認／否認の2択。否認＝取消を認めず、承認済み（APPROVED）のまま据え置く。
+        rejectUrl: '/quotation-management/billing-cancel-approval/reject',
         showAcceptedAt: false,
         reasonRequired: true,
     },

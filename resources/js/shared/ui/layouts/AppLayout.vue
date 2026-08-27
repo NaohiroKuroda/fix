@@ -49,11 +49,12 @@ const quotationChildren = computed<NavChild[]>(() =>
         { key: 'cancel-request', label: '【支払】部長取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/quotation-management/cancel-request', active: path.value.startsWith('/quotation-management/cancel-request') },
         { key: 'cancel-approval', label: '【支払】部長取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/quotation-management/cancel-approval', active: path.value.startsWith('/quotation-management/cancel-approval'), badge: badges.value?.['cancel-approval'] },
         // 【請求】＝もらい（FELIX が請求する側）。相見積・業者選定が無く、FELIX が見積を代理作成する。
-        // ※ 現時点はモック画面（docs/detailed-design/quotations/06〜09_請求_*_詳細設計.md）。
-        { key: 'billing-quote-create', label: '【請求】見積作成【FELIX(担当者)→業者】', href: '/quotation-management/billing-quote-create', active: path.value.startsWith('/quotation-management/billing-quote-create') },
-        { key: 'billing-quote-approval', label: '【請求】見積承認【FELIX(建設部部長)→業者】', href: '/quotation-management/billing-quote-approval', active: path.value.startsWith('/quotation-management/billing-quote-approval') },
+        // （docs/detailed-design/quotations/06〜09_請求_*_詳細設計.md）
+        // 見積作成の赤バッヂは「見積承認で否認され差し戻された件数」（支払側の業者選定と同じ）。
+        { key: 'billing-quote-create', label: '【請求】見積作成【FELIX(担当者)→業者】', href: '/quotation-management/billing-quote-create', active: path.value.startsWith('/quotation-management/billing-quote-create'), badge: badges.value?.['billing-quote-create'], badge2: badges.value?.['billing-quote-create-rejected'] },
+        { key: 'billing-quote-approval', label: '【請求】見積承認【FELIX(建設部部長)→業者】', href: '/quotation-management/billing-quote-approval', active: path.value.startsWith('/quotation-management/billing-quote-approval'), badge: badges.value?.['billing-quote-approval'] },
         { key: 'billing-cancel-request', label: '【請求】見積取消申請【FELIX(担当者)→FELIX(建設部部長)】', href: '/quotation-management/billing-cancel-request', active: path.value.startsWith('/quotation-management/billing-cancel-request') },
-        { key: 'billing-cancel-approval', label: '【請求】見積取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/quotation-management/billing-cancel-approval', active: path.value.startsWith('/quotation-management/billing-cancel-approval') },
+        { key: 'billing-cancel-approval', label: '【請求】見積取消承認【FELIX(建設部部長)→FELIX(担当者)】', href: '/quotation-management/billing-cancel-approval', active: path.value.startsWith('/quotation-management/billing-cancel-approval'), badge: badges.value?.['billing-cancel-approval'] },
     ].filter((child) => canSee(child.key)),
 );
 // 配下メニューが1つも無いロールでは「見積管理」グループごと非表示にする。
@@ -73,7 +74,7 @@ const orderChildren = computed<NavChild[]>(() => [
     { key: 'order-acceptance', label: '【支払】業者承諾確認【発注承諾済み→FELIX(担当者)】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance'), badge: badges.value?.['order-acceptance'] },
     // 【支払】発注取消承認はメニューに出さない（画面・ルートは残す）。
     // 発注取消は業者承諾確認画面のボタンから申請するため、独立メニューを置かない方針。
-    // 【請求】発注書確認（もらい）。業者が発注承諾すると承諾日が入る。※ 現時点はモック画面。
+    // 【請求】発注書確認（もらい）。業者が発注承諾すると承諾日（t_billing_quotations.accepted_at）が入る。
     ...(isEstimateManager.value
         ? [{ key: 'billing-order-confirmation', label: '【請求】発注書確認【FELIX(建設部部長)】', href: '/order-delivery/billing-order-confirmation', active: path.value.startsWith('/order-delivery/billing-order-confirmation') }]
         : []),
@@ -265,7 +266,9 @@ const logout = () => router.post('/logout');
                             <span
                                 v-if="child.badge2"
                                 class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white tabular-nums"
-                                title="部長承認で否認され業者選定へ差し戻された件数"
+                                :title="child.key === 'billing-quote-create'
+                                    ? '見積承認で否認され見積作成へ差し戻された件数'
+                                    : '部長承認で否認され業者選定へ差し戻された件数'"
                             >
                                 <span class="block translate-y-[0.5px] leading-none">{{ child.badge2 > 99 ? '99+' : child.badge2 }}</span>
                             </span>

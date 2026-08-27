@@ -29,7 +29,7 @@ class QuotationMessageController extends Controller
      */
     public function index(TPayablePartner $quotation): JsonResponse
     {
-        $comments = $this->service->thread((int) $quotation->building_cost_item_id);
+        $comments = $this->service->thread((int) $quotation->building_budget_item_id);
 
         return response()->json([
             'messages' => CommentResource::collection($comments)->resolve(),
@@ -40,7 +40,7 @@ class QuotationMessageController extends Controller
     public function store(StoreQuotationMessageRequest $request, TPayablePartner $quotation): JsonResponse
     {
         $comment = $this->service->post(
-            (int) $quotation->building_cost_item_id,
+            (int) $quotation->building_budget_item_id,
             $request->body(),
             $request->attachments(),
         );

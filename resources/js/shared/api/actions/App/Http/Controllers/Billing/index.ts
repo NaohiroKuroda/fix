@@ -2,6 +2,7 @@ import BillingQuoteCreateController from './BillingQuoteCreateController'
 import BillingQuoteApprovalController from './BillingQuoteApprovalController'
 import BillingCancelRequestController from './BillingCancelRequestController'
 import BillingCancelApprovalController from './BillingCancelApprovalController'
+import BillingMessageController from './BillingMessageController'
 import BillingOrderConfirmationController from './BillingOrderConfirmationController'
 
 const Billing = {
@@ -9,6 +10,7 @@ const Billing = {
     BillingQuoteApprovalController: Object.assign(BillingQuoteApprovalController, BillingQuoteApprovalController),
     BillingCancelRequestController: Object.assign(BillingCancelRequestController, BillingCancelRequestController),
     BillingCancelApprovalController: Object.assign(BillingCancelApprovalController, BillingCancelApprovalController),
+    BillingMessageController: Object.assign(BillingMessageController, BillingMessageController),
     BillingOrderConfirmationController: Object.assign(BillingOrderConfirmationController, BillingOrderConfirmationController),
 }
 

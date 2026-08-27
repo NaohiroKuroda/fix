@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 【請求】見積承認（もらい）。共通コンテナに mode='billing-quote-approval' を渡す。**現時点はモック**。
+// 【請求】見積承認（もらい）。共通コンテナに mode='billing-quote-approval' を渡す。
 import { AppLayout } from '@/shared/ui/layouts';
 import { BillingScreen } from '@/features/billing';
 import type { BillingFilters, BillingPagination, BillingProject } from '@/features/billing';

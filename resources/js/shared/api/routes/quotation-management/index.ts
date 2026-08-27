@@ -9,6 +9,7 @@ import billingQuoteApprovalD9abaa from './billing-quote-approval'
 import billingCancelRequest259496 from './billing-cancel-request'
 import billingCancelApprovalF8ce24 from './billing-cancel-approval'
 import quotationMessages from './quotation-messages'
+import billingMessages from './billing-messages'
 import commentAttachments from './comment-attachments'
 /**
 * @see \App\Http\Controllers\Quotation\QuoteRequestController::quoteRequest
@@ -417,7 +418,7 @@ cancelApproval.form = cancelApprovalForm
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 export const billingQuoteCreate = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -432,7 +433,7 @@ billingQuoteCreate.definition = {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 billingQuoteCreate.url = (options?: RouteQueryOptions) => {
@@ -441,7 +442,7 @@ billingQuoteCreate.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 billingQuoteCreate.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -451,7 +452,7 @@ billingQuoteCreate.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 billingQuoteCreate.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -461,7 +462,7 @@ billingQuoteCreate.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 const billingQuoteCreateForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -471,7 +472,7 @@ const billingQuoteCreateForm = (options?: RouteQueryOptions): RouteFormDefinitio
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 billingQuoteCreateForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -481,7 +482,7 @@ billingQuoteCreateForm.get = (options?: RouteQueryOptions): RouteFormDefinition<
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::billingQuoteCreate
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 billingQuoteCreateForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -498,7 +499,7 @@ billingQuoteCreate.form = billingQuoteCreateForm
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:18
 * @route '/quotation-management/billing-quote-approval'
 */
 export const billingQuoteApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -513,7 +514,7 @@ billingQuoteApproval.definition = {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:18
 * @route '/quotation-management/billing-quote-approval'
 */
 billingQuoteApproval.url = (options?: RouteQueryOptions) => {
@@ -522,7 +523,7 @@ billingQuoteApproval.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:18
 * @route '/quotation-management/billing-quote-approval'
 */
 billingQuoteApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -532,7 +533,7 @@ billingQuoteApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'>
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:18
 * @route '/quotation-management/billing-quote-approval'
 */
 billingQuoteApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -542,7 +543,7 @@ billingQuoteApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:18
 * @route '/quotation-management/billing-quote-approval'
 */
 const billingQuoteApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -552,7 +553,7 @@ const billingQuoteApprovalForm = (options?: RouteQueryOptions): RouteFormDefinit
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:18
 * @route '/quotation-management/billing-quote-approval'
 */
 billingQuoteApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -562,7 +563,7 @@ billingQuoteApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinitio
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::billingQuoteApproval
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:18
 * @route '/quotation-management/billing-quote-approval'
 */
 billingQuoteApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -579,7 +580,7 @@ billingQuoteApproval.form = billingQuoteApprovalForm
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 export const billingCancelRequest = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -594,7 +595,7 @@ billingCancelRequest.definition = {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 billingCancelRequest.url = (options?: RouteQueryOptions) => {
@@ -603,7 +604,7 @@ billingCancelRequest.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 billingCancelRequest.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -613,7 +614,7 @@ billingCancelRequest.get = (options?: RouteQueryOptions): RouteDefinition<'get'>
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 billingCancelRequest.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -623,7 +624,7 @@ billingCancelRequest.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 const billingCancelRequestForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -633,7 +634,7 @@ const billingCancelRequestForm = (options?: RouteQueryOptions): RouteFormDefinit
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 billingCancelRequestForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -643,7 +644,7 @@ billingCancelRequestForm.get = (options?: RouteQueryOptions): RouteFormDefinitio
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::billingCancelRequest
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 billingCancelRequestForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -660,7 +661,7 @@ billingCancelRequest.form = billingCancelRequestForm
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
-* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:20
 * @route '/quotation-management/billing-cancel-approval'
 */
 export const billingCancelApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -675,7 +676,7 @@ billingCancelApproval.definition = {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
-* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:20
 * @route '/quotation-management/billing-cancel-approval'
 */
 billingCancelApproval.url = (options?: RouteQueryOptions) => {
@@ -684,7 +685,7 @@ billingCancelApproval.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
-* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:20
 * @route '/quotation-management/billing-cancel-approval'
 */
 billingCancelApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -694,7 +695,7 @@ billingCancelApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
-* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:20
 * @route '/quotation-management/billing-cancel-approval'
 */
 billingCancelApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -704,7 +705,7 @@ billingCancelApproval.head = (options?: RouteQueryOptions): RouteDefinition<'hea
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
-* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:20
 * @route '/quotation-management/billing-cancel-approval'
 */
 const billingCancelApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -714,7 +715,7 @@ const billingCancelApprovalForm = (options?: RouteQueryOptions): RouteFormDefini
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
-* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:20
 * @route '/quotation-management/billing-cancel-approval'
 */
 billingCancelApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -724,7 +725,7 @@ billingCancelApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefiniti
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelApprovalController::billingCancelApproval
-* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:17
+* @see app/Http/Controllers/Billing/BillingCancelApprovalController.php:20
 * @route '/quotation-management/billing-cancel-approval'
 */
 billingCancelApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -750,6 +751,7 @@ const quotationManagement = {
     billingCancelRequest: Object.assign(billingCancelRequest, billingCancelRequest259496),
     billingCancelApproval: Object.assign(billingCancelApproval, billingCancelApprovalF8ce24),
     quotationMessages: Object.assign(quotationMessages, quotationMessages),
+    billingMessages: Object.assign(billingMessages, billingMessages),
     commentAttachments: Object.assign(commentAttachments, commentAttachments),
 }
 

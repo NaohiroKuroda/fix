@@ -7,14 +7,16 @@
 //   docs/detailed-design/quotations/06〜09_請求_*_詳細設計.md
 //   docs/detailed-design/orders/02_請求_発注書確認_詳細設計.md
 //
-// ※ 現時点は**モック**。一覧はサーバの固定データ、送信は成功トーストを返すだけ。
 import { computed, inject, reactive, ref } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { X, Ban } from 'lucide-vue-next';
 import { SIDEBAR_COLLAPSED } from '@/shared/ui/layouts';
 import { FilterBar } from '@/shared/ui/filter-bar';
 import { Pager } from '@/shared/ui/pager';
+import { CommentThreadModal } from '@/shared/ui/comment-thread';
 import { useFelixTheme } from '@/shared/lib/felix-theme';
+import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/shared/api/routes/quotation-management/quotation-messages';
+import { index as billingMessagesIndex, store as billingMessagesStore } from '@/shared/api/routes/quotation-management/billing-messages';
 import BillingProjectCard from './BillingProjectCard.vue';
 import BillingQuotationModal, { type BillingQuotationInput } from './BillingQuotationModal.vue';
 import { BILLING_MODE_CONFIG, billingRowKey } from '../model/billing-mode';
@@ -256,7 +258,9 @@ const submitQuotation = (payload: BillingQuotationInput): void => {
     if (config.value.actionUrl === null) {
         return;
     }
+    // 見積書ファイル（File）を含むため multipart で送る（forceFormData）。
     router.post(config.value.actionUrl, { ...payload }, {
+        forceFormData: true,
         preserveScroll: true,
         onSuccess: () => {
             quotationModalOpen.value = false;
@@ -265,7 +269,7 @@ const submitQuotation = (payload: BillingQuotationInput): void => {
     });
 };
 
-// 発注書プレビュー（⑨）。モックのため内容はプレースホルダ。
+// 発注書プレビュー（⑨）。帳票そのものは未実装のため、現状は主要項目のプレビュー表示。
 const orderDocOpen = ref(false);
 const orderDocTarget = ref<BillingRow | null>(null);
 const openOrderDoc = (row: BillingRow): void => {
@@ -293,7 +297,7 @@ const onRowAction = (row: BillingRow, buildingName: string): void => {
     }
 };
 
-// felix_total を開く iframe モーダル（見積先の詳細 / 業者追加）。モックでは URL 未設定。
+// felix_total を開く iframe モーダル（見積先の詳細 / 業者追加）。
 const iframeOpen = ref(false);
 const iframeUrl = ref<string | null>(null);
 const iframeTitle = ref('');
@@ -303,12 +307,46 @@ const openIframe = (payload: { url: string | null; title: string }): void => {
     iframeOpen.value = true;
 };
 
-// やり取り（チャット）。実装は支払側と共通化する想定。モックでは案内のみ出す。
+const page = usePage();
+// やり取り（チャット）：建物予算項目（t_building_budget_items）単位のスレッド。
+// 取得・投稿・添付の UI は共通コンポーネント（CommentThreadModal）で支払側と共用する。
+// 区分「全て」では支払（はらい）の行も並ぶため、行の区分に応じて叩き先を切り替える
+// （請求＝billing-messages / 支払＝quotation-messages）。同一項目なら中身は同じスレッド。
+const myRole = computed<'manager' | 'staff'>(() => (page.props.auth?.user?.isEstimateManager ? 'manager' : 'staff'));
 const chatOpen = ref(false);
 const chatTarget = ref<BillingRow | null>(null);
-const openChat = (row: BillingRow): void => {
+const chatBuilding = ref('');
+const chatIndexUrl = computed<string | null>(() => {
+    const row = chatTarget.value;
+    if (row == null) {
+        return null;
+    }
+    return row.billingTarget ? billingMessagesIndex(row.partnerId).url : quotationMessagesIndex(row.partnerId).url;
+});
+const chatStoreUrl = computed<string | null>(() => {
+    const row = chatTarget.value;
+    if (row == null) {
+        return null;
+    }
+    return row.billingTarget ? billingMessagesStore(row.partnerId).url : quotationMessagesStore(row.partnerId).url;
+});
+const openChat = (row: BillingRow, buildingName = ''): void => {
     chatTarget.value = row;
+    chatBuilding.value = buildingName;
     chatOpen.value = true;
+    // 開いた時点で既読化される（GET index でポインタ更新）。一覧の未読バッジを即時クリア。
+    row.unreadCount = 0;
+};
+const closeChat = (): void => {
+    chatOpen.value = false;
+    chatTarget.value = null;
+};
+// 投稿成功時：一覧の「やり取り」件数バッジ・コメント有無を楽観的に更新。
+const onChatPosted = (): void => {
+    if (chatTarget.value) {
+        chatTarget.value.messageCount = (chatTarget.value.messageCount ?? 0) + 1;
+        chatTarget.value.hasComments = true;
+    }
 };
 
 // 絞り込み・ページ送り（サーバ側フィルタ）。
@@ -349,7 +387,6 @@ const goToPage = (page: number): void => {
                     <span v-if="isThemed" aria-hidden="true" class="h-7 w-1.5 rounded-full bg-[#c4a35b]"></span>
                     <h1 class="text-2xl font-bold tracking-tight" :class="headingClass">【請求】{{ config.title }}</h1>
                     <span class="text-sm" :class="onGlassTextClass">状態：{{ config.statusLabel }}</span>
-                    <span class="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">モック</span>
                     <button
                         v-if="config.actionLabel"
                         type="button"
@@ -450,7 +487,7 @@ const goToPage = (page: number): void => {
                     @row-toggle="toggleRow"
                     @row-action="(row) => onRowAction(row, project.name)"
                     @reject="openReject"
-                    @open-chat="openChat"
+                    @open-chat="(row, buildingName) => openChat(row, buildingName)"
                     @open-iframe="openIframe"
                 />
 
@@ -564,7 +601,7 @@ const goToPage = (page: number): void => {
         </div>
     </div>
 
-    <!-- ⑨ 発注書プレビュー（モック） -->
+    <!-- ⑨ 発注書プレビュー。帳票そのものは felix_total 側のため、ここでは主要項目のみ表示する。 -->
     <div v-if="orderDocOpen && orderDocTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="orderDocOpen = false">
         <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div class="flex items-center gap-3 border-l-4 border-l-[#c4a35b] bg-primary px-4 py-3 text-primary-foreground">
@@ -586,13 +623,13 @@ const goToPage = (page: number): void => {
                     >承認済</span>
                 </div>
                 <p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                    モックのためレイアウトのみです。実際の発注書は felix_total 側の帳票を表示します。
+                    実際の発注書は felix_total 側の帳票を表示します（本画面は主要項目のプレビューです）。
                 </p>
             </div>
         </div>
     </div>
 
-    <!-- iframe（見積先の詳細 / 業者追加）。モックでは URL 未設定。 -->
+    <!-- iframe（見積先の詳細 / 業者追加）。移行元（source_id）が無い取引先は URL を持たない。 -->
     <div v-if="iframeOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="iframeOpen = false">
         <div class="flex h-[80vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div class="flex items-center gap-3 border-l-4 border-l-[#c4a35b] bg-primary px-4 py-3 text-primary-foreground">
@@ -601,22 +638,20 @@ const goToPage = (page: number): void => {
             </div>
             <iframe v-if="iframeUrl" :src="iframeUrl" class="flex-1" frameborder="0"></iframe>
             <div v-else class="flex flex-1 items-center justify-center p-6 text-sm text-slate-500">
-                モックのため、felix_total の画面は開きません。
+                移行元（source_id）が無いため、felix_total の画面は開けません。
             </div>
         </div>
     </div>
 
-    <!-- やり取り（チャット）。モックでは案内のみ。 -->
-    <div v-if="chatOpen && chatTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="chatOpen = false">
-        <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div class="flex items-center gap-3 border-l-4 border-l-[#c4a35b] bg-primary px-4 py-3 text-primary-foreground">
-                <p class="min-w-0 flex-1 truncate text-sm font-bold">やり取り：{{ chatTarget.itemName }}</p>
-                <button type="button" class="rounded-lg p-1 hover:bg-white/10" @click="chatOpen = false"><X class="size-5" /></button>
-            </div>
-            <div class="p-6 text-sm text-slate-600">
-                モックのため未接続です。実装時は支払側（見積管理）と同じコメントスレッドを利用します。
-                <span class="mt-2 block text-xs text-slate-500">コメント {{ chatTarget.messageCount }} 件 / 未読 {{ chatTarget.unreadCount }} 件</span>
-            </div>
-        </div>
-    </div>
+    <!-- やり取り（チャット）モーダル：支払側と共通のコメントスレッド（項目単位）。 -->
+    <CommentThreadModal
+        :open="chatOpen"
+        :index-url="chatIndexUrl"
+        :store-url="chatStoreUrl"
+        :item-name="chatTarget?.itemName"
+        :building-name="chatBuilding"
+        :my-role="myRole"
+        @close="closeChat"
+        @posted="onChatPosted"
+    />
 </template>

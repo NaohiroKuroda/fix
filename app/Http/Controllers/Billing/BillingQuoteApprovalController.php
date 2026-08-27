@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Http\Requests\BillingPartnerActionRequest;
+use App\Http\Requests\BillingReasonActionRequest;
 use App\Http\Requests\QuotationManagementRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Response;
 
 /**
@@ -19,27 +20,31 @@ class BillingQuoteApprovalController extends AbstractBillingScreenController
         return $this->renderScreen($request, 'billing-quote-approval', 'quotation-management/billing-quote-approval');
     }
 
-    /** 見積承認。**モックのため状態更新・通知メール送信は行わない。** */
-    public function confirm(): RedirectResponse
+    /** 見積承認（一括）。`APPLIED` → `APPROVED`。 */
+    public function confirm(BillingPartnerActionRequest $request): RedirectResponse
     {
-        return back()->with('success', '（モック）見積承認を実行しました。業者への通知メールは未実装です。');
+        $count = $this->service->approve($request->partnerIds());
+
+        if ($count === 0) {
+            return back()->with('error', '見積承認を実行できませんでした。対象の請求先をご確認ください。');
+        }
+
+        return back()->with('success', "見積承認を実行しました。（{$count}件）");
     }
 
     /**
      * 否認（見積作成へ差し戻し）。承認せず `APPLIED → CANCELLED` とし、
      * ③【請求】見積作成の対象（同画面は `DRAFT` / `CANCELLED` を操作対象にする）へ戻す。
-     * 否認理由は当該項目のやり取り（コメント）へ `【否認】{理由}` として残す想定。
-     *
-     * **モックのため状態更新・コメント登録は行わない。**
+     * 否認理由は当該項目のやり取り（コメント）へ `【否認】{理由}` として残す。
      */
-    public function reject(Request $request): RedirectResponse
+    public function reject(BillingReasonActionRequest $request): RedirectResponse
     {
-        $request->validate([
-            'partnerIds' => ['required', 'array', 'min:1'],
-            'partnerIds.*' => ['integer'],
-            'reason' => ['required', 'string', 'max:1000'],
-        ]);
+        $count = $this->service->reject($request->partnerId(), $request->reason());
 
-        return back()->with('success', '（モック）見積を否認しました。見積作成への差し戻しとコメント登録は未実装です。');
+        if ($count === 0) {
+            return back()->with('error', '否認できませんでした。対象の請求先をご確認ください。');
+        }
+
+        return back()->with('success', '見積を否認しました。見積作成へ差し戻しました。');
     }
 }

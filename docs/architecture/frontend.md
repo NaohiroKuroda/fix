@@ -165,7 +165,7 @@ resources/
     │   │   │   ├── order-delivery.ts
     │   │   │   └── order-delivery-mode.ts
     │   │   └── index.ts
-    │   └── billing/                # 請求（もらい）5画面（mode で出し分け）※現時点はモック
+    │   └── billing/                # 請求（もらい）5画面（mode で出し分け）
     │       ├── ui/
     │       │   ├── BillingScreen.vue
     │       │   ├── BillingProjectCard.vue

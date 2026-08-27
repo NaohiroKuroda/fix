@@ -33,6 +33,12 @@ declare module '@inertiajs/core' {
             'vendor-selection-rejected': number;
             'manager-approval': number;
             'cancel-approval': number;
+            // 【請求】見積作成：まだ承認申請していない件数。
+            'billing-quote-create': number;
+            // 【請求】見積作成（差し戻し）：見積承認で否認され見積作成へ戻った件数（2つ目のバッヂ）。
+            'billing-quote-create-rejected': number;
+            'billing-quote-approval': number;
+            'billing-cancel-approval': number;
             'order-execution': number;
             'order-approval': number;
             'order-cancel-approval': number;

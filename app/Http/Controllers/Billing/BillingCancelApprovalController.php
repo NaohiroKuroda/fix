@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Http\Requests\BillingReasonActionRequest;
 use App\Http\Requests\QuotationManagementRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Response;
 
 /**
  * 【請求】見積取消承認画面（もらい運用フロー 取消系）。
+ *
+ * 承認・否認とも差し戻し先は ③【請求】見積作成で、ステータスは `CANCELLED`。
+ * 違いは否認理由がコメントに `【否認】` として残る点（→ 09 §6.5）。
  *
  * @see docs/detailed-design/quotations/09_請求_見積取消承認_詳細設計.md
  */
@@ -19,28 +22,27 @@ class BillingCancelApprovalController extends AbstractBillingScreenController
         return $this->renderScreen($request, 'billing-cancel-approval', 'quotation-management/billing-cancel-approval');
     }
 
-    /** 取消承認。**モックのため状態更新・③への差し戻しは行わない。** */
-    public function confirm(): RedirectResponse
+    /** 取消承認（1件ずつ・理由必須）。`CANCEL_APPLIED` → `CANCELLED`（③ 見積作成へ差し戻し）。 */
+    public function confirm(BillingReasonActionRequest $request): RedirectResponse
     {
-        return back()->with('success', '（モック）取消承認を実行しました。見積作成への差し戻しは未実装です。');
+        $count = $this->service->approveCancel($request->partnerId(), $request->reason());
+
+        if ($count === 0) {
+            return back()->with('error', '取消承認を実行できませんでした。対象の請求先をご確認ください。');
+        }
+
+        return back()->with('success', "取消承認を実行しました。見積作成へ差し戻しました。（{$count}件）");
     }
 
-    /**
-     * 取消申請の否認。`CANCEL_APPLIED → CANCELLED` とし、
-     * ③【請求】見積作成の対象（同画面は `DRAFT` / `CANCELLED` を操作対象にする）へ戻す。
-     * 承認と同じ差し戻し先だが、否認理由を当該項目のやり取り（コメント）へ
-     * `【否認】{理由}` として残す点が異なる。
-     *
-     * **モックのため状態更新・コメント登録は行わない。**
-     */
-    public function reject(Request $request): RedirectResponse
+    /** 否認（1件ずつ・理由必須）。承認と同じく `CANCEL_APPLIED` → `CANCELLED`。 */
+    public function reject(BillingReasonActionRequest $request): RedirectResponse
     {
-        $request->validate([
-            'partnerIds' => ['required', 'array', 'min:1'],
-            'partnerIds.*' => ['integer'],
-            'reason' => ['required', 'string', 'max:1000'],
-        ]);
+        $count = $this->service->rejectCancel($request->partnerId(), $request->reason());
 
-        return back()->with('success', '（モック）取消申請を否認しました。見積作成への差し戻しとコメント登録は未実装です。');
+        if ($count === 0) {
+            return back()->with('error', '否認できませんでした。対象の請求先をご確認ください。');
+        }
+
+        return back()->with('success', '取消申請を否認しました。見積作成へ差し戻しました。');
     }
 }

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Billing;
 
 use App\Http\Requests\QuotationManagementRequest;
+use App\Http\Requests\StoreBillingQuotationRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Response;
 
 /**
@@ -18,9 +20,28 @@ class BillingQuoteCreateController extends AbstractBillingScreenController
         return $this->renderScreen($request, 'billing-quote-create', 'quotation-management/billing-quote-create');
     }
 
-    /** ③ 見積作成モーダルの保存。**モックのため保存は行わず、成功トーストだけ返す。** */
-    public function store(): RedirectResponse
+    /**
+     * ③ 見積作成モーダルの保存。見積（＋明細）を新しい版として保存し、
+     * 承認ステータスを `DRAFT` / `CANCELLED` → `APPLIED` へ進めて ④ 見積承認へ回す（§6.1）。
+     */
+    public function store(StoreBillingQuotationRequest $request): RedirectResponse
     {
-        return back()->with('success', '（モック）見積を保存しました。実データへの保存は未実装です。');
+        $quotation = $request->quotation();
+
+        // 見積書ファイルが添付されていれば public ディスクへ保存し、その URL を持たせる。
+        // 差し替えが無ければ既存の fileUrl をそのまま維持する。
+        if ($request->hasFile('file')) {
+            $path = $request->file('file')->store('billing-quotations/'.$request->partnerId(), 'public');
+            $quotation['fileUrl'] = Storage::disk('public')->url($path);
+        }
+
+        $this->service->saveQuotation($request->partnerId(), $quotation, $request->details());
+        $applied = $this->service->apply([$request->partnerId()]);
+
+        if ($applied === 0) {
+            return back()->with('success', '見積を保存しました。');
+        }
+
+        return back()->with('success', '見積を保存し、承認申請しました。');
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Billing\BillingCancelApprovalController;
 use App\Http\Controllers\Billing\BillingCancelRequestController;
+use App\Http\Controllers\Billing\BillingMessageController;
 use App\Http\Controllers\Billing\BillingOrderConfirmationController;
 use App\Http\Controllers\Billing\BillingQuoteApprovalController;
 use App\Http\Controllers\Billing\BillingQuoteCreateController;
@@ -64,7 +65,6 @@ Route::middleware('auth:admin')->group(function () {
         ->name('quotation-management.cancel-approval.reject');   // 取消申請の否認（却下して承認済みへ据え置き）
 
     // 見積管理（請求＝もらい）。もらいは相見積・業者選定が無く、FELIX 側で見積を代理作成する。
-    // ※ 現時点は**モック**（BillingMockService の固定データ。DB 未接続）。
     // 詳細設計: docs/detailed-design/quotations/06〜09_請求_*_詳細設計.md
     Route::get('/quotation-management/billing-quote-create', [BillingQuoteCreateController::class, 'index'])
         ->name('quotation-management.billing-quote-create');       // 【請求】見積作成（担当→業者）
@@ -92,6 +92,13 @@ Route::middleware('auth:admin')->group(function () {
         ->name('quotation-management.quotation-messages.index');
     Route::post('/quotation-management/quotations/{quotation}/messages', [QuotationMessageController::class, 'store'])
         ->name('quotation-management.quotation-messages.store');
+
+    // 請求取引先（t_billing_partners）単位のやり取り。コメントは項目に集約されるため、
+    // 同一項目なら支払側のスレッドと同じ内容が見える。
+    Route::get('/quotation-management/billing-partners/{partner}/messages', [BillingMessageController::class, 'index'])
+        ->name('quotation-management.billing-messages.index');
+    Route::post('/quotation-management/billing-partners/{partner}/messages', [BillingMessageController::class, 'store'])
+        ->name('quotation-management.billing-messages.store');
 
     // コメント添付ファイル（t_attachments）の配信。認証付きで Laravel から直接ストリームする
     // （公開ストレージの静的配信は Web サーバ設定依存で 403 になり得るため）。

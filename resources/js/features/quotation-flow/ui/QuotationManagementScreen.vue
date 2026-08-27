@@ -8,9 +8,9 @@
 // - 部長承認 / 取消申請 / 取消承認（pick-button）：未処理行をボタンで選び、ヘッダー確定で送信。
 // いずれも成功時はサーバが back() → 一覧再読込 + flash メッセージ。
 // ※ 業者へのメール通知（felix_total のトークン発行＋送信）は本フェーズ未対応。
-import { computed, inject, nextTick, reactive, ref, type Ref } from 'vue';
+import { computed, inject, reactive, ref, type Ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { X, Ban, MessageSquare, Send, Paperclip, FileText } from 'lucide-vue-next';
+import { X, Ban } from 'lucide-vue-next';
 import type { RouteDefinition } from '@/shared/api/wayfinder';
 import { send as sendQuoteRequestRoute } from '@/shared/api/routes/quotation-management/quote-request';
 import { confirm as confirmVendorSelectionRoute, provisional as provisionalRoute } from '@/shared/api/routes/quotation-management/vendor-selection';
@@ -18,13 +18,14 @@ import { confirm as confirmManagerApprovalRoute, reject as rejectManagerApproval
 import { confirm as confirmCancelRequestRoute } from '@/shared/api/routes/quotation-management/cancel-request';
 import { confirm as confirmCancelApprovalRoute, reject as rejectCancelApprovalRoute } from '@/shared/api/routes/quotation-management/cancel-approval';
 import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/shared/api/routes/quotation-management/quotation-messages';
+import { index as billingMessagesIndex, store as billingMessagesStore } from '@/shared/api/routes/quotation-management/billing-messages';
 import { SIDEBAR_COLLAPSED } from '@/shared/ui/layouts';
 import { FilterBar } from '@/shared/ui/filter-bar';
 import { Pager } from '@/shared/ui/pager';
+import { CommentThreadModal } from '@/shared/ui/comment-thread';
 import QuotationProjectCard from './QuotationProjectCard.vue';
 import { useFelixTheme } from '@/shared/lib/felix-theme';
 import { quotationRowKey, QUOTATION_MODE_CONFIG } from '../model/quotation-mode';
-import type { QuotationChatMessage } from '@/shared/api';
 import type {
     QuotationManagementFilters,
     QuotationManagementMode,
@@ -404,189 +405,49 @@ const submitReject = (): void => {
     });
 };
 
-// やり取り（チャット）：見積先（companyId=t_cost_quotations.id）単位のスレッド。
-// 業者選定（部下=staff）と部長承認（部長=manager）が同じ見積についてコメントを交わす。
+// やり取り（チャット）：建物予算項目（t_building_budget_items）単位のスレッド。
+// 取得・投稿・添付の UI は共通コンポーネント（CommentThreadModal）に寄せ、ここは
+// 「どの行のスレッドを、どのエンドポイントで開くか」だけを持つ。
+// 区分「全て」では請求（もらい）の行も並ぶため、行の区分に応じて叩き先を切り替える
+// （支払＝quotation-messages / 請求＝billing-messages）。同一項目なら中身は同じスレッド。
 const page = usePage();
 const myRole = computed<'manager' | 'staff'>(() => (page.props.auth?.user?.isEstimateManager ? 'manager' : 'staff'));
 const chatOpen = ref(false);
 const chatTarget = ref<QuotationManagementRow | null>(null);
 const chatBuilding = ref('');
-const chatMessages = ref<QuotationChatMessage[]>([]);
-const chatBody = ref('');
-const chatLoading = ref(false);
-const chatSending = ref(false);
-const chatError = ref<string | null>(null);
-const chatScroll = ref<HTMLElement | null>(null);
-
-// 添付ファイル（送信前の保留リスト）。ドラッグ&ドロップ／ファイル選択で追加する。
-const chatFiles = ref<File[]>([]);
-const chatDragOver = ref(false);
-const fileInput = ref<HTMLInputElement | null>(null);
-const openFilePicker = (): void => fileInput.value?.click();
-// 添付の制約（06_添付ファイル_詳細設計 §1・§2）。サーバ側 StoreQuotationMessageRequest と一致させる。
-const ALLOWED_EXTENSIONS = [
-    'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif',
-    'pdf', 'txt',
-    'xlsx', 'xls', 'docx', 'doc', 'pptx', 'ppt', 'csv',
-    'dwg', 'dxf', 'jww', 'jwc', 'sfc', 'p21',
-    'zip',
-];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const MAX_FILES = 5;
-
-// アップロード前チェック：拡張子ホワイトリスト外・10MB超・5件超をこの場で弾いてメッセージ表示する。
-const addFiles = (list: FileList | null): void => {
-    if (!list || list.length === 0) {
-        return;
+const chatIndexUrl = computed<string | null>(() => {
+    const row = chatTarget.value;
+    if (row?.companyId == null) {
+        return null;
     }
-
-    const rejected: string[] = [];
-    const accepted: File[] = [];
-    for (const file of Array.from(list)) {
-        const ext = file.name.includes('.') ? (file.name.split('.').pop() ?? '').toLowerCase() : '';
-        if (!ALLOWED_EXTENSIONS.includes(ext)) {
-            rejected.push(`${file.name}（非対応の形式）`);
-            continue;
-        }
-        if (file.size > MAX_FILE_SIZE) {
-            rejected.push(`${file.name}（10MB超）`);
-            continue;
-        }
-        accepted.push(file);
+    return row.billingTarget ? billingMessagesIndex(row.companyId).url : quotationMessagesIndex(row.companyId).url;
+});
+const chatStoreUrl = computed<string | null>(() => {
+    const row = chatTarget.value;
+    if (row?.companyId == null) {
+        return null;
     }
-
-    const room = Math.max(0, MAX_FILES - chatFiles.value.length);
-    const toAdd = accepted.slice(0, room);
-    if (toAdd.length > 0) {
-        chatFiles.value = [...chatFiles.value, ...toAdd];
-    }
-
-    const errors: string[] = [];
-    if (rejected.length > 0) {
-        errors.push(`次のファイルは添付できません: ${rejected.join('、')}`);
-    }
-    if (accepted.length > toAdd.length) {
-        errors.push(`添付は${MAX_FILES}件までです。`);
-    }
-    if (errors.length > 0) {
-        chatError.value = errors.join(' ');
-    }
-};
-const onFileInputChange = (event: Event): void => {
-    const input = event.target as HTMLInputElement;
-    addFiles(input.files);
-    input.value = ''; // 同じファイルを続けて選べるようクリア。
-};
-const removeChatFile = (index: number): void => {
-    chatFiles.value = chatFiles.value.filter((_, i) => i !== index);
-};
-const onChatDrop = (event: DragEvent): void => {
-    chatDragOver.value = false;
-    addFiles(event.dataTransfer?.files ?? null);
-};
-// 送信可否：本文か添付のいずれかがあり、送信中でないこと。
-const canSendChat = computed(() => (chatBody.value.trim().length > 0 || chatFiles.value.length > 0) && !chatSending.value);
-const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) {
-        return `${bytes} B`;
-    }
-    if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-};
-
-// CSRF（axios 未導入のため XSRF-TOKEN クッキーを fetch ヘッダへ手当てする）。
-const xsrfToken = (): string =>
-    decodeURIComponent(document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='))?.split('=')[1] ?? '');
-
-const scrollChatToBottom = (): void => {
-    void nextTick(() => {
-        if (chatScroll.value) {
-            chatScroll.value.scrollTop = chatScroll.value.scrollHeight;
-        }
-    });
-};
-const openChat = async (row: QuotationManagementRow, buildingName = ''): Promise<void> => {
+    return row.billingTarget ? billingMessagesStore(row.companyId).url : quotationMessagesStore(row.companyId).url;
+});
+const openChat = (row: QuotationManagementRow, buildingName = ''): void => {
     if (row.companyId == null) {
         return;
     }
     chatTarget.value = row;
     chatBuilding.value = buildingName;
-    chatMessages.value = [];
-    chatBody.value = '';
-    chatFiles.value = [];
-    chatError.value = null;
     chatOpen.value = true;
     // 開いた時点で既読化される（GET index でポインタ更新）。一覧の未読バッジを即時クリア。
     row.unreadCount = 0;
-    await fetchMessages();
 };
 const closeChat = (): void => {
     chatOpen.value = false;
     chatTarget.value = null;
-    chatFiles.value = [];
-    chatDragOver.value = false;
 };
-const fetchMessages = async (): Promise<void> => {
-    const id = chatTarget.value?.companyId;
-    if (id == null) {
-        return;
-    }
-    chatLoading.value = true;
-    try {
-        const res = await fetch(quotationMessagesIndex(id).url, {
-            headers: { Accept: 'application/json' },
-            credentials: 'same-origin',
-        });
-        const data = await res.json();
-        chatMessages.value = data.messages ?? [];
-        scrollChatToBottom();
-    } catch {
-        chatError.value = 'メッセージの取得に失敗しました。';
-    } finally {
-        chatLoading.value = false;
-    }
-};
-const sendChat = async (): Promise<void> => {
-    const id = chatTarget.value?.companyId;
-    const body = chatBody.value.trim();
-    // 本文・添付いずれか必須。
-    if (id == null || chatSending.value || (!body && chatFiles.value.length === 0)) {
-        return;
-    }
-    chatSending.value = true;
-    chatError.value = null;
-    try {
-        // 添付を含めるため multipart/form-data で送る（Content-Type はブラウザに任せる）。
-        const form = new FormData();
-        form.append('body', body);
-        chatFiles.value.forEach((file) => form.append('files[]', file));
-        const res = await fetch(quotationMessagesStore(id).url, {
-            method: 'POST',
-            headers: { Accept: 'application/json', 'X-XSRF-TOKEN': xsrfToken() },
-            credentials: 'same-origin',
-            body: form,
-        });
-        if (!res.ok) {
-            throw new Error('failed');
-        }
-        const data = await res.json();
-        if (data.message) {
-            chatMessages.value.push(data.message);
-        }
-        chatBody.value = '';
-        chatFiles.value = [];
-        // 一覧の「やり取り」件数バッジ・コメント有無を楽観的に更新（ボタンを選定色へ）。
-        if (chatTarget.value) {
-            chatTarget.value.messageCount = (chatTarget.value.messageCount ?? 0) + 1;
-            chatTarget.value.hasComments = true;
-        }
-        scrollChatToBottom();
-    } catch {
-        chatError.value = '送信に失敗しました。';
-    } finally {
-        chatSending.value = false;
+// 投稿成功時：一覧の「やり取り」件数バッジ・コメント有無を楽観的に更新（ボタンを選定色へ）。
+const onChatPosted = (): void => {
+    if (chatTarget.value) {
+        chatTarget.value.messageCount = (chatTarget.value.messageCount ?? 0) + 1;
+        chatTarget.value.hasComments = true;
     }
 };
 
@@ -886,160 +747,17 @@ const setComment = (value: CommentFilter): void => {
         </div>
     </div>
 
-    <!-- やり取り（チャット）モーダル：部下⇔部長が見積についてコメントを交わす。 -->
-    <Teleport to="body">
-        <div
-            v-if="chatOpen"
-            class="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4"
-            @click.self="closeChat"
-        >
-            <div
-                class="relative flex h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
-                @dragenter.prevent="chatDragOver = true"
-                @dragover.prevent="chatDragOver = true"
-                @dragleave.prevent="chatDragOver = false"
-                @drop.prevent="onChatDrop"
-            >
-                <!-- ドラッグ中のドロップ案内オーバーレイ -->
-                <div
-                    v-if="chatDragOver"
-                    class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#c4a35b] bg-[#c4a35b]/10 backdrop-blur-sm"
-                >
-                    <Paperclip class="size-8 text-[#c4a35b]" />
-                    <p class="text-sm font-semibold text-[#8a6a25]">ここにファイルをドロップして添付</p>
-                </div>
-                <!-- ヘッダー：対象の項目・見積先 -->
-                <div class="flex items-start gap-2 border-b px-4 py-3">
-                    <MessageSquare class="mt-0.5 size-5 text-[#c4a35b]" />
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-semibold text-slate-800">コメント履歴</p>
-                        <p v-if="chatBuilding" class="truncate text-[11px] text-slate-400">{{ chatBuilding }}</p>
-                        <p class="truncate text-xs text-slate-500">{{ chatTarget?.itemName || '項目' }}</p>
-                    </div>
-                    <button
-                        type="button"
-                        class="flex size-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-                        title="閉じる"
-                        @click="closeChat"
-                    >
-                        <X class="size-5" />
-                    </button>
-                </div>
-
-                <!-- コメント履歴一覧（LINE風：自分の投稿は右寄せ、相手は左寄せ） -->
-                <div ref="chatScroll" class="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-4 py-4">
-                    <p v-if="chatLoading" class="py-8 text-center text-sm text-slate-400">読み込み中…</p>
-                    <p v-else-if="!chatMessages.length" class="py-8 text-center text-sm text-slate-400">
-                        まだコメントはありません。最初のコメントを残しましょう。
-                    </p>
-                    <div v-for="m in chatMessages" :key="m.id" class="flex" :class="m.isMine ? 'justify-end' : 'justify-start'">
-                        <div class="flex max-w-[80%] flex-col" :class="m.isMine ? 'items-end' : 'items-start'">
-                            <!-- 送信者情報（名前）。自分は右寄せに並べる。 -->
-                            <div
-                                class="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500"
-                                :class="m.isMine ? 'flex-row-reverse' : ''"
-                            >
-                                <span class="font-semibold text-slate-700">{{ m.senderName }}</span>
-                                <span v-if="m.isMine" class="rounded bg-slate-100 px-1 py-0.5 leading-none text-slate-400">自分</span>
-                            </div>
-                            <!-- 吹き出し：自分＝ゴールド（右）、相手＝白（左）。 -->
-                            <div
-                                class="rounded-2xl px-3 py-2 shadow-sm"
-                                :class="m.isMine
-                                    ? 'rounded-br-sm border border-[#c4a35b] bg-[#c4a35b] text-white'
-                                    : 'rounded-bl-sm border border-slate-200 bg-white text-slate-800'"
-                            >
-                                <div v-if="m.body" class="whitespace-pre-wrap break-words text-sm">{{ m.body }}</div>
-                                <!-- 添付ファイル：サムネのある画像はサムネ表示、その他（HEIC・文書等）はファイル名リンク。クリックは常にダウンロード。 -->
-                                <div v-if="m.files.length" class="mt-2 flex flex-wrap gap-2" :class="m.isMine ? 'justify-end' : ''">
-                                    <template v-for="f in m.files" :key="f.id">
-                                        <a
-                                            v-if="f.thumbUrl"
-                                            :href="f.downloadUrl"
-                                            :download="f.name"
-                                            :title="`${f.name} をダウンロード`"
-                                            class="block overflow-hidden rounded-lg border border-slate-200 transition hover:border-[#c4a35b]"
-                                        >
-                                            <img :src="f.thumbUrl" :alt="f.name" class="size-24 object-cover" />
-                                        </a>
-                                        <a
-                                            v-else
-                                            :href="f.downloadUrl"
-                                            :download="f.name"
-                                            :title="`${f.name} をダウンロード`"
-                                            class="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 transition hover:border-[#c4a35b] hover:bg-[#c4a35b]/10"
-                                        >
-                                            <FileText class="size-4 shrink-0 text-[#c4a35b]" />
-                                            <span class="truncate">{{ f.name }}</span>
-                                            <span class="shrink-0 text-slate-400">{{ formatFileSize(f.size) }}</span>
-                                        </a>
-                                    </template>
-                                </div>
-                            </div>
-                            <!-- 送信時刻 -->
-                            <span class="mt-1 text-[10px] text-slate-400">{{ m.createdAt }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 入力 -->
-                <div class="border-t px-3 py-3">
-                    <p v-if="chatError" class="mb-1 text-xs text-red-600">{{ chatError }}</p>
-                    <!-- 添付予定ファイルの一覧（送信前・個別に取り消し可）。 -->
-                    <div v-if="chatFiles.length" class="mb-2 flex flex-wrap gap-1.5">
-                        <span
-                            v-for="(f, i) in chatFiles"
-                            :key="`${f.name}-${i}`"
-                            class="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg border border-[#c4a35b]/40 bg-[#c4a35b]/10 px-2 py-1 text-xs text-[#8a6a25]"
-                        >
-                            <FileText class="size-3.5 shrink-0" />
-                            <span class="truncate">{{ f.name }}</span>
-                            <span class="shrink-0 text-[#8a6a25]/60">{{ formatFileSize(f.size) }}</span>
-                            <button
-                                type="button"
-                                class="shrink-0 rounded p-0.5 text-[#8a6a25]/70 transition hover:bg-[#c4a35b]/20 hover:text-[#8a6a25]"
-                                title="添付を取り消す"
-                                @click="removeChatFile(i)"
-                            >
-                                <X class="size-3.5" />
-                            </button>
-                        </span>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <!-- ファイル選択（端末内のファイルを開く）。実体は隠し input。 -->
-                        <input ref="fileInput" type="file" multiple class="hidden" accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.pdf,.txt,.xlsx,.xls,.docx,.doc,.pptx,.ppt,.csv,.dwg,.dxf,.jww,.jwc,.sfc,.p21,.zip" @change="onFileInputChange" />
-                        <button
-                            type="button"
-                            class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-500 transition hover:border-[#c4a35b] hover:bg-[#c4a35b]/10 hover:text-[#8a6a25]"
-                            title="ファイルを添付"
-                            @click="openFilePicker"
-                        >
-                            <Paperclip class="size-5" />
-                        </button>
-                        <textarea
-                            v-model="chatBody"
-                            rows="2"
-                            class="flex-1 resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#c4a35b] focus:outline-none focus:ring-2 focus:ring-[#c4a35b]/30"
-                            placeholder="コメントを入力（Enterで改行）"
-                            @keydown.enter.exact.prevent="sendChat"
-                        />
-                        <button
-                            type="button"
-                            class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-white transition"
-                            :class="canSendChat ? 'bg-[#c4a35b] hover:bg-[#b3923f]' : 'cursor-not-allowed bg-[#c4a35b]/40'"
-                            :disabled="!canSendChat"
-                            @click="sendChat"
-                        >
-                            <Send class="size-4" />{{ chatSending ? '送信中' : 'コメントする' }}
-                        </button>
-                    </div>
-                    <p class="mt-1 text-[11px] text-slate-400">
-                        あなたは「{{ myRole === 'manager' ? '部長' : '部下' }}」としてコメントします。ファイルはドラッグ&ドロップでも添付できます。
-                    </p>
-                </div>
-            </div>
-        </div>
-    </Teleport>
+    <!-- やり取り（チャット）モーダル：部下⇔部長が見積についてコメントを交わす（共通コンポーネント）。 -->
+    <CommentThreadModal
+        :open="chatOpen"
+        :index-url="chatIndexUrl"
+        :store-url="chatStoreUrl"
+        :item-name="chatTarget?.itemName"
+        :building-name="chatBuilding"
+        :my-role="myRole"
+        @close="closeChat"
+        @posted="onChatPosted"
+    />
 
     <!-- 否認モーダル（部長承認画面）：理由を入力して業者選定へ差し戻す。 -->
     <Teleport to="body">

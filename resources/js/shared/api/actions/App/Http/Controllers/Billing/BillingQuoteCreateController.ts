@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::index
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::index
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::index
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::index
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::index
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::index
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::index
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:16
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:18
 * @route '/quotation-management/billing-quote-create'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:22
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:22
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:22
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:22
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:22
+* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

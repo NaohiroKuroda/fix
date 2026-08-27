@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Repositories\BillingQuotationRepository;
 use App\Repositories\BuildingQuotationRepository;
 use App\Repositories\CommentRepository;
+use App\Repositories\Contracts\BillingRepositoryInterface;
 use App\Repositories\Contracts\CommentRepositoryInterface;
 use App\Repositories\Contracts\OrderDeliveryRepositoryInterface;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
@@ -16,6 +18,7 @@ class RepositoryServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(QuotationRepositoryInterface::class, BuildingQuotationRepository::class);
+        $this->app->bind(BillingRepositoryInterface::class, BillingQuotationRepository::class);
         $this->app->bind(CommentRepositoryInterface::class, CommentRepository::class);
         $this->app->bind(OrderDeliveryRepositoryInterface::class, OrderDeliveryRepository::class);
     }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 【請求】見積作成（もらい）。共通コンテナに mode='billing-quote-create' を渡す。**現時点はモック**。
+// 【請求】見積作成（もらい）。共通コンテナに mode='billing-quote-create' を渡す。
 import { AppLayout } from '@/shared/ui/layouts';
 import { BillingScreen } from '@/features/billing';
 import type { BillingFilters, BillingMasters, BillingPagination, BillingProject } from '@/features/billing';

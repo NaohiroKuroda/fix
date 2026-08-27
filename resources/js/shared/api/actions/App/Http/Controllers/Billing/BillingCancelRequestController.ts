@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::index
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::index
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::index
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::index
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::index
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::index
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::index
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:16
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:17
 * @route '/quotation-management/billing-cancel-request'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:22
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:23
 * @route '/quotation-management/billing-cancel-request'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ confirm.definition = {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:22
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:23
 * @route '/quotation-management/billing-cancel-request'
 */
 confirm.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ confirm.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:22
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:23
 * @route '/quotation-management/billing-cancel-request'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:22
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:23
 * @route '/quotation-management/billing-cancel-request'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 
 /**
 * @see \App\Http\Controllers\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:22
+* @see app/Http/Controllers/Billing/BillingCancelRequestController.php:23
 * @route '/quotation-management/billing-cancel-request'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

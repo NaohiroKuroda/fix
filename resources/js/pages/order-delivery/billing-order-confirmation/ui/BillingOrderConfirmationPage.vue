@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 【請求】発注書確認（もらい）。共通コンテナに mode='billing-order-confirmation' を渡す。**現時点はモック**。
+// 【請求】発注書確認（もらい）。共通コンテナに mode='billing-order-confirmation' を渡す。
 import { AppLayout } from '@/shared/ui/layouts';
 import { BillingScreen } from '@/features/billing';
 import type { BillingFilters, BillingPagination, BillingProject } from '@/features/billing';

@@ -43,16 +43,16 @@ return [
      * 発注管理（order-management）は今後実装予定。表示ロールが決まったら slug を設定する。
      */
     'menu_roles' => [
-        'quote-request'    => $staffRoleSlugs,
+        'quote-request' => $staffRoleSlugs,
         'vendor-selection' => $staffRoleSlugs,
-        'cancel-request'   => $staffRoleSlugs,
+        'cancel-request' => $staffRoleSlugs,
         'manager-approval' => $managerRoleSlugs,
-        'cancel-approval'  => $managerRoleSlugs,
+        'cancel-approval' => $managerRoleSlugs,
         // 請求（もらい）系。支払側と同じ担当／部長の役割分担に合わせる。
-        'billing-quote-create'      => $staffRoleSlugs,
-        'billing-quote-approval'    => $managerRoleSlugs,
-        'billing-cancel-request'    => $staffRoleSlugs,
-        'billing-cancel-approval'   => $managerRoleSlugs,
+        'billing-quote-create' => $staffRoleSlugs,
+        'billing-quote-approval' => $managerRoleSlugs,
+        'billing-cancel-request' => $staffRoleSlugs,
+        'billing-cancel-approval' => $managerRoleSlugs,
         'billing-order-confirmation' => $managerRoleSlugs,
         'order-management' => [],
     ],
@@ -82,7 +82,7 @@ return [
     'estimate_edit_url' => env(
         'FELIX_ESTIMATE_EDIT_URL',
         rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
-            . '/admin/estimates-custom-detail/auto_login?estimate_unit_company_id={id}'
+            .'/admin/estimates-custom-detail/auto_login?estimate_unit_company_id={id}'
     ),
 
     /*
@@ -98,7 +98,7 @@ return [
     'add_vendor_url' => env(
         'FELIX_ADD_VENDOR_URL',
         rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
-            . '/admin/estimate-unit-companies/create/?iframe=on&estimate_unit_id={id}'
+            .'/admin/estimate-unit-companies/create/?iframe=on&estimate_unit_id={id}'
     ),
 
     /*
@@ -117,7 +117,7 @@ return [
     'vendor_detail_url' => env(
         'FELIX_VENDOR_DETAIL_URL',
         rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
-            . '/admin/estimate-unit-companies/{id}/edit/?iframe=on&from=fix'
+            .'/admin/estimate-unit-companies/{id}/edit/?iframe=on&from=fix'
     ),
 
     /*
@@ -132,7 +132,7 @@ return [
     'order_document_url' => env(
         'FELIX_ORDER_DOCUMENT_URL',
         rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
-            . '/admin/new-estimates-custom-edit/check_company_list?keyword={id}&iframe=on'
+            .'/admin/new-estimates-custom-edit/check_company_list?keyword={id}&iframe=on'
     ),
 
     /*
@@ -141,9 +141,24 @@ return [
      * `{id}` を物件ID（t_buildings.source_id = 旧 estimates.id）に置換する。
      * active=2 で「必須ファイル」タブを開いた状態にする。
      */
+    /*
+     * 明細の「拠点」選択肢。felix_total の config('constant.branch_list') と同じ内容を持つ
+     * （マスタテーブルが無く、旧システムでも設定値で持っているため）。
+     * 請求見積の明細（t_billing_quotation_details.branch_code）に保存する。
+     */
+    'branch_list' => [
+        99 => '全社',
+        1 => '名古屋',
+        6 => '東京',
+        2 => '静岡',
+        5 => '松本',
+        3 => '三河',
+        4 => '豊橋',
+    ],
+
     'completion_report_url' => env(
         'FELIX_COMPLETION_REPORT_URL',
         rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
-            . '/admin/new-estimates-custom-edit?id={id}&active=2&iframe=on#'
+            .'/admin/new-estimates-custom-edit?id={id}&active=2&iframe=on#'
     ),
 ];

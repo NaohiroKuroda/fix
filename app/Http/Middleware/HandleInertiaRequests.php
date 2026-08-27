@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Repositories\Contracts\BillingRepositoryInterface;
 use App\Repositories\Contracts\OrderDeliveryRepositoryInterface;
 use App\Models\AdminUser;
 use App\Repositories\Contracts\QuotationRepositoryInterface;
@@ -85,9 +86,11 @@ class HandleInertiaRequests extends Middleware
         }
 
         try {
-            // 見積管理（QuotationRepository）＋発注〜納品〜請求（OrderDeliveryRepository）の両方を統合する。
+            // 見積管理（支払＝QuotationRepository / 請求＝BillingRepository）＋
+            // 発注〜納品〜請求（OrderDeliveryRepository）を統合する。
             return [
                 ...app(QuotationRepositoryInterface::class)->pendingCounts(),
+                ...app(BillingRepositoryInterface::class)->pendingCounts(),
                 ...app(OrderDeliveryRepositoryInterface::class)->pendingCounts(),
             ];
         } catch (\Exception $e) {

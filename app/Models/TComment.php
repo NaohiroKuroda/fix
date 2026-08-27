@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
  * fix は default 接続（＝felix_total と共有の MySQL: DB_DATABASE=fix）を通じて参照する。
  * ここでは接続を明示しない（他の T* モデルと同じく default 接続を使う）。
  *
- * commentable_type = 対象モデルの FQCN（例: App\Models\TBuildingCostItem）
+ * commentable_type = 対象モデルの FQCN（例: App\Models\TBuildingBudgetItem）
  * commentable_id   = 対象レコードの id
  * user_id          = 投稿者（admin_users.id）
  *

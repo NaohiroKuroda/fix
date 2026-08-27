@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
  * やり取り（コメント）のユースケース入口。
  *
  * コメントは建物予算項目（t_building_budget_items）単位で1スレッドに集約する
- * （commentable_type = "App\Models\TBuildingCostItem" ＝ 旧クラス名のモーフ別名 / commentable_id = 項目ID）。
+ * （commentable_type = "App\Models\TBuildingBudgetItem" / commentable_id = 項目ID）。
  * 投稿者・既読の user_id はログイン中の admin_users.id を用いる。
  */
 class QuotationCommentService
@@ -26,9 +26,9 @@ class QuotationCommentService
     /**
      * コメント対象＝建物予算項目（t_building_budget_items）のモーフ型。
      *
-     * 2026-08 のスキーマ改訂でモデルを TBuildingBudgetItem へ改称したが、既存の t_comments には
-     * 旧クラス名が保存済みのため、FQCN 直書きではなく morphMap（AppServiceProvider）を通した
-     * getMorphClass() の値を使う。＝ 既存行と同じ型文字列で読み書きできる。
+     * FQCN 直書きではなくモデルの getMorphClass() を通す（morphMap を入れた場合にも追随するため）。
+     * 2026-08 のスキーマ改訂前に保存された旧クラス名（TBuildingCostItem）は
+     * マイグレーション 2026_08_27_000000 で新 FQCN へ書き換え済み。
      */
     private function commentableType(): string
     {

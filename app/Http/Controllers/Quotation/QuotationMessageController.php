@@ -15,7 +15,7 @@ use Illuminate\Http\JsonResponse;
  * チャットUI（モーダル）から fetch で利用するため JSON を返す。
  *
  * ルートは見積先（t_cost_quotations）でバインドされるが、コメントはポリモーフィックで
- * 費用項目（commentable_type = App\Models\TBuildingCostItem（モーフ別名。実体は TBuildingBudgetItem））に集約して保存・取得する。
+ * 建物予算項目（commentable_type = App\Models\TBuildingBudgetItem）に集約して保存・取得する。
  * これにより、項目に見積先が複数あっても1スレッドにまとまる。
  */
 class QuotationMessageController extends Controller

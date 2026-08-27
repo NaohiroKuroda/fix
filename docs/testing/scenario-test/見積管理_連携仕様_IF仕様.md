@@ -50,7 +50,7 @@
 | S4 | 確定見積額 | `t_payable_quotations.amount_excluding_tax`（`is_latest`・選定済み見積先） | 選定確定後の項目金額。`t_building_budget_items.quotation_amount` は felix_total 側の同期コピーで、画面表示には使わない（共通仕様 §1.2.1） | 部長承認・取消申請・取消承認 |
 | S5 | 相見積回答額 | 相見積履歴 `amount_excluding_tax`（`is_latest`） | 業者からの最新回答。有無が「回答状態」 | 見積依頼・業者選定 |
 | S6 | 見積依頼履歴 | `t_payable_quotation_requests` | その見積先へ送信した依頼のログ（件数＝`sendCount`） | 見積依頼 |
-| S7 | やり取り（コメント） | `t_comments`（`commentable_type=TBuildingCostItem` / `commentable_id=項目ID`） | 項目単位スレッドの発言（本文・投稿者・時刻） | 全画面（チャット） |
+| S7 | やり取り（コメント） | `t_comments`（`commentable_type=App\Models\TBuildingBudgetItem` / `commentable_id=項目ID`） | 項目単位スレッドの発言（本文・投稿者・時刻） | 全画面（チャット） |
 | S8 | 既読ポインタ | `t_comment_read_timestamps`（`readable_type/readable_id/user_id/last_read_at`） | ユーザー×項目ごとの最終既読時刻 | 全画面（未読バッヂ） |
 | S9 | 添付ファイル | `t_attachments`（`file_path/original_name/mime_type/size/user_id`）＋ `public` ディスク | 本体 `comments/{itemId}/{uuid}.{ext}`、サムネ `.../thumbs/{uuid}.jpg` | 全画面（チャット） |
 | S10 | felix_total 側の反映 | felix_total スキーマ（見積依頼／発注確定） | 見積依頼・業者選定の確定は felix_total へも反映（同一DB） | 見積依頼・業者選定 |

@@ -435,8 +435,12 @@ return TCostQuotation::query()
   一覧の `denied`（赤ボタン）もコメントの有無から導出する。
   コメントは項目単位のため、同一項目に複数の見積先があると全て否認扱いになる。
 - **モーフ型**: `t_comments.commentable_type` / `t_comment_read_timestamps.readable_type` には
-  旧クラス名 `App\Models\TBuildingCostItem` が保存済み。既存データを書き換えずに済むよう、
-  `AppServiceProvider` の `Relation::morphMap()` で旧 FQCN を別名として `TBuildingBudgetItem` に割り当てている。
+  改称前のクラス名 `App\Models\TBuildingCostItem` が保存されていた。
+  `Relation::morphMap()` で旧 FQCN を別名として割り当てる方式にしていたが、
+  **保存時にも旧クラス名が書き込まれ続ける**ため、マイグレーション
+  `2026_08_27_000000_rename_building_cost_item_morph_type` で既存行を
+  `App\Models\TBuildingBudgetItem` へ書き換え、別名登録は廃止した。
+  以後、モーフ型は `getMorphClass()` が返す実クラス名で保存される。
 - **区分（請求／支払）**: 支払系の一覧（`BuildingQuotationResource`）は `t_payable_partners` のみを
   読むため `billingTarget` は常に `false`。請求（もらい）は【請求】系画面が扱う。
 

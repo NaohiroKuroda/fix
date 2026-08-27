@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\TBuildingBudgetItem;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,13 +24,11 @@ class AppServiceProvider extends ServiceProvider
         JsonResource::withoutWrapping();
 
         // ポリモーフィック型のマップ。
-        // コメント（t_comments.commentable_type）と既読（t_comment_read_timestamps.readable_type）には
-        // 旧クラス名 "App\Models\TBuildingCostItem" が保存済みで、2026-08 のスキーマ改訂で
-        // モデルを TBuildingBudgetItem へ改称した。既存データを書き換えずに解決できるよう、
-        // 旧 FQCN をそのまま別名（morph alias）として登録する。
-        // ＝ 保存時も getMorphClass() が旧 FQCN を返すため、既存行と型文字列が揃う。
-        Relation::morphMap([
-            'App\Models\TBuildingCostItem' => TBuildingBudgetItem::class,
-        ]);
+        // 2026-08 のスキーマ改訂で費用項目のモデルを TBuildingCostItem → TBuildingBudgetItem へ改称した。
+        // 既存データ（t_comments.commentable_type / t_comment_read_timestamps.readable_type）は
+        // マイグレーション（2026_08_27_000000_rename_building_cost_item_morph_type）で
+        // 新しい FQCN へ書き換え済みのため、**別名は登録しない**（getMorphClass() が実クラス名を返す）。
+        //
+        // 旧 FQCN を別名として登録すると、保存時にも旧クラス名が書き込まれ続けてしまう。
     }
 }

@@ -164,9 +164,13 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         // 表示用の見積額を各見積先に付与：
         // 見積依頼 / 業者選定＝相見積（業者の最新回答＝最新履歴）/ それ以外＝確定見積（項目）。
         $useLatestQuote = in_array($mode, ['quote-request', 'vendor-selection'], true);
+        // 確定見積を出す画面（部長承認 / 取消申請 / 取消承認）の項目 ID → 金額。
+        $settledQuotes = $useLatestQuote ? [] : $this->settledQuoteMap($paginator);
         // 操作できるのは自区分（支払）の取引先だけ（$screenIsBilling は上で定義）。
         foreach ($paginator as $building) {
             foreach ($building->budgetItems as $item) {
+                // 確定見積＝選定済みの見積先の最新見積額（amount_excluding_tax。§settledQuoteMap）。
+                $settledQuote = $settledQuotes[(int) $item->id] ?? null;
                 // Resource が区分に依らず同じ名前で読めるよう、表示対象を displayPartners に寄せる。
                 // all のときは支払と請求を1つの一覧に合成する（請求＝もらいを先に並べる）。
                 $partners = collect();
@@ -175,7 +179,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                     foreach ($item->getRelation($relation) as $quotation) {
                         $quotation->setAttribute('display_quote', $useLatestQuote
                             ? optional($quotation->latestQuotation)->amount_excluding_tax
-                            : $item->quotation_amount);
+                            : $settledQuote);
                         // 区分（請求＝もらい / 支払＝はらい）。行の地色・バッジに使う。
                         $quotation->setAttribute('billing_target', $isBilling);
                         // 操作できる行か（処理フロー J列）。false の行は一覧に出すが操作させない（K列）。
@@ -194,6 +198,59 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         $this->attachCommentMeta($paginator);
 
         return $paginator;
+    }
+
+    /**
+     * 確定見積（項目 ID → 税抜金額）を求める。
+     *
+     * 確定見積＝**選定済み（`approval_status <> 'DRAFT'`）の支払見積先の最新見積額**
+     * （`t_payable_quotations` の `is_latest` の `amount_excluding_tax`）。
+     * 相見積・確定見積・見積額はいずれも対応テーブルの `amount_excluding_tax` を出す方針に揃える。
+     *
+     * `t_building_budget_items.quotation_amount` は使わない。同列は felix_total の実行予算画面で
+     * 保存し直したときにだけ同期される（丸めた）コピーで、fix 側の選定確定では更新されないため、
+     * 未同期のまま空になったり、未選定の項目に古い値が残ったりして実データとズレる。
+     *
+     * 一覧の絞り込み（見積先名・ステータス）で選定済みの行が表示対象から外れていても拾えるよう、
+     * 表示中の項目 ID から引き直す。同一項目に選定済みが複数あるときは最小 ID の行を採用する
+     * （業者選定は1業者が前提。旧 felix_total の `adoption_flg=1` に相当）。
+     *
+     * @param  LengthAwarePaginator<int, TBuilding>  $paginator
+     * @return array<int, int> 項目 ID → 税抜金額（選定済みが無い項目は含めない＝画面は「—」）
+     */
+    private function settledQuoteMap(LengthAwarePaginator $paginator): array
+    {
+        $itemIds = [];
+        foreach ($paginator as $building) {
+            foreach ($building->budgetItems as $item) {
+                $itemIds[(int) $item->id] = true;
+            }
+        }
+        $itemIds = array_keys($itemIds);
+
+        if ($itemIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('t_payable_partners as p')
+            ->join('t_payable_quotations as q', function ($join): void {
+                $join->on('q.payable_partner_id', '=', 'p.id')
+                    ->where('q.is_latest', true)
+                    ->whereNull('q.deleted_at');
+            })
+            ->whereIn('p.building_budget_item_id', $itemIds)
+            ->where('p.approval_status', '<>', 'DRAFT')
+            ->whereNull('p.deleted_at')
+            ->orderBy('p.id')
+            ->get(['p.building_budget_item_id as item_id', 'q.amount_excluding_tax as amount']);
+
+        $map = [];
+        foreach ($rows as $row) {
+            // orderBy('p.id') のため、最初に現れた（＝最小 ID の）選定済み見積先の額を採用する。
+            $map[(int) $row->item_id] ??= (int) $row->amount;
+        }
+
+        return $map;
     }
 
     /**

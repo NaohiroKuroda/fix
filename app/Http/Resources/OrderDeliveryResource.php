@@ -89,8 +89,10 @@ class OrderDeliveryResource extends JsonResource
             // 金額列。発注実行=標準単価/予算単価/相見積、発注承認以降=予算単価/見積/発注。
             'masterPrice' => Format::yen($item->master_price),
             'budgetPrice' => Format::yen($item->budget_price),
-            // 見積（相見積）＝業者の見積額（最新の相見積履歴）。
-            'quotePrice' => Format::yen(optional($quotation->latestHistory)->amount_excluding_tax),
+            // 見積（相見積）＝業者の見積額（最新の相見積 = t_payable_quotations.is_latest）。
+            // リポジトリが `latestQuotation` を eager load している（存在しない `latestHistory` を
+            // 読んでいたため、この列は常に空になっていた）。
+            'quotePrice' => Format::yen(optional($quotation->latestQuotation)->amount_excluding_tax),
             // 発注＝発注金額（発注前は null）。
             'orderPrice' => Format::yen($order?->amount),
             // 承諾の残り期限（日数）。発注日 + 承諾期限（10日）- 今日。発注前は null。

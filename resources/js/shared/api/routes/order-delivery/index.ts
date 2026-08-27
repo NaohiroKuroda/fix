@@ -8,8 +8,8 @@ import deliveryReport0ef403 from './delivery-report'
 import deliveryApproval3c1f0b from './delivery-approval'
 import invoiceApproval4acfd2 from './invoice-approval'
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::orderExecution
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::orderExecution
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:16
 * @route '/order-delivery/order-execution'
 */
 export const orderExecution = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -23,8 +23,8 @@ orderExecution.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::orderExecution
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::orderExecution
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:16
 * @route '/order-delivery/order-execution'
 */
 orderExecution.url = (options?: RouteQueryOptions) => {
@@ -32,8 +32,8 @@ orderExecution.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::orderExecution
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::orderExecution
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:16
 * @route '/order-delivery/order-execution'
 */
 orderExecution.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -42,8 +42,8 @@ orderExecution.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::orderExecution
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::orderExecution
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:16
 * @route '/order-delivery/order-execution'
 */
 orderExecution.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -52,8 +52,8 @@ orderExecution.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::orderExecution
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::orderExecution
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:16
 * @route '/order-delivery/order-execution'
 */
 const orderExecutionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -62,8 +62,8 @@ const orderExecutionForm = (options?: RouteQueryOptions): RouteFormDefinition<'g
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::orderExecution
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::orderExecution
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:16
 * @route '/order-delivery/order-execution'
 */
 orderExecutionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -72,8 +72,8 @@ orderExecutionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::orderExecution
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::orderExecution
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:16
 * @route '/order-delivery/order-execution'
 */
 orderExecutionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -89,8 +89,8 @@ orderExecutionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 orderExecution.form = orderExecutionForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderApprovalController::orderApproval
-* @see app/Http/Controllers/OrderDelivery/OrderApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderApprovalController::orderApproval
+* @see app/Http/Controllers/Order/Payable/OrderApprovalController.php:17
 * @route '/order-delivery/order-approval'
 */
 export const orderApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -104,8 +104,8 @@ orderApproval.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderApprovalController::orderApproval
-* @see app/Http/Controllers/OrderDelivery/OrderApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderApprovalController::orderApproval
+* @see app/Http/Controllers/Order/Payable/OrderApprovalController.php:17
 * @route '/order-delivery/order-approval'
 */
 orderApproval.url = (options?: RouteQueryOptions) => {
@@ -113,8 +113,8 @@ orderApproval.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderApprovalController::orderApproval
-* @see app/Http/Controllers/OrderDelivery/OrderApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderApprovalController::orderApproval
+* @see app/Http/Controllers/Order/Payable/OrderApprovalController.php:17
 * @route '/order-delivery/order-approval'
 */
 orderApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -123,8 +123,8 @@ orderApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderApprovalController::orderApproval
-* @see app/Http/Controllers/OrderDelivery/OrderApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderApprovalController::orderApproval
+* @see app/Http/Controllers/Order/Payable/OrderApprovalController.php:17
 * @route '/order-delivery/order-approval'
 */
 orderApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -133,8 +133,8 @@ orderApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderApprovalController::orderApproval
-* @see app/Http/Controllers/OrderDelivery/OrderApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderApprovalController::orderApproval
+* @see app/Http/Controllers/Order/Payable/OrderApprovalController.php:17
 * @route '/order-delivery/order-approval'
 */
 const orderApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -143,8 +143,8 @@ const orderApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderApprovalController::orderApproval
-* @see app/Http/Controllers/OrderDelivery/OrderApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderApprovalController::orderApproval
+* @see app/Http/Controllers/Order/Payable/OrderApprovalController.php:17
 * @route '/order-delivery/order-approval'
 */
 orderApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -153,8 +153,8 @@ orderApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderApprovalController::orderApproval
-* @see app/Http/Controllers/OrderDelivery/OrderApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderApprovalController::orderApproval
+* @see app/Http/Controllers/Order/Payable/OrderApprovalController.php:17
 * @route '/order-delivery/order-approval'
 */
 orderApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -170,8 +170,8 @@ orderApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get
 orderApproval.form = orderApprovalForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelRequestController::orderCancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderCancelRequestController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelRequestController::orderCancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderCancelRequestController.php:16
 * @route '/order-delivery/order-cancel-request'
 */
 export const orderCancelRequest = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -185,8 +185,8 @@ orderCancelRequest.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelRequestController::orderCancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderCancelRequestController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelRequestController::orderCancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderCancelRequestController.php:16
 * @route '/order-delivery/order-cancel-request'
 */
 orderCancelRequest.url = (options?: RouteQueryOptions) => {
@@ -194,8 +194,8 @@ orderCancelRequest.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelRequestController::orderCancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderCancelRequestController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelRequestController::orderCancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderCancelRequestController.php:16
 * @route '/order-delivery/order-cancel-request'
 */
 orderCancelRequest.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -204,8 +204,8 @@ orderCancelRequest.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelRequestController::orderCancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderCancelRequestController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelRequestController::orderCancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderCancelRequestController.php:16
 * @route '/order-delivery/order-cancel-request'
 */
 orderCancelRequest.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -214,8 +214,8 @@ orderCancelRequest.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelRequestController::orderCancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderCancelRequestController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelRequestController::orderCancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderCancelRequestController.php:16
 * @route '/order-delivery/order-cancel-request'
 */
 const orderCancelRequestForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -224,8 +224,8 @@ const orderCancelRequestForm = (options?: RouteQueryOptions): RouteFormDefinitio
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelRequestController::orderCancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderCancelRequestController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelRequestController::orderCancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderCancelRequestController.php:16
 * @route '/order-delivery/order-cancel-request'
 */
 orderCancelRequestForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -234,8 +234,8 @@ orderCancelRequestForm.get = (options?: RouteQueryOptions): RouteFormDefinition<
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelRequestController::orderCancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderCancelRequestController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelRequestController::orderCancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderCancelRequestController.php:16
 * @route '/order-delivery/order-cancel-request'
 */
 orderCancelRequestForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -251,8 +251,8 @@ orderCancelRequestForm.head = (options?: RouteQueryOptions): RouteFormDefinition
 orderCancelRequest.form = orderCancelRequestForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelApprovalController::orderCancelApproval
-* @see app/Http/Controllers/OrderDelivery/OrderCancelApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelApprovalController::orderCancelApproval
+* @see app/Http/Controllers/Order/Payable/OrderCancelApprovalController.php:16
 * @route '/order-delivery/order-cancel-approval'
 */
 export const orderCancelApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -266,8 +266,8 @@ orderCancelApproval.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelApprovalController::orderCancelApproval
-* @see app/Http/Controllers/OrderDelivery/OrderCancelApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelApprovalController::orderCancelApproval
+* @see app/Http/Controllers/Order/Payable/OrderCancelApprovalController.php:16
 * @route '/order-delivery/order-cancel-approval'
 */
 orderCancelApproval.url = (options?: RouteQueryOptions) => {
@@ -275,8 +275,8 @@ orderCancelApproval.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelApprovalController::orderCancelApproval
-* @see app/Http/Controllers/OrderDelivery/OrderCancelApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelApprovalController::orderCancelApproval
+* @see app/Http/Controllers/Order/Payable/OrderCancelApprovalController.php:16
 * @route '/order-delivery/order-cancel-approval'
 */
 orderCancelApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -285,8 +285,8 @@ orderCancelApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelApprovalController::orderCancelApproval
-* @see app/Http/Controllers/OrderDelivery/OrderCancelApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelApprovalController::orderCancelApproval
+* @see app/Http/Controllers/Order/Payable/OrderCancelApprovalController.php:16
 * @route '/order-delivery/order-cancel-approval'
 */
 orderCancelApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -295,8 +295,8 @@ orderCancelApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelApprovalController::orderCancelApproval
-* @see app/Http/Controllers/OrderDelivery/OrderCancelApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelApprovalController::orderCancelApproval
+* @see app/Http/Controllers/Order/Payable/OrderCancelApprovalController.php:16
 * @route '/order-delivery/order-cancel-approval'
 */
 const orderCancelApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -305,8 +305,8 @@ const orderCancelApprovalForm = (options?: RouteQueryOptions): RouteFormDefiniti
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelApprovalController::orderCancelApproval
-* @see app/Http/Controllers/OrderDelivery/OrderCancelApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelApprovalController::orderCancelApproval
+* @see app/Http/Controllers/Order/Payable/OrderCancelApprovalController.php:16
 * @route '/order-delivery/order-cancel-approval'
 */
 orderCancelApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -315,8 +315,8 @@ orderCancelApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderCancelApprovalController::orderCancelApproval
-* @see app/Http/Controllers/OrderDelivery/OrderCancelApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\OrderCancelApprovalController::orderCancelApproval
+* @see app/Http/Controllers/Order/Payable/OrderCancelApprovalController.php:16
 * @route '/order-delivery/order-cancel-approval'
 */
 orderCancelApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -332,8 +332,8 @@ orderCancelApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinitio
 orderCancelApproval.form = orderCancelApprovalForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
 * @route '/order-delivery/order-acceptance'
 */
 export const orderAcceptance = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -347,8 +347,8 @@ orderAcceptance.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptance.url = (options?: RouteQueryOptions) => {
@@ -356,8 +356,8 @@ orderAcceptance.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -366,8 +366,8 @@ orderAcceptance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -376,8 +376,8 @@ orderAcceptance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
 * @route '/order-delivery/order-acceptance'
 */
 const orderAcceptanceForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -386,8 +386,8 @@ const orderAcceptanceForm = (options?: RouteQueryOptions): RouteFormDefinition<'
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptanceForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -396,8 +396,8 @@ orderAcceptanceForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:17
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptanceForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -413,8 +413,8 @@ orderAcceptanceForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'g
 orderAcceptance.form = orderAcceptanceForm
 
 /**
-* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
-* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @see \App\Http\Controllers\Order\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Order/Billing/BillingOrderConfirmationController.php:16
 * @route '/order-delivery/billing-order-confirmation'
 */
 export const billingOrderConfirmation = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -428,8 +428,8 @@ billingOrderConfirmation.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
-* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @see \App\Http\Controllers\Order\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Order/Billing/BillingOrderConfirmationController.php:16
 * @route '/order-delivery/billing-order-confirmation'
 */
 billingOrderConfirmation.url = (options?: RouteQueryOptions) => {
@@ -437,8 +437,8 @@ billingOrderConfirmation.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
-* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @see \App\Http\Controllers\Order\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Order/Billing/BillingOrderConfirmationController.php:16
 * @route '/order-delivery/billing-order-confirmation'
 */
 billingOrderConfirmation.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -447,8 +447,8 @@ billingOrderConfirmation.get = (options?: RouteQueryOptions): RouteDefinition<'g
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
-* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @see \App\Http\Controllers\Order\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Order/Billing/BillingOrderConfirmationController.php:16
 * @route '/order-delivery/billing-order-confirmation'
 */
 billingOrderConfirmation.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -457,8 +457,8 @@ billingOrderConfirmation.head = (options?: RouteQueryOptions): RouteDefinition<'
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
-* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @see \App\Http\Controllers\Order\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Order/Billing/BillingOrderConfirmationController.php:16
 * @route '/order-delivery/billing-order-confirmation'
 */
 const billingOrderConfirmationForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -467,8 +467,8 @@ const billingOrderConfirmationForm = (options?: RouteQueryOptions): RouteFormDef
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
-* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @see \App\Http\Controllers\Order\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Order/Billing/BillingOrderConfirmationController.php:16
 * @route '/order-delivery/billing-order-confirmation'
 */
 billingOrderConfirmationForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -477,8 +477,8 @@ billingOrderConfirmationForm.get = (options?: RouteQueryOptions): RouteFormDefin
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingOrderConfirmationController::billingOrderConfirmation
-* @see app/Http/Controllers/Billing/BillingOrderConfirmationController.php:15
+* @see \App\Http\Controllers\Order\Billing\BillingOrderConfirmationController::billingOrderConfirmation
+* @see app/Http/Controllers/Order/Billing/BillingOrderConfirmationController.php:16
 * @route '/order-delivery/billing-order-confirmation'
 */
 billingOrderConfirmationForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -494,8 +494,8 @@ billingOrderConfirmationForm.head = (options?: RouteQueryOptions): RouteFormDefi
 billingOrderConfirmation.form = billingOrderConfirmationForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::deliveryReport
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:16
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::deliveryReport
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:16
 * @route '/order-delivery/delivery-report'
 */
 export const deliveryReport = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -509,8 +509,8 @@ deliveryReport.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::deliveryReport
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:16
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::deliveryReport
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:16
 * @route '/order-delivery/delivery-report'
 */
 deliveryReport.url = (options?: RouteQueryOptions) => {
@@ -518,8 +518,8 @@ deliveryReport.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::deliveryReport
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:16
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::deliveryReport
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:16
 * @route '/order-delivery/delivery-report'
 */
 deliveryReport.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -528,8 +528,8 @@ deliveryReport.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::deliveryReport
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:16
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::deliveryReport
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:16
 * @route '/order-delivery/delivery-report'
 */
 deliveryReport.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -538,8 +538,8 @@ deliveryReport.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::deliveryReport
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:16
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::deliveryReport
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:16
 * @route '/order-delivery/delivery-report'
 */
 const deliveryReportForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -548,8 +548,8 @@ const deliveryReportForm = (options?: RouteQueryOptions): RouteFormDefinition<'g
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::deliveryReport
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:16
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::deliveryReport
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:16
 * @route '/order-delivery/delivery-report'
 */
 deliveryReportForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -558,8 +558,8 @@ deliveryReportForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::deliveryReport
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:16
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::deliveryReport
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:16
 * @route '/order-delivery/delivery-report'
 */
 deliveryReportForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -575,8 +575,8 @@ deliveryReportForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 deliveryReport.form = deliveryReportForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::deliveryApproval
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::deliveryApproval
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:17
 * @route '/order-delivery/delivery-approval'
 */
 export const deliveryApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -590,8 +590,8 @@ deliveryApproval.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::deliveryApproval
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::deliveryApproval
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:17
 * @route '/order-delivery/delivery-approval'
 */
 deliveryApproval.url = (options?: RouteQueryOptions) => {
@@ -599,8 +599,8 @@ deliveryApproval.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::deliveryApproval
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::deliveryApproval
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:17
 * @route '/order-delivery/delivery-approval'
 */
 deliveryApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -609,8 +609,8 @@ deliveryApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => 
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::deliveryApproval
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::deliveryApproval
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:17
 * @route '/order-delivery/delivery-approval'
 */
 deliveryApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -619,8 +619,8 @@ deliveryApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::deliveryApproval
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::deliveryApproval
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:17
 * @route '/order-delivery/delivery-approval'
 */
 const deliveryApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -629,8 +629,8 @@ const deliveryApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::deliveryApproval
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::deliveryApproval
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:17
 * @route '/order-delivery/delivery-approval'
 */
 deliveryApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -639,8 +639,8 @@ deliveryApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'g
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::deliveryApproval
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:17
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::deliveryApproval
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:17
 * @route '/order-delivery/delivery-approval'
 */
 deliveryApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -656,8 +656,8 @@ deliveryApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'
 deliveryApproval.form = deliveryApprovalForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::invoiceApproval
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::invoiceApproval
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:16
 * @route '/order-delivery/invoice-approval'
 */
 export const invoiceApproval = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -671,8 +671,8 @@ invoiceApproval.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::invoiceApproval
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::invoiceApproval
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:16
 * @route '/order-delivery/invoice-approval'
 */
 invoiceApproval.url = (options?: RouteQueryOptions) => {
@@ -680,8 +680,8 @@ invoiceApproval.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::invoiceApproval
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::invoiceApproval
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:16
 * @route '/order-delivery/invoice-approval'
 */
 invoiceApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -690,8 +690,8 @@ invoiceApproval.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::invoiceApproval
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::invoiceApproval
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:16
 * @route '/order-delivery/invoice-approval'
 */
 invoiceApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -700,8 +700,8 @@ invoiceApproval.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::invoiceApproval
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::invoiceApproval
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:16
 * @route '/order-delivery/invoice-approval'
 */
 const invoiceApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -710,8 +710,8 @@ const invoiceApprovalForm = (options?: RouteQueryOptions): RouteFormDefinition<'
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::invoiceApproval
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::invoiceApproval
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:16
 * @route '/order-delivery/invoice-approval'
 */
 invoiceApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -720,8 +720,8 @@ invoiceApprovalForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::invoiceApproval
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:16
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::invoiceApproval
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:16
 * @route '/order-delivery/invoice-approval'
 */
 invoiceApprovalForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

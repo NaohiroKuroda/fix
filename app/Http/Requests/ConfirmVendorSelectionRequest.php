@@ -7,14 +7,12 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * 業者選定の確定（業者選定画面）の入力。
  *
- * ボタンで選定された見積先（EstimateUnitCompany.id）の配列を受け取り、採用業者として確定する。
+ * ボタンで選定された支払取引先（t_payable_partners.id）の配列を受け取り、採用業者として確定する。
  */
 class ConfirmVendorSelectionRequest extends FormRequest
 {
     /**
      * リクエストの認可可否を返す。
-     *
-     * @return bool
      */
     public function authorize(): bool
     {
@@ -29,8 +27,8 @@ class ConfirmVendorSelectionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'companyIds' => ['required', 'array', 'min:1'],
-            'companyIds.*' => ['integer', 'distinct', 'exists:estimate_unit_companies,id'],
+            'partnerIds' => ['required', 'array', 'min:1'],
+            'partnerIds.*' => ['integer', 'distinct', 'exists:t_payable_partners,id'],
         ];
     }
 
@@ -42,8 +40,8 @@ class ConfirmVendorSelectionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'companyIds.required' => '発注業者を選定してください。',
-            'companyIds.min' => '発注業者を選定してください。',
+            'partnerIds.required' => '発注業者を選定してください。',
+            'partnerIds.min' => '発注業者を選定してください。',
         ];
     }
 
@@ -52,10 +50,10 @@ class ConfirmVendorSelectionRequest extends FormRequest
      *
      * @return list<int>
      */
-    public function companyIds(): array
+    public function partnerIds(): array
     {
         /** @var list<int|string> $ids */
-        $ids = $this->input('companyIds', []);
+        $ids = $this->input('partnerIds', []);
 
         return array_values(array_map(intval(...), $ids));
     }

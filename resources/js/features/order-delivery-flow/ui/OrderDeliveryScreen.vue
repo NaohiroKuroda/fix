@@ -1,12 +1,12 @@
 <script setup lang="ts">
 // 発注〜納品〜請求フローの共通画面コンテナ。7画面（mode）で共用する。
-// 見積管理（QuotationManagementScreen）とほぼ同じUI：物件カード＋右端ボタン＋項目横チャット。
+// 見積管理（PayableScreen）とほぼ同じUI：物件カード＋右端ボタン＋項目横チャット。
 // 業者はシステムに登録しないため、ファイル添付は持たず、全画面「選択→ヘッダー確定／否認」だけ。
 // チャットは見積管理と同じ項目単位コメント（quotation-management の quotation-messages ルート）を流用する。
 import { computed, inject, nextTick, reactive, ref, type Ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { X, Ban, MessageSquare, Send, Paperclip, FileText, XCircle, CheckCircle2, ReceiptText } from 'lucide-vue-next';
-import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/shared/api/routes/quotation-management/quotation-messages';
+import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/shared/api/routes/quotation-management/payable-messages';
 import { SIDEBAR_COLLAPSED } from '@/shared/ui/layouts';
 import { FilterBar } from '@/shared/ui/filter-bar';
 import { Pager } from '@/shared/ui/pager';
@@ -112,7 +112,7 @@ const submitReject = (): void => {
     rejectForm.post(props.rejectUrl, { preserveScroll: true, onSuccess: () => closeReject() });
 };
 
-// 取消モーダル（理由必須）：部長取消申請／取消承認画面（QuotationManagementScreen）と同じ、理由入力→確定の流れ。
+// 取消モーダル（理由必須）：部長取消申請／取消承認画面（PayableScreen）と同じ、理由入力→確定の流れ。
 // 業者承諾確認では追加列の「取消申請」、発注取消承認では主操作の「取消承認」として使う（mode で文言を出し分け）。
 const isCancelApprovalMode = computed(() => props.mode === 'order-cancel-approval');
 const cancelModalTitle = computed(() => (isCancelApprovalMode.value ? '取消承認' : '取消申請'));

@@ -107,7 +107,7 @@ class EstimateService
 
 - **Service 層で try-catch**: Service の各公開メソッドは処理を `try` で囲み、`catch (\Exception $e)` で
   失敗時に `Log::error()` へ**統一フォーマット**で記録する。第一引数は失敗内容の和文、第二引数の配列は
-  `message`（`$e->getMessage()`）→ 主要な業務コンテキスト（`companyId` 等）→ `file` / `line` / `trace`
+  `message`（`$e->getMessage()`）→ 主要な業務コンテキスト（`partnerId` 等）→ `file` / `line` / `trace`
   （`$e->getFile()` / `getLine()` / `getTraceAsString()`）の順とする。
   記録後は `App\Exceptions\ServiceException` を**メッセージ無し**で投げ直す（`previous` に元例外を保持）。
   ユーザー向け文言は `ServiceException` の既定メッセージを用いる。
@@ -123,7 +123,7 @@ class EstimateService
 
 ```php
 // Service：記録してドメイン例外へ変換
-public function reject(int $companyId, string $reason): int
+public function reject(int $partnerId, string $reason): int
 {
     try {
         // ...ユースケース本体...
@@ -131,7 +131,7 @@ public function reject(int $companyId, string $reason): int
     } catch (\Exception $e) {
         Log::error('部長承認の否認に失敗しました', [
             'message'   => $e->getMessage(),
-            'companyId' => $companyId,
+            'partnerId' => $partnerId,
             'file'      => $e->getFile(),
             'line'      => $e->getLine(),
             'trace'     => $e->getTraceAsString(),
@@ -170,16 +170,31 @@ public function reject(int $companyId, string $reason): int
 ```
 app/
 ├── Http/
-│   ├── Controllers/        # 薄いコントローラ
+│   ├── Controllers/        # 薄いコントローラ。業務（見積管理 / 発注）× 区分（支払 / 請求）で分ける
+│   │   ├── Quotation/      # 見積管理
+│   │   │   ├── Payable/    # 【支払】見積依頼・業者選定・部長承認・取消申請・取消承認
+│   │   │   └── Billing/    # 【請求】見積作成・見積承認・見積取消申請・見積取消承認
+│   │   ├── Order/          # 発注
+│   │   │   ├── Payable/    # 【支払】発注実行〜業者承諾確認・完了確認・請求取消承認
+│   │   │   └── Billing/    # 【請求】発注書確認
+│   │   └── Comment/        # やり取り（コメント）※支払・請求で共用
 │   ├── Requests/           # FormRequest（バリデーション）
 │   ├── Resources/          # JsonResource（レスポンス整形）
 │   └── Middleware/
 ├── Repositories/           # データアクセス層
 │   ├── Contracts/          # Repository インターフェース
-│   │   └── EstimateRepositoryInterface.php
-│   └── EstimateRepository.php
+│   │   ├── PayableRepositoryInterface.php
+│   │   └── BillingRepositoryInterface.php
+│   ├── PayableQuotationRepository.php
+│   └── BillingQuotationRepository.php
 ├── Actions/                # 単一目的のドメイン処理（任意）
 ├── Services/               # ドメインロジック（Controller の単一の入口・必須経路）
+│   ├── Quotation/          # 見積管理（Controllers と同じ Payable / Billing の分け方）
+│   │   ├── Payable/
+│   │   └── Billing/
+│   ├── Order/              # 発注
+│   │   └── Payable/
+│   ├── Comment/            # やり取り（コメント）※支払・請求で共用
 │   └── FelixTotal/         # 現行 felix_total への外部連携ゲートウェイ（HTTP + cross_auth）
 ├── Utils/                  # ユーティリティクラス（ステートレス・static のみ）
 │   ├── Format.php
@@ -325,7 +340,7 @@ class StatusManagementController extends Controller
 
 ### 3.5 外部システム連携（felix_total の見積依頼）
 
-新スキーマ（`BuildingQuotationRepository`）には、見積依頼の履歴を保存するテーブルが存在しない
+新スキーマ（`PayableQuotationRepository`）には、見積依頼の履歴を保存するテーブルが存在しない
 （旧スキーマの `estimate_order_histories` 相当が無い）。また見積依頼は **トークン発行・依頼履歴作成・
 業者へのメール送信** を伴う複合処理であり、その実体は現行 felix_total（laravel-admin）の
 `EstimateCustomDetailController@order_estimate` が唯一の正である。
@@ -335,7 +350,7 @@ class StatusManagementController extends Controller
 `app/Services/FelixTotal/FelixTotalQuoteRequestGateway.php`（concrete・自動解決）に集約する。
 
 - **永続化境界としての位置づけ**: 新スキーマでは「見積依頼を記録する」＝「felix_total を呼ぶ」である。
-  そのため Repository（`BuildingQuotationRepository::recordQuoteRequests`）からゲートウェイを呼ぶ。
+  そのため Repository（`PayableQuotationRepository::recordQuoteRequests`）からゲートウェイを呼ぶ。
   ゲートウェイ自身は Eloquent に触れず、HTTP と認証のみを担う（モデルアクセスは Repository に限る方針を維持）。
 - **ID 写像**: チェックされた `t_payable_partners.id` を、`source_id`（旧 `estimate_unit_companies.id`）と
   その費用 `t_building_budget_items.source_id`（旧 `estimate_units.id`）へ写像し、
@@ -441,7 +456,7 @@ return TCostQuotation::query()
   `2026_08_27_000000_rename_building_cost_item_morph_type` で既存行を
   `App\Models\TBuildingBudgetItem` へ書き換え、別名登録は廃止した。
   以後、モーフ型は `getMorphClass()` が返す実クラス名で保存される。
-- **区分（請求／支払）**: 支払系の一覧（`BuildingQuotationResource`）は `t_payable_partners` のみを
+- **区分（請求／支払）**: 支払系の一覧（`PayablePartnerResource`）は `t_payable_partners` のみを
   読むため `billingTarget` は常に `false`。請求（もらい）は【請求】系画面が扱う。
 
 ## 4. レスポンス整形（JsonResource）

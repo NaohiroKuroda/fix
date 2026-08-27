@@ -56,7 +56,7 @@
 | S10 | felix_total 側の反映 | felix_total スキーマ（見積依頼／発注確定） | 見積依頼・業者選定の確定は felix_total へも反映（同一DB） | 見積依頼・業者選定 |
 
 > 表示専用の派生値（一覧メタ）: `comments_count` / `has_comments` / `unread_count` は
-> `BuildingQuotationRepository::attachCommentMeta()` が S7・S8 から一覧取得時に算出する（DB列ではない）。
+> `PayableQuotationRepository::attachCommentMeta()` が S7・S8 から一覧取得時に算出する（DB列ではない）。
 
 ### 3-2. イベントの一覧（何が起きたら、何が更新され、誰に伝わるか）
 

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::execute
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:25
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::execute
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:25
 * @route '/order-delivery/order-execution'
 */
 export const execute = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ execute.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::execute
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:25
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::execute
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:25
 * @route '/order-delivery/order-execution'
 */
 execute.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ execute.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::execute
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:25
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::execute
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:25
 * @route '/order-delivery/order-execution'
 */
 execute.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ execute.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::execute
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:25
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::execute
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:25
 * @route '/order-delivery/order-execution'
 */
 const executeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const executeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderExecutionController::execute
-* @see app/Http/Controllers/OrderDelivery/OrderExecutionController.php:25
+* @see \App\Http\Controllers\Order\Payable\OrderExecutionController::execute
+* @see app/Http/Controllers/Order/Payable/OrderExecutionController.php:25
 * @route '/order-delivery/order-execution'
 */
 executeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/CancelRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\CancelRequestController::confirm
+* @see app/Http/Controllers/Quotation/Payable/CancelRequestController.php:41
 * @route '/quotation-management/cancel-request'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ confirm.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/CancelRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\CancelRequestController::confirm
+* @see app/Http/Controllers/Quotation/Payable/CancelRequestController.php:41
 * @route '/quotation-management/cancel-request'
 */
 confirm.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ confirm.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/CancelRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\CancelRequestController::confirm
+* @see app/Http/Controllers/Quotation/Payable/CancelRequestController.php:41
 * @route '/quotation-management/cancel-request'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/CancelRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\CancelRequestController::confirm
+* @see app/Http/Controllers/Quotation/Payable/CancelRequestController.php:41
 * @route '/quotation-management/cancel-request'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\CancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/CancelRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\CancelRequestController::confirm
+* @see app/Http/Controllers/Quotation/Payable/CancelRequestController.php:41
 * @route '/quotation-management/cancel-request'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

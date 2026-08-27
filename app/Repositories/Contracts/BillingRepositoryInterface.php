@@ -8,7 +8,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 /**
  * 請求（もらい）系画面のデータ取得・更新の入口。
  *
- * 支払（はらい）系は {@see QuotationRepositoryInterface}。承認ステータスの語彙は共通
+ * 支払（はらい）系は {@see PayableRepositoryInterface}。承認ステータスの語彙は共通
  * （DRAFT / APPLIED / APPROVED / CANCEL_APPLIED / CANCELLED）。
  */
 interface BillingRepositoryInterface

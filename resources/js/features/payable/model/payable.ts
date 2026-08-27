@@ -1,0 +1,116 @@
+// 見積管理画面（見積り依頼 / 業者選定 ほか）の型。
+// サーバの PayablePartnerResource と一致させること。
+
+import type { ProjectFilters } from '@/shared/api';
+
+/** 一覧のページネーション。形は他フローと共通なので shared/api の型をそのまま使う。 */
+export type { Pagination as PayablePagination } from '@/shared/api';
+
+/** 案件 → 項目 → 見積先 を展開した1行。 */
+export interface PayableRow {
+    budgetItemId: number;
+    partnerId: number | null;
+    /** 項目名（全行に入る）。表示は「表示中の同一項目の先頭行」にのみ出す（PayableProjectCard 側で制御）。 */
+    itemName: string;
+    vendorName: string;
+    /** 見積先の詳細（iframe で開く felix_total の見積先編集フォーム）。会社名リンクに使う。 */
+    vendorDetailUrl: string | null;
+    /** 業者マイページ（別タブで開く auto_login の estimate 編集ページ）。右端ボタンに使う。 */
+    vendorUrl: string | null;
+    /** 「見積先を追加」リンク先（iframe で開く felix_total の見積先追加画面）。項目（unit）単位。 */
+    addVendorUrl: string | null;
+    masterPrice: number | null;
+    budgetPrice: number | null;
+    quotePrice: number | null;
+    /** 見積依頼済み（送信回数が1回以上）。 */
+    requested: boolean;
+    /** 見積依頼の送信回数（t_cost_quotation_requests の件数）。0=未依頼。見積依頼画面のみ意味を持つ。 */
+    sendCount: number;
+    /**
+     * 最終依頼日時（t_cost_quotation_requests.requested_at の最大値。`Y/m/d H:i` 整形済み）。
+     * 未依頼および見積依頼以外の画面は null。見積依頼画面のみ意味を持つ。
+     */
+    lastRequestedAt: string | null;
+    /** やり取り（コメント）の件数（費用項目単位）。業者選定・部長承認の「やり取り」列に表示。 */
+    messageCount: number;
+    /** やり取り（コメント）が1件以上あるか。コメントボタンを選定ボタンと同色にする判定に使う。 */
+    hasComments: boolean;
+    /** やり取りの未読数（自分の最終既読より新しい他者コメント）。0=未読なし。 */
+    unreadCount: number;
+    /** 発注業者として選定済み（adoption_flg=1）。 */
+    selected: boolean;
+    /** 部長承認済み（fix_status=1）。 */
+    approved: boolean;
+    /** 取消申請中（cancel_flg>=1）。 */
+    cancelRequested: boolean;
+    /** 取消承認済み（cancel_flg>=2）。 */
+    cancelApproved: boolean;
+    /** 仮選定（新スキーマ t_cost_quotations.is_drafted）。旧スキーマは常に false。 */
+    provisional: boolean;
+    /**
+     * 請求先（新スキーマ t_cost_quotations.is_billing_target）。
+     * 業者追加時に「請求先とする」をONにした業者。見積依頼画面では金額3列・仮選定を「ー」表示にし、
+     * 操作列はチェック不要で即時送信する「見積送信」ボタンにする。
+     */
+    billingTarget: boolean;
+    /** 部長承認で否認され業者選定へ差し戻された（項目に「【否認】」コメントあり）。ボタンの赤色表示に使う。 */
+    denied: boolean;
+    /**
+     * 承認ステータス（t_payable_partners.approval_status）。状態バッジの表示に使う。
+     * 値は見積管理_処理フロー準拠（00_共通仕様_詳細設計 §0）。
+     */
+    approvalStatus: PayableApprovalStatus | null;
+    /**
+     * この画面で操作できる行か（処理フロー J列「表示承認ステータス」）。
+     * false の行も一覧には出すが、操作は不可にする（K列「ステータス外表示形式」）。
+     */
+    operable: boolean;
+}
+
+/** 承認ステータス（支払・請求で共通の語彙）。 */
+export type PayableApprovalStatus =
+    | 'DRAFT'
+    | 'APPLIED'
+    | 'APPROVED'
+    | 'CANCEL_APPLIED'
+    | 'CANCELLED';
+
+/** 状態バッジの表示名。 */
+export const PAYABLE_STATUS_LABEL: Record<PayableApprovalStatus, string> = {
+    DRAFT: '未申請',
+    APPLIED: '申請中',
+    APPROVED: '承認済',
+    CANCEL_APPLIED: '取消申請中',
+    CANCELLED: '取消承認済',
+};
+
+/** 案件（実行予算）1件。 */
+export interface PayableProject {
+    id: number;
+    no: number | null;
+    name: string;
+    rows: PayableRow[];
+}
+
+export interface PayableFilters extends ProjectFilters {
+    /** 業者選定画面の回答状態フィルタ（全て / 回答あり / 回答なし）。サーバから常に渡る。 */
+    answer?: 'all' | 'answered' | 'unanswered';
+    /** コメント有無フィルタ（全て / コメントあり / コメントなし）。全画面共通。サーバから常に渡る。 */
+    comment?: 'all' | 'has' | 'none';
+    /**
+     * 区分。支払系画面の初期値は `payable`。
+     * `all` にすると請求取引先も同じ一覧に並ぶ（請求行は**表示のみ**で操作不可）。
+     */
+    kind?: 'all' | 'payable' | 'billing';
+}
+
+/**
+ * 画面モード（列の出し分け / アクション）。
+ * quote-request 以外は「業者選定」と同じボタン形式（押下→ヘッダー確定→API→リロード）。
+ */
+export type PayableMode =
+    | 'quote-request'
+    | 'vendor-selection'
+    | 'manager-approval'
+    | 'cancel-request'
+    | 'cancel-approval';

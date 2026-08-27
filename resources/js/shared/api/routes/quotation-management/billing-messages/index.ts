@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::index
-* @see app/Http/Controllers/Billing/BillingMessageController.php:30
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::index
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:30
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 export const index = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -15,8 +15,8 @@ index.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::index
-* @see app/Http/Controllers/Billing/BillingMessageController.php:30
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::index
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:30
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 index.url = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -48,8 +48,8 @@ index.url = (args: { partner: number | { id: number } } | [partner: number | { i
 }
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::index
-* @see app/Http/Controllers/Billing/BillingMessageController.php:30
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::index
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:30
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 index.get = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -58,8 +58,8 @@ index.get = (args: { partner: number | { id: number } } | [partner: number | { i
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::index
-* @see app/Http/Controllers/Billing/BillingMessageController.php:30
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::index
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:30
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 index.head = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -68,8 +68,8 @@ index.head = (args: { partner: number | { id: number } } | [partner: number | { 
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::index
-* @see app/Http/Controllers/Billing/BillingMessageController.php:30
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::index
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:30
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 const indexForm = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -78,8 +78,8 @@ const indexForm = (args: { partner: number | { id: number } } | [partner: number
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::index
-* @see app/Http/Controllers/Billing/BillingMessageController.php:30
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::index
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:30
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 indexForm.get = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -88,8 +88,8 @@ indexForm.get = (args: { partner: number | { id: number } } | [partner: number |
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::index
-* @see app/Http/Controllers/Billing/BillingMessageController.php:30
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::index
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:30
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 indexForm.head = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -105,8 +105,8 @@ indexForm.head = (args: { partner: number | { id: number } } | [partner: number 
 index.form = indexForm
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::store
-* @see app/Http/Controllers/Billing/BillingMessageController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:40
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 export const store = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -120,8 +120,8 @@ store.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::store
-* @see app/Http/Controllers/Billing/BillingMessageController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:40
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 store.url = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -153,8 +153,8 @@ store.url = (args: { partner: number | { id: number } } | [partner: number | { i
 }
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::store
-* @see app/Http/Controllers/Billing/BillingMessageController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:40
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 store.post = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -163,8 +163,8 @@ store.post = (args: { partner: number | { id: number } } | [partner: number | { 
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::store
-* @see app/Http/Controllers/Billing/BillingMessageController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:40
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 const storeForm = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -173,8 +173,8 @@ const storeForm = (args: { partner: number | { id: number } } | [partner: number
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingMessageController::store
-* @see app/Http/Controllers/Billing/BillingMessageController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingMessageController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingMessageController.php:40
 * @route '/quotation-management/billing-partners/{partner}/messages'
 */
 storeForm.post = (args: { partner: number | { id: number } } | [partner: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

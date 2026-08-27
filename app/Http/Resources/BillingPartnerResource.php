@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
  * 請求（もらい）系画面の案件1件分を、フロント（BillingScreen.vue）が扱う
  * 「案件 → 項目 → 請求取引先」のフラット行に整形する。
  *
- * 支払側は {@see BuildingQuotationResource}。区分「全て」のときは支払取引先も
+ * 支払側は {@see PayablePartnerResource}。区分「全て」のときは支払取引先も
  * `displayPartners` に混ざるため、区分に依存しない形で読めるようにしてある。
  *
  * @mixin TBuilding

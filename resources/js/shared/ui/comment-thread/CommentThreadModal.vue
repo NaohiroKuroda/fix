@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// やり取り（コメント）モーダル。支払系（QuotationManagementScreen）と請求系（BillingScreen）で共用する。
+// やり取り（コメント）モーダル。支払系（PayableScreen）と請求系（BillingScreen）で共用する。
 //
 // コメントは建物予算項目（t_building_budget_items）単位の1スレッドに集約されるため、
 // 同じ項目なら支払・請求のどちらの画面から開いても同じ内容が見える。
@@ -42,7 +42,7 @@ const files = ref<File[]>([]);
 const dragOver = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const openFilePicker = (): void => fileInput.value?.click();
-// 添付の制約（06_添付ファイル_詳細設計 §1・§2）。サーバ側 StoreQuotationMessageRequest と一致させる。
+// 添付の制約（06_添付ファイル_詳細設計 §1・§2）。サーバ側 StoreCommentRequest と一致させる。
 const ALLOWED_EXTENSIONS = [
     'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif',
     'pdf', 'txt',

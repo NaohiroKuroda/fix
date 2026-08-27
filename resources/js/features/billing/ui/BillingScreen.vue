@@ -3,7 +3,7 @@
 // 発注書確認 で共用し、mode（BILLING_MODE_CONFIG）で操作を出し分ける。
 //
 // もらいは相見積・業者選定が発生しない（金額は TEL 合意済みで FELIX が代理入力する）ため、
-// 支払側（quotation-flow）とは列構成・操作が異なる。詳細設計:
+// 支払側（features/payable）とは列構成・操作が異なる。詳細設計:
 //   docs/detailed-design/quotations/06〜09_請求_*_詳細設計.md
 //   docs/detailed-design/orders/02_請求_発注書確認_詳細設計.md
 //
@@ -15,7 +15,7 @@ import { FilterBar } from '@/shared/ui/filter-bar';
 import { Pager } from '@/shared/ui/pager';
 import { CommentThreadModal } from '@/shared/ui/comment-thread';
 import { useFelixTheme } from '@/shared/lib/felix-theme';
-import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/shared/api/routes/quotation-management/quotation-messages';
+import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/shared/api/routes/quotation-management/payable-messages';
 import { index as billingMessagesIndex, store as billingMessagesStore } from '@/shared/api/routes/quotation-management/billing-messages';
 import BillingProjectCard from './BillingProjectCard.vue';
 import BillingQuotationModal, { type BillingQuotationInput } from './BillingQuotationModal.vue';

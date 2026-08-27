@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * 部長取消申請 / 部長取消承認の入力。
  * 選択された見積先（t_payable_partners.id）の配列と、理由（必須）を受け取る。
- * 否認（RejectQuotationRequest）と同様、理由入力を必須にする。
+ * 否認（RejectPayableRequest）と同様、理由入力を必須にする。
  */
 class CancelActionRequest extends FormRequest
 {
@@ -22,8 +22,8 @@ class CancelActionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'companyIds' => ['required', 'array', 'min:1'],
-            'companyIds.*' => ['integer', 'distinct', 'exists:t_payable_partners,id'],
+            'partnerIds' => ['required', 'array', 'min:1'],
+            'partnerIds.*' => ['integer', 'distinct', 'exists:t_payable_partners,id'],
             'reason' => ['required', 'string', 'max:1000'],
         ];
     }
@@ -34,8 +34,8 @@ class CancelActionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'companyIds.required' => '対象の見積先を選択してください。',
-            'companyIds.min' => '対象の見積先を選択してください。',
+            'partnerIds.required' => '対象の見積先を選択してください。',
+            'partnerIds.min' => '対象の見積先を選択してください。',
             'reason.required' => '理由を入力してください。',
             'reason.max' => '理由は1000文字以内で入力してください。',
         ];
@@ -46,10 +46,10 @@ class CancelActionRequest extends FormRequest
      *
      * @return list<int>
      */
-    public function companyIds(): array
+    public function partnerIds(): array
     {
         /** @var list<int|string> $ids */
-        $ids = $this->input('companyIds', []);
+        $ids = $this->input('partnerIds', []);
 
         return array_values(array_map(intval(...), $ids));
     }

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::confirm
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:24
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::confirm
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:24
 * @route '/quotation-management/billing-quote-approval'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ confirm.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::confirm
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:24
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::confirm
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:24
 * @route '/quotation-management/billing-quote-approval'
 */
 confirm.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ confirm.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::confirm
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:24
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::confirm
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:24
 * @route '/quotation-management/billing-quote-approval'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::confirm
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:24
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::confirm
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:24
 * @route '/quotation-management/billing-quote-approval'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::confirm
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:24
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::confirm
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:24
 * @route '/quotation-management/billing-quote-approval'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -56,8 +56,8 @@ confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 confirm.form = confirmForm
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::reject
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::reject
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:40
 * @route '/quotation-management/billing-quote-approval/reject'
 */
 export const reject = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -71,8 +71,8 @@ reject.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::reject
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::reject
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:40
 * @route '/quotation-management/billing-quote-approval/reject'
 */
 reject.url = (options?: RouteQueryOptions) => {
@@ -80,8 +80,8 @@ reject.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::reject
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::reject
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:40
 * @route '/quotation-management/billing-quote-approval/reject'
 */
 reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -90,8 +90,8 @@ reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::reject
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::reject
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:40
 * @route '/quotation-management/billing-quote-approval/reject'
 */
 const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -100,8 +100,8 @@ const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteApprovalController::reject
-* @see app/Http/Controllers/Billing/BillingQuoteApprovalController.php:40
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController::reject
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteApprovalController.php:40
 * @route '/quotation-management/billing-quote-approval/reject'
 */
 rejectForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

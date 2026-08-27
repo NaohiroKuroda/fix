@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AdminUser;
 use App\Repositories\Contracts\BillingRepositoryInterface;
 use App\Repositories\Contracts\OrderDeliveryRepositoryInterface;
-use App\Models\AdminUser;
-use App\Repositories\Contracts\QuotationRepositoryInterface;
+use App\Repositories\Contracts\PayableRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -89,7 +89,7 @@ class HandleInertiaRequests extends Middleware
             // 見積管理（支払＝QuotationRepository / 請求＝BillingRepository）＋
             // 発注〜納品〜請求（OrderDeliveryRepository）を統合する。
             return [
-                ...app(QuotationRepositoryInterface::class)->pendingCounts(),
+                ...app(PayableRepositoryInterface::class)->pendingCounts(),
                 ...app(BillingRepositoryInterface::class)->pendingCounts(),
                 ...app(OrderDeliveryRepositoryInterface::class)->pendingCounts(),
             ];
@@ -97,8 +97,8 @@ class HandleInertiaRequests extends Middleware
             Log::error('メニューバッヂの集計に失敗しました', [
                 'message' => $e->getMessage(),
                 'adminId' => $admin->id,
-                'file'  => $e->getFile(),
-                'line'  => $e->getLine(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 

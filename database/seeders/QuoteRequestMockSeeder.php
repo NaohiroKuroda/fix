@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Http\Resources\BuildingQuotationResource;
+use App\Http\Resources\PayablePartnerResource;
 use App\Models\TBuilding;
 use App\Models\TBuildingBudgetItem;
 use App\Models\TPayablePartner;
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  * 見積依頼画面は t_cost_quotations.source_id が NOT NULL（felix_total 移行済み）の見積先のみ並べ、
  * 画面上のリンク（見積先名＝業者詳細 / 見積編集 / 業者追加）は source_id を felix_total の
  * estimate_unit_companies.id / estimate_units.id に埋め込んで組み立てる
- * （{@see BuildingQuotationResource}、{@see config/felix.php}）。
+ * （{@see PayablePartnerResource}、{@see config/felix.php}）。
  *
  * source_id を実在する estimate_unit_companies.id 等に一致させることで、リンク・ボタンが
  * ローカル felix_total の「既存Fix画面」を実際に開けるようにする。

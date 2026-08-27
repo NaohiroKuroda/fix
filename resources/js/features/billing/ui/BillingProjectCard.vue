@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 1案件分の明細カード（タイトル帯＋テーブル）。請求（もらい）専用。
-// 支払側（QuotationProjectCard）との違い:
+// 支払側（PayableProjectCard）との違い:
 //   - もらいは相見積・業者選定が無いため、標準単価 / 予算単価 / 仮選定は「—」固定
 //   - 区分は常に「請求」
 //   - 操作列は mode（BILLING_MODE_CONFIG.kind）で出し分ける
@@ -60,7 +60,7 @@ interface DisplayRow {
 }
 // 同一項目（itemName）の行をまとめ、先頭行にだけ項目名セル（rowspan）を出す。
 // 区分「全て」では請求（もらい）と支払（はらい）が混ざるため、項目内で請求を先・支払を後に並べ替える
-// （支払側 QuotationProjectCard と同じ並び）。並べ替えないと同じ項目が2グループに割れて項目名が重複する。
+// （支払側 PayableProjectCard と同じ並び）。並べ替えないと同じ項目が2グループに割れて項目名が重複する。
 const displayRows = computed<DisplayRow[]>(() => {
     const itemOrder: string[] = [];
     const byItem = new Map<string, BillingRow[]>();

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::cancel
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:25
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::cancel
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:25
 * @route '/order-delivery/invoice-approval'
 */
 export const cancel = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ cancel.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::cancel
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:25
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::cancel
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:25
 * @route '/order-delivery/invoice-approval'
 */
 cancel.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ cancel.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::cancel
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:25
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::cancel
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:25
 * @route '/order-delivery/invoice-approval'
 */
 cancel.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ cancel.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::cancel
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:25
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::cancel
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:25
 * @route '/order-delivery/invoice-approval'
 */
 const cancelForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const cancelForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\InvoiceApprovalController::cancel
-* @see app/Http/Controllers/OrderDelivery/InvoiceApprovalController.php:25
+* @see \App\Http\Controllers\Order\Payable\InvoiceApprovalController::cancel
+* @see app/Http/Controllers/Order/Payable/InvoiceApprovalController.php:25
 * @route '/order-delivery/invoice-approval'
 */
 cancelForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

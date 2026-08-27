@@ -1,6 +1,6 @@
 // 請求（もらい）系画面の型。サーバの BillingMockService（将来は BillingPartnerResource）と一致させること。
 //
-// もらいは「相見積・業者選定が発生しない」ため、支払（quotation-flow）と列構成・操作が異なる。
+// もらいは「相見積・業者選定が発生しない」ため、支払（features/payable）と列構成・操作が異なる。
 // 詳細設計: docs/detailed-design/quotations/06〜09_請求_*_詳細設計.md
 
 import type { ProjectFilters } from '@/shared/api';

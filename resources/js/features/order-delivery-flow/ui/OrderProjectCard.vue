@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 発注フロー1案件分の明細カード（タイトル帯＋テーブル）。見積管理の QuotationProjectCard を
+// 発注フロー1案件分の明細カード（タイトル帯＋テーブル）。見積管理の PayableProjectCard を
 // 発注フロー用に簡略化したもの（相見積比較・仮選定・業者追加・iframe は持たない）。
 // 開閉・選択・否認・チャットは親へ emit で委譲。
 import { computed } from 'vue';

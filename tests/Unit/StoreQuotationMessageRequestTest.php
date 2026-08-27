@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Http\Requests\StoreQuotationMessageRequest;
+use App\Http\Requests\StoreCommentRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
@@ -10,12 +10,12 @@ use Tests\TestCase;
 /**
  * 添付バリデーション（拡張子ホワイトリスト・件数・サイズ）の検証。
  */
-class StoreQuotationMessageRequestTest extends TestCase
+class StoreCommentRequestTest extends TestCase
 {
     /** @return array<string, mixed> */
     private function rules(): array
     {
-        return (new StoreQuotationMessageRequest)->rules();
+        return (new StoreCommentRequest)->rules();
     }
 
     public function test_png_and_jpg_pass(): void

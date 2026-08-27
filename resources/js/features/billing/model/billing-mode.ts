@@ -47,13 +47,13 @@ export interface BillingModeConfig {
      * 「この画面で操作できる行（`operable`）だけに絞る」チェックボックスの表示名。
      * 例: 見積作成=「作成可能」／見積承認=「未承認」／見積取消申請=「申請可能」。
      * 指定した画面ではこのチェックボックスを出し、**初期表示は ON**（外すと全件表示）。
-     * 支払系（`QuotationModeConfig.operableFilterLabel`）と同じ考え方。
+     * 支払系（`PayableModeConfig.operableFilterLabel`）と同じ考え方。
      */
     operableFilterLabel?: string;
     /**
      * 否認（却下）ボタンの設定。未指定＝否認列を出さない。
      * 承認／否認の2択になる画面（見積承認・見積取消承認）だけが持つ。
-     * 支払系の `QuotationModeConfig.reject` と同じ考え方。
+     * 支払系の `PayableModeConfig.reject` と同じ考え方。
      */
     reject?: {
         /** 否認の送信先 URL（POST）。 */

@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * 発注〜納品〜請求フローの案件1件分を、見積管理（{@see BuildingQuotationResource}）と同じ
+ * 発注〜納品〜請求フローの案件1件分を、見積管理（{@see PayablePartnerResource}）と同じ
  * 「案件 → 項目 → 見積先」のフラット行に整形する。フロント（OrderDeliveryScreen /
  * OrderProjectCard）が見積管理とほぼ同じUIで扱えるようにする。
  *
@@ -84,7 +84,7 @@ class OrderDeliveryResource extends JsonResource
             'vendorName' => (string) ($quotation->company?->company_name ?? '（業者未設定）'),
             // 区分（もらい＝請求 / 払い＝支払）。2026-08 のスキーマ改訂で請求は t_billing_partners へ
             // 分離されたため、支払テーブル由来の本画面の行は全て支払。
-            // 業者承諾確認画面の「区分」列に出す（{@see \App\Http\Resources\BuildingQuotationResource}）。
+            // 業者承諾確認画面の「区分」列に出す（{@see \App\Http\Resources\PayablePartnerResource}）。
             'billingTarget' => false,
             // 金額列。発注実行=標準単価/予算単価/相見積、発注承認以降=予算単価/見積/発注。
             'masterPrice' => Format::yen($item->master_price),

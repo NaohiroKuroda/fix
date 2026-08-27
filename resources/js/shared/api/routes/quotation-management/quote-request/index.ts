@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\QuoteRequestController::send
+* @see app/Http/Controllers/Quotation/Payable/QuoteRequestController.php:41
 * @route '/quotation-management/quote-request'
 */
 export const send = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ send.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\QuoteRequestController::send
+* @see app/Http/Controllers/Quotation/Payable/QuoteRequestController.php:41
 * @route '/quotation-management/quote-request'
 */
 send.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ send.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\QuoteRequestController::send
+* @see app/Http/Controllers/Quotation/Payable/QuoteRequestController.php:41
 * @route '/quotation-management/quote-request'
 */
 send.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ send.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\QuoteRequestController::send
+* @see app/Http/Controllers/Quotation/Payable/QuoteRequestController.php:41
 * @route '/quotation-management/quote-request'
 */
 const sendForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const sendForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => (
 })
 
 /**
-* @see \App\Http\Controllers\Quotation\QuoteRequestController::send
-* @see app/Http/Controllers/Quotation/QuoteRequestController.php:41
+* @see \App\Http\Controllers\Quotation\Payable\QuoteRequestController::send
+* @see app/Http/Controllers/Quotation/Payable/QuoteRequestController.php:41
 * @route '/quotation-management/quote-request'
 */
 sendForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * 発注〜納品フローのデータアクセス。
  *
- * 見積管理（{@see BuildingQuotationRepository}）と同じ「物件 → 項目 → 見積先」の構造で
+ * 見積管理（{@see PayableQuotationRepository}）と同じ「物件 → 項目 → 見積先」の構造で
  * 一覧を返し、各見積先に発注・納品の状態を付与する。各フェーズは「担当者が実行/確認 →
  * 承認者が承認」の固定2段階。発注の取消も見積管理と同様に「取消申請 → 取消承認」の2段階。
  */

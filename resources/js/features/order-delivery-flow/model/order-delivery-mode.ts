@@ -75,7 +75,7 @@ export interface OrderDeliveryModeConfig {
 
 /**
  * 画面モードごとの操作 UI 定義。発注〜納品フローの7画面で共用する。
- * 見積管理（QUOTATION_MODE_CONFIG）と同じ考え方。全画面「物件カード＋右端ボタン＋チャット」。
+ * 見積管理（PAYABLE_MODE_CONFIG）と同じ考え方。全画面「物件カード＋右端ボタン＋チャット」。
  */
 export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDeliveryModeConfig> = {
     'order-execution': {

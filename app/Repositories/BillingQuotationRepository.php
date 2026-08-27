@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * 請求（もらい）系画面のデータ取得・更新。
  *
- * 支払（はらい）系の {@see BuildingQuotationRepository} と対になる。共通の約束事
+ * 支払（はらい）系の {@see PayableQuotationRepository} と対になる。共通の約束事
  * （区分「全て」のときの絞り込み適用範囲・行キー・コメントメタ）は
  * docs/detailed-design/quotations/00_共通仕様_詳細設計.md を参照。
  *
@@ -206,7 +206,7 @@ class BillingQuotationRepository implements BillingRepositoryInterface
 
     /**
      * ページ内の各取引先に、コメント（t_comments）のメタ情報を付与する。
-     * 支払側（{@see BuildingQuotationRepository::attachCommentMeta()}）と同じ項目単位スレッド。
+     * 支払側（{@see PayableQuotationRepository::attachCommentMeta()}）と同じ項目単位スレッド。
      *
      * @param  LengthAwarePaginator<int, TBuilding>  $paginator
      */

@@ -1,27 +1,27 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Billing\BillingCancelApprovalController;
-use App\Http\Controllers\Billing\BillingCancelRequestController;
-use App\Http\Controllers\Billing\BillingMessageController;
-use App\Http\Controllers\Billing\BillingOrderConfirmationController;
-use App\Http\Controllers\Billing\BillingQuoteApprovalController;
-use App\Http\Controllers\Billing\BillingQuoteCreateController;
-use App\Http\Controllers\OrderDelivery\DeliveryApprovalController;
-use App\Http\Controllers\OrderDelivery\DeliveryReportController;
-use App\Http\Controllers\OrderDelivery\InvoiceApprovalController;
-use App\Http\Controllers\OrderDelivery\OrderAcceptanceController;
-use App\Http\Controllers\OrderDelivery\OrderApprovalController;
-use App\Http\Controllers\OrderDelivery\OrderCancelApprovalController;
-use App\Http\Controllers\OrderDelivery\OrderCancelRequestController;
-use App\Http\Controllers\OrderDelivery\OrderExecutionController;
-use App\Http\Controllers\Quotation\CancelApprovalController;
-use App\Http\Controllers\Quotation\CancelRequestController;
-use App\Http\Controllers\Quotation\CommentAttachmentController;
-use App\Http\Controllers\Quotation\ManagerApprovalController;
-use App\Http\Controllers\Quotation\QuotationMessageController;
-use App\Http\Controllers\Quotation\QuoteRequestController;
-use App\Http\Controllers\Quotation\VendorSelectionController;
+use App\Http\Controllers\Comment\CommentAttachmentController;
+use App\Http\Controllers\Order\Billing\BillingOrderConfirmationController;
+use App\Http\Controllers\Order\Payable\DeliveryApprovalController;
+use App\Http\Controllers\Order\Payable\DeliveryReportController;
+use App\Http\Controllers\Order\Payable\InvoiceApprovalController;
+use App\Http\Controllers\Order\Payable\OrderAcceptanceController;
+use App\Http\Controllers\Order\Payable\OrderApprovalController;
+use App\Http\Controllers\Order\Payable\OrderCancelApprovalController;
+use App\Http\Controllers\Order\Payable\OrderCancelRequestController;
+use App\Http\Controllers\Order\Payable\OrderExecutionController;
+use App\Http\Controllers\Quotation\Billing\BillingCancelApprovalController;
+use App\Http\Controllers\Quotation\Billing\BillingCancelRequestController;
+use App\Http\Controllers\Quotation\Billing\BillingMessageController;
+use App\Http\Controllers\Quotation\Billing\BillingQuoteApprovalController;
+use App\Http\Controllers\Quotation\Billing\BillingQuoteCreateController;
+use App\Http\Controllers\Quotation\Payable\CancelApprovalController;
+use App\Http\Controllers\Quotation\Payable\CancelRequestController;
+use App\Http\Controllers\Quotation\Payable\ManagerApprovalController;
+use App\Http\Controllers\Quotation\Payable\PayableMessageController;
+use App\Http\Controllers\Quotation\Payable\QuoteRequestController;
+use App\Http\Controllers\Quotation\Payable\VendorSelectionController;
 use Illuminate\Support\Facades\Route;
 
 // 未認証（ゲスト）— ログイン画面 / ログイン処理
@@ -87,11 +87,12 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/quotation-management/billing-cancel-approval/reject', [BillingCancelApprovalController::class, 'reject'])
         ->name('quotation-management.billing-cancel-approval.reject'); // 取消申請の否認（却下して承認済みへ戻す）
 
-    // 見積先（t_cost_quotations）単位のやり取り（チャット）。業者選定（部下）⇔部長承認（部長）。
-    Route::get('/quotation-management/quotations/{quotation}/messages', [QuotationMessageController::class, 'index'])
-        ->name('quotation-management.quotation-messages.index');
-    Route::post('/quotation-management/quotations/{quotation}/messages', [QuotationMessageController::class, 'store'])
-        ->name('quotation-management.quotation-messages.store');
+    // 支払取引先（t_payable_partners）単位のやり取り（チャット）。業者選定（部下）⇔部長承認（部長）。
+    // コメントは項目単位のスレッドなので、請求側（billing-messages）と中身は同じになる。
+    Route::get('/quotation-management/payable-partners/{partner}/messages', [PayableMessageController::class, 'index'])
+        ->name('quotation-management.payable-messages.index');
+    Route::post('/quotation-management/payable-partners/{partner}/messages', [PayableMessageController::class, 'store'])
+        ->name('quotation-management.payable-messages.store');
 
     // 請求取引先（t_billing_partners）単位のやり取り。コメントは項目に集約されるため、
     // 同一項目なら支払側のスレッドと同じ内容が見える。

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::record
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:26
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::record
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:26
 * @route '/order-delivery/order-acceptance'
 */
 export const record = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ record.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::record
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:26
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::record
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:26
 * @route '/order-delivery/order-acceptance'
 */
 record.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ record.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::record
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:26
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::record
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:26
 * @route '/order-delivery/order-acceptance'
 */
 record.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ record.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::record
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:26
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::record
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:26
 * @route '/order-delivery/order-acceptance'
 */
 const recordForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const recordForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::record
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:26
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::record
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:26
 * @route '/order-delivery/order-acceptance'
 */
 recordForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -56,8 +56,8 @@ recordForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 record.form = recordForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::renotify
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:0
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::renotify
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:0
 * @route '/order-delivery/order-acceptance/renotify'
 */
 export const renotify = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -71,8 +71,8 @@ renotify.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::renotify
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:0
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::renotify
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:0
 * @route '/order-delivery/order-acceptance/renotify'
 */
 renotify.url = (options?: RouteQueryOptions) => {
@@ -80,8 +80,8 @@ renotify.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::renotify
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:0
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::renotify
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:0
 * @route '/order-delivery/order-acceptance/renotify'
 */
 renotify.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -90,8 +90,8 @@ renotify.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::renotify
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:0
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::renotify
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:0
 * @route '/order-delivery/order-acceptance/renotify'
 */
 const renotifyForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -100,8 +100,8 @@ const renotifyForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> 
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::renotify
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:0
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::renotify
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:0
 * @route '/order-delivery/order-acceptance/renotify'
 */
 renotifyForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -112,8 +112,8 @@ renotifyForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 renotify.form = renotifyForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::cancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:36
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::cancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:36
 * @route '/order-delivery/order-acceptance/cancel-request'
 */
 export const cancelRequest = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -127,8 +127,8 @@ cancelRequest.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::cancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:36
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::cancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:36
 * @route '/order-delivery/order-acceptance/cancel-request'
 */
 cancelRequest.url = (options?: RouteQueryOptions) => {
@@ -136,8 +136,8 @@ cancelRequest.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::cancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:36
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::cancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:36
 * @route '/order-delivery/order-acceptance/cancel-request'
 */
 cancelRequest.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -146,8 +146,8 @@ cancelRequest.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::cancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:36
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::cancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:36
 * @route '/order-delivery/order-acceptance/cancel-request'
 */
 const cancelRequestForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -156,8 +156,8 @@ const cancelRequestForm = (options?: RouteQueryOptions): RouteFormDefinition<'po
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\OrderAcceptanceController::cancelRequest
-* @see app/Http/Controllers/OrderDelivery/OrderAcceptanceController.php:36
+* @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::cancelRequest
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:36
 * @route '/order-delivery/order-acceptance/cancel-request'
 */
 cancelRequestForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

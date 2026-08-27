@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::confirm
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:25
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::confirm
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:25
 * @route '/order-delivery/delivery-report'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ confirm.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::confirm
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:25
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::confirm
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:25
 * @route '/order-delivery/delivery-report'
 */
 confirm.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ confirm.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::confirm
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:25
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::confirm
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:25
 * @route '/order-delivery/delivery-report'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::confirm
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:25
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::confirm
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:25
 * @route '/order-delivery/delivery-report'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryReportController::confirm
-* @see app/Http/Controllers/OrderDelivery/DeliveryReportController.php:25
+* @see \App\Http\Controllers\Order\Payable\DeliveryReportController::confirm
+* @see app/Http/Controllers/Order/Payable/DeliveryReportController.php:25
 * @route '/order-delivery/delivery-report'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

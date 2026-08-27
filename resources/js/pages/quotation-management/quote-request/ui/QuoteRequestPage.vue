@@ -1,24 +1,24 @@
 <script setup lang="ts">
 // 見積依頼（FELIX→業者依頼前）。共通コンポーネントに mode='quote-request' を渡す。
 import { AppLayout } from '@/shared/ui/layouts';
-import { QuotationManagementScreen } from '@/features/quotation-flow';
+import { PayableScreen } from '@/features/payable';
 import type {
-    QuotationManagementFilters,
-    QuotationManagementPagination,
-    QuotationManagementProject,
-} from '@/features/quotation-flow';
+    PayableFilters,
+    PayablePagination,
+    PayableProject,
+} from '@/features/payable';
 
 defineOptions({ layout: AppLayout });
 
 defineProps<{
-    projects: QuotationManagementProject[];
-    pagination: QuotationManagementPagination;
-    filters: QuotationManagementFilters;
+    projects: PayableProject[];
+    pagination: PayablePagination;
+    filters: PayableFilters;
 }>();
 </script>
 
 <template>
-    <QuotationManagementScreen
+    <PayableScreen
         title="見積依頼"
         status-label="【FELIX→業者依頼前】"
         mode="quote-request"

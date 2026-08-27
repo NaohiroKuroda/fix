@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::approve
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:26
 * @route '/order-delivery/delivery-approval'
 */
 export const approve = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ approve.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::approve
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:26
 * @route '/order-delivery/delivery-approval'
 */
 approve.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ approve.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::approve
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:26
 * @route '/order-delivery/delivery-approval'
 */
 approve.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ approve.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::approve
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:26
 * @route '/order-delivery/delivery-approval'
 */
 const approveForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const approveForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::approve
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:26
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::approve
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:26
 * @route '/order-delivery/delivery-approval'
 */
 approveForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -56,8 +56,8 @@ approveForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 approve.form = approveForm
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::reject
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:35
 * @route '/order-delivery/delivery-approval/reject'
 */
 export const reject = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -71,8 +71,8 @@ reject.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::reject
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:35
 * @route '/order-delivery/delivery-approval/reject'
 */
 reject.url = (options?: RouteQueryOptions) => {
@@ -80,8 +80,8 @@ reject.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::reject
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:35
 * @route '/order-delivery/delivery-approval/reject'
 */
 reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -90,8 +90,8 @@ reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::reject
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:35
 * @route '/order-delivery/delivery-approval/reject'
 */
 const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -100,8 +100,8 @@ const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 })
 
 /**
-* @see \App\Http\Controllers\OrderDelivery\DeliveryApprovalController::reject
-* @see app/Http/Controllers/OrderDelivery/DeliveryApprovalController.php:35
+* @see \App\Http\Controllers\Order\Payable\DeliveryApprovalController::reject
+* @see app/Http/Controllers/Order/Payable/DeliveryApprovalController.php:35
 * @route '/order-delivery/delivery-approval/reject'
 */
 rejectForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

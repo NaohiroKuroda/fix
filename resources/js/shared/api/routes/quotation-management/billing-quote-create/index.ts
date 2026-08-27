@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteCreateController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -15,8 +15,8 @@ store.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteCreateController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ store.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteCreateController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -34,8 +34,8 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteCreateController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -44,8 +44,8 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 })
 
 /**
-* @see \App\Http\Controllers\Billing\BillingQuoteCreateController::store
-* @see app/Http/Controllers/Billing/BillingQuoteCreateController.php:27
+* @see \App\Http\Controllers\Quotation\Billing\BillingQuoteCreateController::store
+* @see app/Http/Controllers/Quotation/Billing/BillingQuoteCreateController.php:27
 * @route '/quotation-management/billing-quote-create'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

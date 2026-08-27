@@ -1,4 +1,4 @@
-// やり取り（コメント）のサーバ表現。QuotationMessageController と一致させること。
+// やり取り（コメント）のサーバ表現。PayableMessageController と一致させること。
 // 見積管理・発注納品の両フローが同じエンドポイント（shared/api/routes/quotation-management/
 // quotation-messages）を使うため、DTO は shared/api に置く。
 

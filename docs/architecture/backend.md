@@ -808,7 +808,7 @@ $this->assertSame('124', Decimal::round('123.5', 0));
 
 - 画面遷移を伴うレスポンスは `Inertia::render()` を返す。
 - ページ名はフロントの `resources/js/pages/` 配下の**スライスパス（kebab-case）**と 1:1 で対応させる（`frontend.md` 4.3.8 参照）。
-  例: `Inertia::render('quotation-management/quote-request')` → `resources/js/pages/quotation-management/quote-request/index.ts`
+  例: `Inertia::render('quotation/payable/quote-request')` → `resources/js/pages/quotation/payable/quote-request/index.ts`
 
 ```php
 use Inertia\Inertia;

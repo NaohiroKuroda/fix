@@ -130,34 +130,43 @@ resources/
     │   │   ├── ui/
     │   │   │   └── LoginPage.vue
     │   │   └── index.ts            # public API（default export）
-    │   ├── quotation-management/   # スライスグループ（セグメント・public API を持たない）
-    │   │   ├── quote-request/
-    │   │   │   ├── ui/QuoteRequestPage.vue
-    │   │   │   └── index.ts
-    │   │   ├── vendor-selection/
-    │   │   ├── manager-approval/
-    │   │   ├── cancel-request/
-    │   │   └── cancel-approval/
-    │   └── order-delivery/         # スライスグループ
-    │       ├── order-execution/
-    │       ├── order-approval/
-    │       ├── order-acceptance/
-    │       ├── delivery-report-submission/
-    │       ├── delivery-approval/
-    │       ├── invoice-approval/
-    │       ├── order-cancel-request/
-    │       └── order-cancel-approval/
+    │   ├── quotation/              # スライスグループ（業務）。セグメント・public API を持たない
+    │   │   ├── payable/            # スライスグループ（区分）
+    │   │   │   ├── quote-request/
+    │   │   │   │   ├── ui/QuoteRequestPage.vue
+    │   │   │   │   └── index.ts
+    │   │   │   ├── vendor-selection/
+    │   │   │   ├── manager-approval/
+    │   │   │   ├── cancel-request/
+    │   │   │   └── cancel-approval/
+    │   │   └── billing/
+    │   │       ├── quote-create/
+    │   │       ├── quote-approval/
+    │   │       ├── cancel-request/
+    │   │       └── cancel-approval/
+    │   └── order/
+    │       ├── payable/
+    │       │   ├── order-execution/
+    │       │   ├── order-approval/
+    │       │   ├── order-acceptance/
+    │       │   ├── delivery-report-submission/
+    │       │   ├── delivery-approval/
+    │       │   ├── invoice-approval/
+    │       │   ├── order-cancel-request/
+    │       │   └── order-cancel-approval/
+    │       └── billing/
+    │           └── order-confirmation/
     │
-    ├── features/                   # features レイヤ（複数ページで実際に再利用される操作フロー）
-    │   ├── payable/         # 見積管理5画面（mode で出し分け）
+    ├── features/                   # features レイヤ（pages と同じく 業務/区分 でグループ化）
+    │   ├── quotation/payable/      # 【支払】見積管理5画面（mode で出し分け）
     │   │   ├── ui/
     │   │   │   ├── PayableScreen.vue
     │   │   │   └── PayableProjectCard.vue
     │   │   ├── model/
-    │   │   │   ├── quotation.ts            # 行・案件・Inertia props の型
-    │   │   │   └── payable-mode.ts       # 画面モード設定（見積依頼／業者選定／承認…）
+    │   │   │   ├── payable.ts              # 行・案件・Inertia props の型
+    │   │   │   └── payable-mode.ts         # 画面モード設定（見積依頼／業者選定／承認…）
     │   │   └── index.ts                    # public API
-    │   ├── order-delivery-flow/    # 発注〜納品〜請求8画面（mode で出し分け）
+    │   ├── order/payable/          # 【支払】発注〜納品〜請求8画面（mode で出し分け）
     │   │   ├── ui/
     │   │   │   ├── OrderDeliveryScreen.vue
     │   │   │   └── OrderProjectCard.vue
@@ -165,7 +174,7 @@ resources/
     │   │   │   ├── order-delivery.ts
     │   │   │   └── order-delivery-mode.ts
     │   │   └── index.ts
-    │   └── billing/                # 請求（もらい）5画面（mode で出し分け）
+    │   └── quotation/billing/      # 【請求】見積管理4画面（mode で出し分け）
     │       ├── ui/
     │       │   ├── BillingScreen.vue
     │       │   ├── BillingProjectCard.vue
@@ -258,7 +267,7 @@ resources/
 - 使用箇所が 1 つしかない段階で `features` / `entities` に切り出す（まずページに置いておく）。
 - 振り分けを検討せずに `widgets` へ逃がす（まず `pages` / `features` / `shared` を検討する）。
 - `shared/` に業務ロジック（金額計算、承認判定などのドメイン規則）を置く。
-- 責務が広すぎる god slice を作る（例: `quotation-management/` に全部入れる → 操作単位に分割する）。
+- 責務が広すぎる god slice を作る（例: `quotation/payable/` に全部入れる → 操作単位に分割する）。
 - トップレベルに `assets/` を作る。静的アセットは使う場所の隣、共有するものは `shared/ui/` に置く。
 
 ### 4.3.5 インポート規則（MUST）
@@ -277,21 +286,21 @@ app → pages → widgets → features → shared
 ```ts
 // ✅ OK
 import { Button } from '@/shared/ui/button';                     // features → shared
-import { PayableScreen } from '@/features/payable'; // pages → features
+import { PayableScreen } from '@/features/quotation/payable'; // pages → features
 
 // ❌ 違反
-import { QuotationRow } from '@/pages/quotation-management/quote-request'; // features → pages（上位）
-import { OrderDeliveryScreen } from '@/features/order-delivery-flow';      // features → features（同一レイヤ）
+import { PayableRow } from '@/pages/quotation/payable/quote-request'; // features → pages（上位）
+import { OrderDeliveryScreen } from '@/features/order/payable';      // features → features（同一レイヤ）
 ```
 
 **2. スライスの外部公開は `index.ts`（public API）経由のみ。**
 
 ```ts
 // ✅ OK
-import { PayableScreen } from '@/features/payable';
+import { PayableScreen } from '@/features/quotation/payable';
 
 // ❌ 違反（内部ファイルへの直接 import）
-import PayableScreen from '@/features/payable/ui/PayableScreen.vue';
+import PayableScreen from '@/features/quotation/payable/ui/PayableScreen.vue';
 ```
 
 `shared` はスライスを持たないため、**セグメント単位で public API を定義する**。`shared/index.ts` は作らない。
@@ -337,11 +346,11 @@ import PayableScreen from '@/features/payable/ui/PayableScreen.vue';
 （features がレイアウトを内包すると、ページ側で差し替えられずレイヤの合成が崩れるため。cross-import 解決の Strategy C。）
 
 ```vue
-<!-- pages/quotation-management/quote-request/ui/QuoteRequestPage.vue -->
+<!-- pages/quotation/payable/quote-request/ui/QuoteRequestPage.vue -->
 <script setup lang="ts">
 import { AppLayout } from '@/shared/ui/layouts';
-import { PayableScreen } from '@/features/payable';
-import type { QuotationPageProps } from '@/features/payable';
+import { PayableScreen } from '@/features/quotation/payable';
+import type { QuotationPageProps } from '@/features/quotation/payable';
 
 defineOptions({ layout: AppLayout });   // Inertia の永続レイアウト
 const props = defineProps<QuotationPageProps>();
@@ -369,16 +378,20 @@ FSD から外れるが、Laravel / Vite の規約を優先する箇所。**意�
 | Inertia ページ名 | ファイル |
 | --- | --- |
 | `login` | `pages/login/index.ts` → `ui/LoginPage.vue` |
-| `quotation-management/quote-request` | `pages/quotation-management/quote-request/index.ts` |
-| `order-delivery/order-approval` | `pages/order-delivery/order-approval/index.ts` |
+| `quotation/payable/quote-request` | `pages/quotation/payable/quote-request/index.ts` |
+| `order/payable/order-approval` | `pages/order/payable/order-approval/index.ts` |
 
-`quotation-management/` `order-delivery/` は **スライスグループ**（ナビゲーション目的のまとめ役）であり、
-セグメントも public API も持たない。実体のスライスはその 1 階層下。
+`quotation/` `order/`（業務）と、その下の `payable/` `billing/`（区分）は **スライスグループ**
+（ナビゲーション目的のまとめ役）であり、セグメントも public API も持たない。実体のスライスはその下。
+バックエンドの `Controllers/<業務>/<区分>/` と同じ分け方に揃えている。
+
+> Inertia のページ名はこのパスそのもの（例: `quotation/payable/quote-request`）。
+> **URL とは独立**で、URL は従来どおり `/quotation-management/quote-request` のまま。
 
 ページスライスの public API は、Inertia の解決仕様に合わせて **default export** で公開する。
 
 ```ts
-// pages/quotation-management/quote-request/index.ts
+// pages/quotation/payable/quote-request/index.ts
 export { default } from './ui/QuoteRequestPage.vue';
 export type { QuoteRequestPageProps } from './model/quote-request.ts';
 ```
@@ -391,20 +404,20 @@ export type { QuoteRequestPageProps } from './model/quote-request.ts';
 | --- | --- |
 | `app.ts` | `app/index.ts` |
 | `pages/Auth/Login.vue` | `pages/login/ui/LoginPage.vue` |
-| `pages/QuotationManagement/*.vue`（5件） | `pages/quotation-management/<kebab>/ui/<Pascal>Page.vue` |
-| `pages/OrderDelivery/*.vue`（8件） | `pages/order-delivery/<kebab>/ui/<Pascal>Page.vue` |
-| `components/quotation-management/PayableScreen.vue` / `PayableProjectCard.vue` | `features/payable/ui/` |
-| `components/order-delivery/OrderDeliveryScreen.vue` / `OrderProjectCard.vue` | `features/order-delivery-flow/ui/` |
+| `pages/QuotationManagement/*.vue`（5件） | `pages/quotation/payable/<kebab>/ui/<Pascal>Page.vue` |
+| `pages/OrderDelivery/*.vue`（8件） | `pages/order/payable/<kebab>/ui/<Pascal>Page.vue` |
+| `components/quotation-management/PayableScreen.vue` / `PayableProjectCard.vue` | `features/quotation/payable/ui/` |
+| `components/order-delivery/OrderDeliveryScreen.vue` / `OrderProjectCard.vue` | `features/order/payable/ui/` |
 | `components/quotation-management/QuotationFilterBar.vue` | `shared/ui/filter-bar/FilterBar.vue`（2フロー共用のため降ろした） |
 | `components/quotation-management/QuotationPager.vue` | `shared/ui/pager/Pager.vue`（同上） |
 | `components/quotation-management/BillingKindBadge.vue` | `shared/ui/billing-kind-badge/BillingKindBadge.vue`（同上） |
-| `types/quotation-management.ts` | `features/payable/model/payable.ts` |
-| `types/order-delivery.ts` | `features/order-delivery-flow/model/order-delivery.ts` |
+| `types/quotation-management.ts` | `features/quotation/payable/model/payable.ts` |
+| `types/order-delivery.ts` | `features/order/payable/model/order-delivery.ts` |
 | ↑ のうち `QuotationChatMessage` / `QuotationChatFile` | `shared/api/quotation-message.ts`（2フロー共用） |
 | ↑ のうち `*Pagination`（2つとも同一形） | `shared/api/pagination.ts` の `Pagination`（各 model が別名で再公開） |
 | ↑ のうち絞り込みの共通3項目 | `shared/api/project-filter.ts` の `ProjectFilters`（各 model が `extends` して画面固有条件を足す） |
-| `lib/quotation-management.ts` | `features/payable/model/payable-mode.ts` |
-| `lib/order-delivery.ts` | `features/order-delivery-flow/model/order-delivery-mode.ts` |
+| `lib/quotation-management.ts` | `features/quotation/payable/model/payable-mode.ts` |
+| `lib/order-delivery.ts` | `features/order/payable/model/order-delivery-mode.ts` |
 | `composables/useQuotationTheme.ts` | `shared/lib/felix-theme.ts` の `useFelixTheme`（2フロー共用のため降ろした） |
 | `components/ui/*`（shadcn-vue） | `shared/ui/*` |
 | `components/feedback/FlashMessages.vue` / `AppToast.vue` | `shared/ui/flash-messages/` / `shared/ui/toast/` |
@@ -494,7 +507,7 @@ function submit() {
   含めないと上記の引き継ぎで古い `flash` が残り続ける。消費（上記）との二重防御として両方守る。
 
 ```ts
-// 例：iframe を閉じた後の一覧再取得（features/payable/ui/PayableScreen.vue）
+// 例：iframe を閉じた後の一覧再取得（features/quotation/payable/ui/PayableScreen.vue）
 router.reload({ only: ['projects', 'pagination', 'flash'] });
 ```
 
@@ -591,13 +604,13 @@ export default defineConfig({
 | 対象 | 規約 | 例 |
 | --- | --- | --- |
 | レイヤ | FSD 既定の名前のみ | `app` / `pages` / `features` / `shared`（必要なら `widgets`） |
-| スライス | kebab-case | `features/payable/`, `pages/quote-request/` |
-| スライスグループ | kebab-case（セグメント・public API を持たない） | `pages/quotation-management/` |
+| スライス | kebab-case | `features/quotation/payable/`, `pages/quote-request/` |
+| スライスグループ | kebab-case（セグメント・public API を持たない） | `pages/quotation/`・`pages/quotation/payable/` |
 | セグメント | FSD 既定の名前 | `ui` / `model` / `api` / `lib` / `config` |
 | ページコンポーネント | PascalCase + `Page` 接尾辞 | `pages/login/ui/LoginPage.vue` |
-| 部品コンポーネント | PascalCase | `features/payable/ui/QuotationPager.vue` |
+| 部品コンポーネント | PascalCase | `features/quotation/payable/ui/QuotationPager.vue` |
 | composable | camelCase + `use` 接頭辞。ファイル名はドメイン名 | `shared/lib/felix-theme.ts` の `useFelixTheme` |
-| 型 | PascalCase。ドメイン名のファイルに置く | `features/payable/model/payable.ts` の `QuotationRow` |
+| 型 | PascalCase。ドメイン名のファイルに置く | `features/quotation/payable/model/payable.ts` の `QuotationRow` |
 | 関数ファイル | ドメイン/目的名の kebab-case | `shared/lib/format-money.ts` |
 | 禁止するファイル名 | 技術的役割名 | `types.ts` / `utils.ts` / `helpers.ts` / `constants.ts` |
 
@@ -612,7 +625,7 @@ export default defineConfig({
 - [x] `components/ui/` → `shared/ui/`、`layouts/` → `shared/ui/layouts/`、`components/feedback/` → `shared/ui/`
 - [x] `lib/utils.ts` → `shared/lib/cn.ts`、`lib/format.ts` → `shared/lib/format-money.ts`
 - [x] `composables/useQuotationTheme.ts` → `shared/lib/felix-theme.ts`（`useFelixTheme` へ改名）
-- [x] 見積管理・発注納品の各コンポーネント／型／モード設定を `features/payable` `features/order-delivery-flow` へ集約
+- [x] 見積管理・発注納品の各コンポーネント／型／モード設定を `features/quotation/{payable,billing}` `features/order/payable` へ集約
 - [x] features 間の cross-import を解消（共用の表示部品を `shared/ui`、共用 DTO を `shared/api` へ降ろした）
 - [x] 各 `features` スライスに `index.ts`（public API）を作成し、内部ファイルへの直接 import を解消
 - [x] `pages/` を kebab-case のスライス構成へ再編し、各スライスに default export の `index.ts` を作成

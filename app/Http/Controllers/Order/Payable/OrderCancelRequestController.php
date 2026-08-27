@@ -17,7 +17,7 @@ class OrderCancelRequestController extends AbstractOrderDeliveryScreenController
     {
         return $this->renderScreen(
             $request,
-            'order-delivery/order-cancel-request',
+            'order/payable/order-cancel-request',
             $this->service->paginate('order-cancel-request', $request->filters(), self::PER_PAGE),
         );
     }

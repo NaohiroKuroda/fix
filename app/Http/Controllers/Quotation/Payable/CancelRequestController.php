@@ -27,7 +27,7 @@ class CancelRequestController extends AbstractPayableScreenController
     {
         return $this->renderScreen(
             $request,
-            'quotation-management/cancel-request',
+            'quotation/payable/cancel-request',
             $this->service->paginate($request->filters(), self::PER_PAGE),
         );
     }

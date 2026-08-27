@@ -16,7 +16,7 @@ class BillingCancelRequestController extends AbstractBillingScreenController
 {
     public function index(QuotationManagementRequest $request): Response
     {
-        return $this->renderScreen($request, 'billing-cancel-request', 'quotation-management/billing-cancel-request');
+        return $this->renderScreen($request, 'billing-cancel-request', 'quotation/billing/cancel-request');
     }
 
     /** 取消申請（1件ずつ・理由必須）。`APPROVED` → `CANCEL_APPLIED`。 */

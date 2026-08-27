@@ -15,6 +15,6 @@ class BillingOrderConfirmationController extends AbstractBillingScreenController
 {
     public function index(QuotationManagementRequest $request): Response
     {
-        return $this->renderScreen($request, 'billing-order-confirmation', 'order-delivery/billing-order-confirmation');
+        return $this->renderScreen($request, 'billing-order-confirmation', 'order/billing/order-confirmation');
     }
 }

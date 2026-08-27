@@ -28,7 +28,7 @@ class VendorSelectionController extends AbstractPayableScreenController
     {
         return $this->renderScreen(
             $request,
-            'quotation-management/vendor-selection',
+            'quotation/payable/vendor-selection',
             $this->service->paginate($request->filters(), self::PER_PAGE),
         );
     }

@@ -27,7 +27,7 @@ class QuoteRequestController extends AbstractPayableScreenController
     {
         return $this->renderScreen(
             $request,
-            'quotation-management/quote-request',
+            'quotation/payable/quote-request',
             $this->service->paginate($request->filters(), self::PER_PAGE),
         );
     }

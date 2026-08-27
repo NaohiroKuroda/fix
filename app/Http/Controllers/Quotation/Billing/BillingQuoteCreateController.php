@@ -17,7 +17,7 @@ class BillingQuoteCreateController extends AbstractBillingScreenController
 {
     public function index(QuotationManagementRequest $request): Response
     {
-        return $this->renderScreen($request, 'billing-quote-create', 'quotation-management/billing-quote-create');
+        return $this->renderScreen($request, 'billing-quote-create', 'quotation/billing/quote-create');
     }
 
     /**

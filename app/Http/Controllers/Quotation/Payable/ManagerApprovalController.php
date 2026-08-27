@@ -28,7 +28,7 @@ class ManagerApprovalController extends AbstractPayableScreenController
     {
         return $this->renderScreen(
             $request,
-            'quotation-management/manager-approval',
+            'quotation/payable/manager-approval',
             $this->service->paginate($request->filters(), self::PER_PAGE),
         );
     }

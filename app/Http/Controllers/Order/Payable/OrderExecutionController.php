@@ -17,7 +17,7 @@ class OrderExecutionController extends AbstractOrderDeliveryScreenController
     {
         return $this->renderScreen(
             $request,
-            'order-delivery/order-execution',
+            'order/payable/order-execution',
             $this->service->paginate('order-execution', $request->filters(), self::PER_PAGE),
         );
     }

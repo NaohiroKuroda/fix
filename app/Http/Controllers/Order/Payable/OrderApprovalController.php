@@ -18,7 +18,7 @@ class OrderApprovalController extends AbstractOrderDeliveryScreenController
     {
         return $this->renderScreen(
             $request,
-            'order-delivery/order-approval',
+            'order/payable/order-approval',
             $this->service->paginate('order-approval', $request->filters(), self::PER_PAGE),
         );
     }

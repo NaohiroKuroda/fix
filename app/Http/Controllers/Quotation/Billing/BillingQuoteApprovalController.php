@@ -17,7 +17,7 @@ class BillingQuoteApprovalController extends AbstractBillingScreenController
 {
     public function index(QuotationManagementRequest $request): Response
     {
-        return $this->renderScreen($request, 'billing-quote-approval', 'quotation-management/billing-quote-approval');
+        return $this->renderScreen($request, 'billing-quote-approval', 'quotation/billing/quote-approval');
     }
 
     /** 見積承認（一括）。`APPLIED` → `APPROVED`。 */

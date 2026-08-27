@@ -51,10 +51,20 @@ export interface BillingModeConfig {
      */
     operableFilterLabel?: string;
     /**
-     * 否認（却下）ボタンの送信先 URL。null＝否認列を出さない。
-     * 【請求】見積取消承認だけが承認／否認の2択（取消を認めない場合は否認して承認済みのまま据え置く）。
+     * 否認（却下）ボタンの設定。未指定＝否認列を出さない。
+     * 承認／否認の2択になる画面（見積承認・見積取消承認）だけが持つ。
+     * 支払系の `QuotationModeConfig.reject` と同じ考え方。
      */
-    rejectUrl?: string | null;
+    reject?: {
+        /** 否認の送信先 URL（POST）。 */
+        url: string;
+        /** 行の否認ボタンの `title`。 */
+        hint: string;
+        /** 否認モーダルの見出し。 */
+        modalTitle: string;
+        /** 否認モーダルの説明文（「請求先「〇〇」」に続ける文）。 */
+        description: string;
+    };
     /** 承諾日列を出すか（発注書確認のみ）。 */
     showAcceptedAt: boolean;
     /** 理由入力を必須にするか（取消系）。 */
@@ -100,6 +110,13 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         bulkSelectLabel: '全て承認',
         bulkClearLabel: '全ての承認を解除',
         operableFilterLabel: '未承認',
+        // 承認／否認の2択。否認＝承認せず CANCELLED にし、③ 見積作成へ差し戻す。
+        reject: {
+            url: '/quotation-management/billing-quote-approval/reject',
+            hint: '否認して見積作成へ差し戻す',
+            modalTitle: '否認（見積作成へ差し戻し）',
+            description: 'の見積を否認し、見積作成へ差し戻します。',
+        },
         showAcceptedAt: false,
         reasonRequired: false,
     },
@@ -136,8 +153,13 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         bulkSelectLabel: '全て取消承認',
         bulkClearLabel: '全ての取消承認を解除',
         operableFilterLabel: '承認可能',
-        // 取消承認だけは承認／否認の2択。否認＝取消を認めず、承認済み（APPROVED）のまま据え置く。
-        rejectUrl: '/quotation-management/billing-cancel-approval/reject',
+        // 承認／否認の2択。承認・否認とも CANCELLED にし、③ 見積作成へ差し戻す。
+        reject: {
+            url: '/quotation-management/billing-cancel-approval/reject',
+            hint: '否認して見積作成へ差し戻す',
+            modalTitle: '否認（見積作成へ差し戻し）',
+            description: 'の取消申請を否認し、見積作成へ差し戻します。',
+        },
         showAcceptedAt: false,
         reasonRequired: true,
     },

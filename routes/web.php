@@ -74,6 +74,8 @@ Route::middleware('auth:admin')->group(function () {
         ->name('quotation-management.billing-quote-approval');     // 【請求】見積承認（部長→業者）
     Route::post('/quotation-management/billing-quote-approval', [BillingQuoteApprovalController::class, 'confirm'])
         ->name('quotation-management.billing-quote-approval.confirm');
+    Route::post('/quotation-management/billing-quote-approval/reject', [BillingQuoteApprovalController::class, 'reject'])
+        ->name('quotation-management.billing-quote-approval.reject'); // 見積の否認（見積作成へ差し戻し）
     Route::get('/quotation-management/billing-cancel-request', [BillingCancelRequestController::class, 'index'])
         ->name('quotation-management.billing-cancel-request');     // 【請求】見積取消申請（担当→部長）
     Route::post('/quotation-management/billing-cancel-request', [BillingCancelRequestController::class, 'confirm'])

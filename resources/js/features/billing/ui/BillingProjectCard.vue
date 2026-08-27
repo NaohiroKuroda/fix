@@ -38,8 +38,8 @@ const isThemed = computed(() => props.glass === true);
 const cardBgClass = computed(() => (isThemed.value ? 'bg-white' : 'bg-card'));
 const config = computed(() => BILLING_MODE_CONFIG[props.mode]);
 const isPick = computed(() => config.value.kind === 'pick');
-// 否認列を出すか（config に否認 URL を持つ画面＝【請求】見積取消承認のみ）。
-const showReject = computed(() => (config.value.rejectUrl ?? null) !== null);
+// 否認列を出すか（config に否認設定を持つ画面＝見積承認 / 見積取消承認）。
+const showReject = computed(() => config.value.reject != null);
 const isQuoteCreate = computed(() => props.mode === 'billing-quote-create');
 const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellTextClass, mutedTextClass } =
     useFelixTheme(isThemed);
@@ -237,13 +237,17 @@ const rowButtonLabel = (row: BillingRow): string =>
                                 {{ isPick && isActive(row) ? config.activeLabel : rowButtonLabel(row) }}
                             </button>
                         </td>
-                        <!-- 否認（右端・【請求】見積取消承認のみ）。押下で理由入力モーダル→取消を却下する。 -->
+                        <!--
+                            否認（右端・見積承認 / 見積取消承認）。押下で理由入力モーダルを開く。
+                            見積承認＝③見積作成へ差し戻し／見積取消承認＝取消を却下して承認済みのまま据え置き。
+                            操作できない行（K列）は否認もできないため「—」にする。
+                        -->
                         <td v-if="showReject" class="px-3 py-2 text-center">
                             <button
                                 v-if="row.operable"
                                 type="button"
                                 class="relative mx-auto flex h-9 w-24 items-center justify-center gap-1 whitespace-nowrap rounded-xl border border-red-400/60 bg-red-50 px-2 text-sm font-semibold text-red-600 shadow-sm transition hover:border-red-500 hover:bg-red-100"
-                                title="否認して取消を却下する（承認済みのまま据え置き）"
+                                :title="config.reject?.hint"
                                 @click="emit('reject', row)"
                             >
                                 <Ban class="size-4" />否認

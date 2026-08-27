@@ -26,8 +26,10 @@ class BillingCancelApprovalController extends AbstractBillingScreenController
     }
 
     /**
-     * 取消申請の否認（却下）。取消を認めず、承認済み（`APPROVED`）のまま据え置く。
-     * 否認理由は当該項目のやり取り（コメント）へ `【否認】{理由}` として残す想定。
+     * 取消申請の否認。`CANCEL_APPLIED → CANCELLED` とし、
+     * ③【請求】見積作成の対象（同画面は `DRAFT` / `CANCELLED` を操作対象にする）へ戻す。
+     * 承認と同じ差し戻し先だが、否認理由を当該項目のやり取り（コメント）へ
+     * `【否認】{理由}` として残す点が異なる。
      *
      * **モックのため状態更新・コメント登録は行わない。**
      */
@@ -39,6 +41,6 @@ class BillingCancelApprovalController extends AbstractBillingScreenController
             'reason' => ['required', 'string', 'max:1000'],
         ]);
 
-        return back()->with('success', '（モック）取消申請を否認しました。ステータスの据え置きとコメント登録は未実装です。');
+        return back()->with('success', '（モック）取消申請を否認しました。見積作成への差し戻しとコメント登録は未実装です。');
     }
 }

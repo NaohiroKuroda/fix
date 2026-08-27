@@ -214,8 +214,11 @@ const submitWithReason = (): void => {
     });
 };
 
-// 否認（【請求】見積取消承認のみ）：理由入力モーダル → 取消を却下し、承認済みのまま据え置く。
-const rejectUrl = computed(() => config.value.rejectUrl ?? null);
+// 否認（見積承認 / 見積取消承認）：理由入力モーダル → 差し戻し or 却下。
+// - 見積承認 …… 承認せず ③ 見積作成（DRAFT）へ差し戻す
+// - 見積取消承認 … 取消を認めず、承認済み（APPROVED）のまま据え置く
+const rejectConfig = computed(() => config.value.reject ?? null);
+const rejectUrl = computed(() => rejectConfig.value?.url ?? null);
 const rejectForm = useForm<{ partnerIds: number[]; reason: string }>({ partnerIds: [], reason: '' });
 const rejectTarget = ref<BillingRow | null>(null);
 const rejectModalOpen = ref(false);
@@ -520,12 +523,11 @@ const goToPage = (page: number): void => {
         <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div class="flex items-center gap-2 border-b px-4 py-3">
                 <Ban class="size-5 text-red-600" />
-                <span class="text-sm font-semibold text-slate-800">否認（取消を却下）</span>
+                <span class="text-sm font-semibold text-slate-800">{{ rejectConfig?.modalTitle }}</span>
             </div>
             <div class="space-y-3 px-4 py-4">
                 <p class="text-sm text-slate-600">
-                    請求先「<span class="font-semibold text-slate-800">{{ rejectTarget.vendorName }}</span>」の取消申請を否認します。
-                    ステータスは承認済みのまま据え置かれます。
+                    請求先「<span class="font-semibold text-slate-800">{{ rejectTarget.vendorName }}</span>」{{ rejectConfig?.description }}
                 </p>
                 <div>
                     <label class="mb-1 block text-xs font-semibold text-slate-500">否認理由<span class="text-red-500">（必須）</span></label>
@@ -533,7 +535,7 @@ const goToPage = (page: number): void => {
                         v-model="rejectForm.reason"
                         rows="4"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#c4a35b] focus:outline-none focus:ring-2 focus:ring-[#c4a35b]/30"
-                        placeholder="取消を認めない理由を入力してください"
+                        placeholder="否認の理由を入力してください"
                     />
                     <p v-if="rejectForm.errors.reason" class="mt-1 text-xs text-red-600">{{ rejectForm.errors.reason }}</p>
                 </div>

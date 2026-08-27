@@ -86,6 +86,9 @@ const toggleAllProjects = (): void => {
 };
 
 const allRows = computed<QuotationManagementRow[]>(() => props.projects.flatMap((p) => p.rows));
+// 区分フィルタ「全て」では請求（もらい）の取引先も同じ一覧に並ぶが、支払系画面が操作できるのは
+// 支払側だけ（サーバも operable=false を返す）。選択・選定・送信の判定は常にこの支払行だけで行う。
+const payableRows = computed<QuotationManagementRow[]>(() => allRows.value.filter((r) => !r.billingTarget));
 // 行が「処理済み」か（mode ごとのサーバ側フラグ。例: 見積依頼=requested / 部長承認=approved）。
 // reselectable（見積依頼）はロックせず、依頼済みでも選択・再依頼できる。
 const isApplied = (row: QuotationManagementRow): boolean =>
@@ -105,7 +108,7 @@ const toggleRow = (row: QuotationManagementRow): void => {
 };
 // 選べるのは「見積先（業者）が紐づき、かつ未処理」の行だけ（処理済みは再操作不可）。
 const selectableRows = computed<QuotationManagementRow[]>(() =>
-    allRows.value.filter((r) => r.companyId != null && !isApplied(r) && r.operable),
+    payableRows.value.filter((r) => r.companyId != null && !isApplied(r) && r.operable),
 );
 const anyChecked = computed(() => checkedKeys.value.size > 0);
 
@@ -129,11 +132,11 @@ const toggleSelect = (row: QuotationManagementRow): void => {
 };
 // 現在「選定済（押下）」の行キー集合。明細カードのボタン表示に使う。
 const vendorSelectedKeys = computed(
-    () => new Set(allRows.value.filter((r) => r.companyId != null && isRowSelected(r)).map((r) => quotationRowKey(r))),
+    () => new Set(payableRows.value.filter((r) => r.companyId != null && isRowSelected(r)).map((r) => quotationRowKey(r))),
 );
 // サーバ状態から1つでも変更（押下）があるか。確定ボタンの活性判定に使う。
 const vendorDirty = computed(() =>
-    allRows.value.some((r) => {
+    payableRows.value.some((r) => {
         const key = quotationRowKey(r);
         return key in selectionOverride && selectionOverride[key] !== serverSelected(r);
     }),
@@ -225,8 +228,14 @@ const displayProjects = computed<QuotationManagementProject[]>(() => {
     if (rowFilters.length === 0) {
         return props.projects;
     }
+    // 絞り込みは**自区分（支払）の行にだけ**効かせる。区分「全て」で並ぶ請求行は「表示のみ」なので
+    // 絞り込み対象にせず、絞り込み後も支払行が残った項目（unitId）にだけそのまま並べる。
     return props.projects
-        .map((p) => ({ ...p, rows: p.rows.filter((r) => rowFilters.every((f) => f(r))) }))
+        .map((p) => {
+            const keep = (r: QuotationManagementRow): boolean => rowFilters.every((f) => f(r));
+            const unitIds = new Set(p.rows.filter((r) => !r.billingTarget && keep(r)).map((r) => r.unitId));
+            return { ...p, rows: p.rows.filter((r) => (r.billingTarget ? unitIds.has(r.unitId) : keep(r))) };
+        })
         .filter((p) => p.rows.length > 0);
 });
 
@@ -334,7 +343,7 @@ const submitAction = (): void => {
         return;
     }
     const keys = isToggleMode.value ? vendorSelectedKeys.value : checkedKeys.value;
-    const companyIds = allRows.value
+    const companyIds = payableRows.value
         .filter((row) => row.companyId != null && keys.has(quotationRowKey(row)))
         .map((row) => row.companyId as number);
     if (companyIds.length === 0) {

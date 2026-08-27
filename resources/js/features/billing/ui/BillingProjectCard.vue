@@ -9,7 +9,7 @@ import { ChevronDown, MessageSquare, Plus, FileText } from 'lucide-vue-next';
 import { useFelixTheme } from '@/shared/lib/felix-theme';
 import { yenString } from '@/shared/lib/format-money';
 import { BillingKindBadge } from '@/shared/ui/billing-kind-badge';
-import { BILLING_MODE_CONFIG } from '../model/billing-mode';
+import { BILLING_MODE_CONFIG, billingRowKey } from '../model/billing-mode';
 import { BILLING_STATUS_LABEL } from '../model/billing';
 import type { BillingMode, BillingProject, BillingRow } from '../model/billing';
 
@@ -18,8 +18,8 @@ const props = defineProps<{
     mode: BillingMode;
     open: boolean;
     glass?: boolean;
-    /** 選択中の行キー（partnerId）の集合。pick モードのみ使う。 */
-    selectedKeys: Set<number>;
+    /** 選択中の行キー（billingRowKey）の集合。pick モードのみ使う。 */
+    selectedKeys: Set<string>;
 }>();
 const emit = defineEmits<{
     (e: 'toggle'): void;
@@ -40,7 +40,7 @@ const isQuoteCreate = computed(() => props.mode === 'billing-quote-create');
 const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellTextClass, mutedTextClass } =
     useFelixTheme(isThemed);
 
-const isActive = (row: BillingRow): boolean => props.selectedKeys.has(row.partnerId);
+const isActive = (row: BillingRow): boolean => props.selectedKeys.has(billingRowKey(row));
 /** 状態バッジの文言（操作できない行に出す）。処理フロー K列「ステータス外表示形式」。 */
 const statusLabel = (row: BillingRow): string => BILLING_STATUS_LABEL[row.approvalStatus];
 
@@ -54,26 +54,32 @@ interface DisplayRow {
     unitRowSpan: number;
     isUnitBoundary: boolean;
 }
-// 同一項目の行をまとめ、先頭行にだけ項目名セル（rowspan）を出す。
+// 同一項目（itemName）の行をまとめ、先頭行にだけ項目名セル（rowspan）を出す。
+// 区分「全て」では請求（もらい）と支払（はらい）が混ざるため、項目内で請求を先・支払を後に並べ替える
+// （支払側 QuotationProjectCard と同じ並び）。並べ替えないと同じ項目が2グループに割れて項目名が重複する。
 const displayRows = computed<DisplayRow[]>(() => {
-    const result: DisplayRow[] = [];
-    let index = 0;
-    while (index < props.project.rows.length) {
-        const name = props.project.rows[index].itemName;
-        let span = 0;
-        while (index + span < props.project.rows.length && props.project.rows[index + span].itemName === name) {
-            span += 1;
+    const itemOrder: string[] = [];
+    const byItem = new Map<string, BillingRow[]>();
+    for (const row of props.project.rows) {
+        if (!byItem.has(row.itemName)) {
+            byItem.set(row.itemName, []);
+            itemOrder.push(row.itemName);
         }
-        for (let offset = 0; offset < span; offset += 1) {
-            result.push({
-                row: props.project.rows[index + offset],
-                isUnitFirstRow: offset === 0,
-                unitRowSpan: span,
-                isUnitBoundary: offset === 0 && index > 0,
-            });
-        }
-        index += span;
+        byItem.get(row.itemName)!.push(row);
     }
+    const result: DisplayRow[] = [];
+    itemOrder.forEach((itemName, itemIndex) => {
+        const rows = byItem.get(itemName) ?? [];
+        const ordered = [...rows.filter((r) => r.billingTarget), ...rows.filter((r) => !r.billingTarget)];
+        ordered.forEach((row, offset) => {
+            result.push({
+                row,
+                isUnitFirstRow: offset === 0,
+                unitRowSpan: ordered.length,
+                isUnitBoundary: offset === 0 && itemIndex > 0,
+            });
+        });
+    });
     return result;
 });
 
@@ -140,7 +146,7 @@ const rowButtonLabel = (row: BillingRow): string =>
                 <tbody>
                     <tr
                         v-for="{ row, isUnitFirstRow, unitRowSpan, isUnitBoundary } in displayRows"
-                        :key="row.partnerId"
+                        :key="billingRowKey(row)"
                         :class="[rowBorderClass, isUnitBoundary ? 'border-t-4 border-slate-300' : 'border-t', row.billingTarget ? 'bg-sky-50/70' : '']"
                     >
                         <!-- 項目名：同一項目の行数ぶん rowspan で1回だけ出す。 -->

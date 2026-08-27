@@ -17,7 +17,7 @@ import { Pager } from '@/shared/ui/pager';
 import { useFelixTheme } from '@/shared/lib/felix-theme';
 import BillingProjectCard from './BillingProjectCard.vue';
 import BillingQuotationModal, { type BillingQuotationInput } from './BillingQuotationModal.vue';
-import { BILLING_MODE_CONFIG } from '../model/billing-mode';
+import { BILLING_MODE_CONFIG, billingRowKey } from '../model/billing-mode';
 import type {
     BillingFilters,
     BillingMasters,
@@ -122,30 +122,39 @@ const displayProjects = computed(() => {
     if (rowFilters.length === 0) {
         return props.projects;
     }
+    // 絞り込みは**自区分（請求）の行にだけ**効かせる。区分「全て」で並ぶ支払行は「表示のみ」なので
+    // 絞り込み対象にせず、絞り込み後も請求行が残った項目（itemName）にだけそのまま並べる。
     return props.projects
-        .map((p) => ({ ...p, rows: p.rows.filter((r) => rowFilters.every((f) => f(r))) }))
+        .map((p) => {
+            const keep = (r: BillingRow): boolean => rowFilters.every((f) => f(r));
+            const items = new Set(p.rows.filter((r) => r.billingTarget && keep(r)).map((r) => r.itemName));
+            return { ...p, rows: p.rows.filter((r) => (r.billingTarget ? keep(r) : items.has(r.itemName))) };
+        })
         .filter((p) => p.rows.length > 0);
 });
 
-// pick モード（見積承認）の選択。1つの真実は checked（partnerId → 真偽）。
-const checked = reactive<Record<number, boolean>>({});
-const checkedKeys = computed(() => new Set(allRows.value.map((r) => r.partnerId).filter((id) => checked[id])));
+// pick モード（見積承認）の選択。1つの真実は checked（行キー → 真偽）。
+// キーは区分込み（billingRowKey）。区分フィルタ「全て」では支払取引先も並び、
+// partnerId だけだと請求行と id が衝突して選択状態が混線するため。
+const checked = reactive<Record<string, boolean>>({});
+const checkedKeys = computed(() => new Set(allRows.value.map(billingRowKey).filter((key) => checked[key])));
 const toggleRow = (row: BillingRow): void => {
     // operable = 処理フロー J列の対象ステータスか。false の行は一覧に出すが操作させない（K列）。
     if (!row.operable) {
         return;
     }
-    checked[row.partnerId] = !checked[row.partnerId];
+    const key = billingRowKey(row);
+    checked[key] = !checked[key];
 };
 /** 一括選択の対象（操作できる行だけ）。 */
 const bulkSelectableRows = computed(() => allRows.value.filter((r) => r.operable));
 const bulkAllSelected = computed(
-    () => bulkSelectableRows.value.length > 0 && bulkSelectableRows.value.every((r) => checkedKeys.value.has(r.partnerId)),
+    () => bulkSelectableRows.value.length > 0 && bulkSelectableRows.value.every((r) => checkedKeys.value.has(billingRowKey(r))),
 );
 const toggleSelectAll = (): void => {
     const select = !bulkAllSelected.value;
     bulkSelectableRows.value.forEach((r) => {
-        checked[r.partnerId] = select;
+        checked[billingRowKey(r)] = select;
     });
 };
 
@@ -168,12 +177,12 @@ const submitAction = (): void => {
     if (!actionEnabled.value || config.value.actionUrl === null) {
         return;
     }
-    form.partnerIds = [...checkedKeys.value];
+    form.partnerIds = allRows.value.filter((r) => checkedKeys.value.has(billingRowKey(r))).map((r) => r.partnerId);
     form.reason = '';
     form.post(config.value.actionUrl, {
         preserveScroll: true,
         onSuccess: () => {
-            Object.keys(checked).forEach((key) => delete checked[Number(key)]);
+            Object.keys(checked).forEach((key) => delete checked[key]);
         },
     });
 };

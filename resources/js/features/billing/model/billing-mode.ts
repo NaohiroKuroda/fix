@@ -1,4 +1,14 @@
-import type { BillingMode } from './billing';
+import type { BillingMode, BillingRow } from './billing';
+
+/**
+ * 明細行の一意キー。区分＋取引先 id（請求=b{id} / 支払=c{id}）。
+ *
+ * ※ 区分を先頭に付けるのは必須。請求は t_billing_partners、支払は t_payable_partners と
+ *   別テーブルで id が独立採番のため、区分フィルタ「全て」で両方を並べると id が衝突しうる。
+ *   衝突すると v-for の key が重複して行の表示が壊れ（絞り込みで消えたまま戻らない）、
+ *   さらに選択状態が請求行と支払行で混線する。
+ */
+export const billingRowKey = (row: BillingRow): string => `${row.billingTarget ? 'b' : 'c'}${row.partnerId}`;
 
 /**
  * 操作（最終列）の種類。

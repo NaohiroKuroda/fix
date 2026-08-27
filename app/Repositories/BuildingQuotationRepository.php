@@ -87,6 +87,14 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             $withPayable ? 'payablePartners' : null,
             $withBilling ? 'billingPartners' : null,
         ]));
+        // 本リポジトリは支払系画面のもの。自区分＝支払（t_payable_partners）。
+        $screenIsBilling = false;
+        $ownRelation = $screenIsBilling ? 'billingPartners' : 'payablePartners';
+        // 取引先レベルの絞り込み（見積先名・回答状態・初期表示条件）を効かせる区分。
+        // **自区分だけに効かせる**。逆区分は「表示のみ」なので絞り込まずそのまま並べる。
+        // 項目・案件を出すかどうかも自区分の絞り込み結果で決める（自区分にヒットが無ければ項目ごと非表示）。
+        // 自区分が一覧に出ない（kind が逆区分のみ）ときだけ、表示している側に効かせる。
+        $filterRelation = in_array($ownRelation, $relations, true) ? $ownRelation : ($relations[0] ?? null);
         $isQuoteRequest = $mode === 'quote-request'; // 見積依頼は移行済み（source_id あり）のみ対象
         $operable = self::MODE_OPERABLE_STATUS[$mode] ?? null;
         $empty = $operable === null;                                 // 未知の mode は空
@@ -121,18 +129,19 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
                 }
             }
         };
-        // リレーション名 → 絞り込みクロージャ。
+        // リレーション名 → 絞り込みクロージャ。自区分以外は素通し（表示のみ）。
+        $passThrough = static function (Builder $q): void {};
         $filterFor = [
-            'payablePartners' => $makeFilter(false),
-            'billingPartners' => $makeFilter(true),
+            'payablePartners' => $filterRelation === 'payablePartners' ? $makeFilter(false) : $passThrough,
+            'billingPartners' => $filterRelation === 'billingPartners' ? $makeFilter(true) : $passThrough,
         ];
 
         $paginator = TBuilding::query()
             ->when($empty, fn (Builder $q) => $q->whereRaw('1 = 0'))
             ->when($keyword, fn (Builder $q, string $kw) => $q->where('name', 'like', "%{$kw}%"))
-            ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $filterFor, $relations))
-            ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $comment, $filterFor, $isQuoteRequest, $relations): void {
-                $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $filterFor, $relations);
+            ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $filterFor, $filterRelation))
+            ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $comment, $filterFor, $isQuoteRequest, $relations, $filterRelation): void {
+                $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $filterFor, $filterRelation);
                 $i->orderBy('sort')->orderBy('id');
                 foreach ($relations as $relation) {
                     $filter = $filterFor[$relation];
@@ -155,8 +164,7 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
         // 表示用の見積額を各見積先に付与：
         // 見積依頼 / 業者選定＝相見積（業者の最新回答＝最新履歴）/ それ以外＝確定見積（項目）。
         $useLatestQuote = in_array($mode, ['quote-request', 'vendor-selection'], true);
-        // 本リポジトリは支払系画面のもの。操作できるのは支払側の取引先だけ。
-        $screenIsBilling = false;
+        // 操作できるのは自区分（支払）の取引先だけ（$screenIsBilling は上で定義）。
         foreach ($paginator as $building) {
             foreach ($building->budgetItems as $item) {
                 // Resource が区分に依らず同じ名前で読めるよう、表示対象を displayPartners に寄せる。
@@ -270,12 +278,13 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
     }
 
     /**
-     * 項目（明細）の絞り込み：項目名 ＋ コメント有無 ＋ 対象の取引先を持つこと。
+     * 項目（明細）の絞り込み：項目名 ＋ コメント有無 ＋ 自区分の取引先を持つこと。
      *
      * @param  array<string, callable>  $filterFor  リレーション名 → 絞り込みクロージャ
-     * @param  list<string>  $relations  対象のリレーション（all は支払・請求の両方）
+     * @param  string|null  $filterRelation  絞り込みを効かせる（＝項目の存在判定に使う）自区分のリレーション。
+     *                                       逆区分は表示のみのため判定に使わない（共通仕様 §3.3）。
      */
-    private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, array $filterFor, array $relations): Builder
+    private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, array $filterFor, ?string $filterRelation): Builder
     {
         if ($itemLabel !== false) {
             $i->where('name', 'like', "%{$itemLabel}%");
@@ -288,14 +297,15 @@ class BuildingQuotationRepository implements QuotationRepositoryInterface
             $i->whereDoesntHave('comments');
         }
 
-        // どちらかの区分に対象の取引先があれば、その項目を表示する。
-        return $i->where(function (Builder $q) use ($filterFor, $relations): void {
-            foreach ($relations as $index => $relation) {
-                $filter = $filterFor[$relation];
-                $method = $index === 0 ? 'whereHas' : 'orWhereHas';
-                $q->{$method}($relation, fn (Builder $p) => $filter($p));
-            }
-        });
+        // 項目を出すかどうかは**自区分**（$filterRelation）に絞り込み後の取引先が残るかで決める。
+        // 逆区分は表示のみ（絞り込み対象外）のため、ここでの判定には使わない。
+        if ($filterRelation === null) {
+            return $i;
+        }
+
+        $filter = $filterFor[$filterRelation];
+
+        return $i->whereHas($filterRelation, fn (Builder $p) => $filter($p));
     }
 
     /**

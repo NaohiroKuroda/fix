@@ -1,11 +1,16 @@
 import type { QuotationManagementMode, QuotationManagementRow } from './quotation';
 
 /**
- * 明細行の一意キー。業者ありは companyId（c{id}）、業者なしは unitId（u{id}）。
- * v-for の key と見積依頼の選択状態キーに共用する（案件内で一意）。
+ * 明細行の一意キー。取引先ありは区分＋id（支払=c{id} / 請求=b{id}）、取引先なしは unitId（u{id}）。
+ * v-for の key と選択・選定・仮選定などのローカル状態キーに共用する。
+ *
+ * ※ 区分（支払 / 請求）を先頭に付けるのは必須。支払は t_payable_partners、請求は t_billing_partners と
+ *   別テーブルで id が独立採番のため、区分フィルタ「全て」で両方を並べると id が衝突しうる。
+ *   衝突すると v-for の key が重複して行の表示が壊れ（絞り込みで消えたまま戻らない）、
+ *   さらに選択状態が支払行と請求行で混線する。
  */
 export const quotationRowKey = (row: QuotationManagementRow): string =>
-    row.companyId != null ? `c${row.companyId}` : `u${row.unitId}`;
+    row.companyId != null ? `${row.billingTarget ? 'b' : 'c'}${row.companyId}` : `u${row.unitId}`;
 
 /**
  * 操作（最終列）の種類。

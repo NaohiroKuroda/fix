@@ -49,19 +49,37 @@ final class BillingMockService
         if (! in_array($kind, ['all', 'payable', 'billing'], true)) {
             $kind = 'billing';
         }
+        // 絞り込み（初期表示条件・取引先名）を効かせる区分。**自区分（請求）だけに効かせる**。
+        // 逆区分は「表示のみ」なので絞り込まず、自区分が残った項目にだけ並べる。
+        // 自区分が一覧に出ない（kind が逆区分のみ）ときだけ、表示している側に効かせる。
+        $filterKind = $kind === 'all' ? 'billing' : $kind;
         $projects = [];
 
         foreach ($this->buildings() as $building) {
+            // 1周目：自区分の行に絞り込みを適用し、残った項目（itemName）を集める。
+            // 項目・案件を出すかどうかはこの結果で決まる（自区分にヒットが無ければ項目ごと非表示）。
+            $keptOwn = [];
+            $visibleItems = [];
+            foreach ($building['rows'] as $index => $row) {
+                if ($row['kind'] !== $filterKind) {
+                    continue;
+                }
+                if (! $this->inScope($mode, $row) || ! $this->matches($building['name'], $row, $filters)) {
+                    continue;
+                }
+                $keptOwn[$index] = true;
+                $visibleItems[(string) $row['itemName']] = true;
+            }
+
+            // 2周目：表示する行を組み立てる。逆区分は絞り込まず、上で残った項目のものだけ並べる。
             $rows = [];
-            foreach ($building['rows'] as $row) {
-                if (! $this->inScope($mode, $row)) {
-                    continue;
-                }
-                if (! $this->matches($building['name'], $row, $filters)) {
-                    continue;
-                }
+            foreach ($building['rows'] as $index => $row) {
                 // 区分で除外する（all は両方出す）。
                 if ($kind !== 'all' && $row['kind'] !== $kind) {
+                    continue;
+                }
+                $isOwn = $row['kind'] === $filterKind;
+                if ($isOwn ? ! isset($keptOwn[$index]) : ! isset($visibleItems[(string) $row['itemName']])) {
                     continue;
                 }
                 $isBilling = $row['kind'] === 'billing';

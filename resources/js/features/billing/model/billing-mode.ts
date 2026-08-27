@@ -43,6 +43,13 @@ export interface BillingModeConfig {
     hint: string;
     bulkSelectLabel: string;
     bulkClearLabel: string;
+    /**
+     * 「この画面で操作できる行（`operable`）だけに絞る」チェックボックスの表示名。
+     * 例: 見積作成=「作成可能」／見積承認=「未承認」／見積取消申請=「申請可能」。
+     * 指定した画面ではこのチェックボックスを出し、**初期表示は ON**（外すと全件表示）。
+     * 支払系（`QuotationModeConfig.operableFilterLabel`）と同じ考え方。
+     */
+    operableFilterLabel?: string;
     /** 承諾日列を出すか（発注書確認のみ）。 */
     showAcceptedAt: boolean;
     /** 理由入力を必須にするか（取消系）。 */
@@ -69,6 +76,7 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         hint: '見積を作成する請求先を選択してください',
         bulkSelectLabel: '全て選択',
         bulkClearLabel: '全ての選択を解除',
+        operableFilterLabel: '作成可能',
         showAcceptedAt: false,
         reasonRequired: false,
     },
@@ -86,6 +94,7 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         hint: '承認する請求先を選択してください',
         bulkSelectLabel: '全て承認',
         bulkClearLabel: '全ての承認を解除',
+        operableFilterLabel: '未承認',
         showAcceptedAt: false,
         reasonRequired: false,
     },
@@ -103,6 +112,7 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         hint: '取消申請する請求先を選択してください',
         bulkSelectLabel: '全て取消申請',
         bulkClearLabel: '全ての取消申請を解除',
+        operableFilterLabel: '申請可能',
         showAcceptedAt: false,
         reasonRequired: true,
     },

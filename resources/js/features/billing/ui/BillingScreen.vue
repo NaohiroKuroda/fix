@@ -102,8 +102,11 @@ const quotationFilterOptions: { value: QuotationFilter; label: string }[] = [
 ];
 /** 【請求】見積承認：見積作成ずみ（初期 ON）。 */
 const createdOnly = ref(props.mode === 'billing-quote-approval');
-/** 【請求】見積承認：未承認（＝この画面で承認できる行）。初期 ON。 */
-const unapprovedOnly = ref(props.mode === 'billing-quote-approval');
+// 「この画面で操作できる行（operable）だけに絞る」チェックボックス。
+// 文言は画面ごと（見積作成=作成可能 / 見積承認=未承認 / 見積取消申請=申請可能）。
+// 出す画面では**初期表示 ON**（着手すべき行だけを最初に見せる）。外すと全件表示に戻る。
+const operableFilterLabel = computed(() => config.value.operableFilterLabel ?? null);
+const operableOnly = ref(operableFilterLabel.value !== null);
 
 /** 画面に出す案件（クライアント側の行フィルタを適用したもの）。 */
 const displayProjects = computed(() => {
@@ -116,7 +119,7 @@ const displayProjects = computed(() => {
     if (createdOnly.value) {
         rowFilters.push((r) => r.quotationAmount !== null);
     }
-    if (unapprovedOnly.value) {
+    if (operableOnly.value && operableFilterLabel.value !== null) {
         rowFilters.push((r) => r.operable);
     }
     if (rowFilters.length === 0) {
@@ -377,7 +380,7 @@ const goToPage = (page: number): void => {
                                 {{ opt.label }}
                             </button>
                         </div>
-                        <!-- 【請求】見積承認：見積作成ずみ / 未承認（処理フロー I列・どちらも初期 ON）。 -->
+                        <!-- 【請求】見積承認：見積作成ずみ（処理フロー I列・初期 ON）。 -->
                         <label
                             v-if="mode === 'billing-quote-approval'"
                             class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
@@ -388,15 +391,19 @@ const goToPage = (page: number): void => {
                             <input type="checkbox" v-model="createdOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
                             見積作成ずみ
                         </label>
+                        <!--
+                            この画面で操作できる行だけに絞る（処理フロー I列・初期 ON）。
+                            文言は画面ごと（見積作成=作成可能 / 見積承認=未承認 / 見積取消申請=申請可能）。
+                        -->
                         <label
-                            v-if="mode === 'billing-quote-approval'"
+                            v-if="operableFilterLabel"
                             class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
-                            :class="unapprovedOnly
+                            :class="operableOnly
                                 ? 'border-[#c4a35b] bg-[#c4a35b]/15 text-[#8a6d2f]'
                                 : 'border-primary/20 bg-white/70 text-primary hover:bg-primary/10'"
                         >
-                            <input type="checkbox" v-model="unapprovedOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
-                            未承認
+                            <input type="checkbox" v-model="operableOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
+                            {{ operableFilterLabel }}
                         </label>
                     </div>
                     <Pager :pagination="pagination" :glass="glass" @change="goToPage" />
@@ -418,7 +425,9 @@ const goToPage = (page: number): void => {
                 />
 
                 <div v-if="!displayProjects.length" class="p-8 text-center" :class="[glassPanelClass, onGlassTextClass]">
-                    対象の請求先がありません。
+                    {{ operableOnly && operableFilterLabel
+                        ? `「${operableFilterLabel}」に該当する請求先がありません。`
+                        : '対象の請求先がありません。' }}
                 </div>
 
                 <div class="flex justify-end pt-1">

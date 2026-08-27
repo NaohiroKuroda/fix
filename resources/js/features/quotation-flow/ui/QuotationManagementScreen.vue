@@ -205,10 +205,11 @@ const kindOptions: { value: PartnerKind; label: string }[] = [
 ];
 
 const provisionalOnly = ref(false);
-// 業者選定：既に選定済み（未申請でない）行だけに絞る。初期 OFF。
-const selectedOnly = ref(false);
-// 部長承認：未承認（この画面で承認できる行＝operable）だけに絞る。初期 ON。
-const unapprovedOnly = ref(props.mode === 'manager-approval');
+// 「この画面で操作できる行（operable）だけに絞る」チェックボックス。
+// 画面ごとに文言が変わる（業者選定=業者未選定 / 部長承認=未承認 / 部長取消申請=申請可能）。
+// 出す画面では**初期表示 ON**（着手すべき行だけを最初に見せる）。外すと全件表示に戻る。
+const operableFilterLabel = computed(() => config.value.operableFilterLabel ?? null);
+const operableOnly = ref(operableFilterLabel.value !== null);
 // 見積依頼画面は初期表示で「未依頼のみ表示」をチェック済みにする（未依頼の見積先から着手できるように）。
 const unrequestedOnly = ref(props.mode === 'quote-request');
 const displayProjects = computed<QuotationManagementProject[]>(() => {
@@ -219,10 +220,7 @@ const displayProjects = computed<QuotationManagementProject[]>(() => {
     if (unrequestedOnly.value) {
         rowFilters.push((r) => r.sendCount === 0);
     }
-    if (selectedOnly.value) {
-        rowFilters.push((r) => r.selected);
-    }
-    if (unapprovedOnly.value) {
+    if (operableOnly.value && operableFilterLabel.value !== null) {
         rowFilters.push((r) => r.operable);
     }
     if (rowFilters.length === 0) {
@@ -813,27 +811,19 @@ const setComment = (value: CommentFilter): void => {
                             />
                             未依頼のみ表示
                         </label>
-                        <!-- 業者選定のみ：既に選定済みの行だけに絞る（処理フロー I列・初期 OFF）。 -->
+                        <!--
+                            この画面で操作できる行だけに絞る（処理フロー I列・初期 ON）。
+                            文言は画面ごと（業者選定=業者未選定 / 部長承認=未承認 / 部長取消申請=申請可能）。
+                        -->
                         <label
-                            v-if="mode === 'vendor-selection'"
+                            v-if="operableFilterLabel"
                             class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
-                            :class="selectedOnly
+                            :class="operableOnly
                                 ? 'border-[#c4a35b] bg-[#c4a35b]/15 text-[#8a6d2f]'
                                 : 'border-primary/20 bg-white/70 text-primary hover:bg-primary/10'"
                         >
-                            <input type="checkbox" v-model="selectedOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
-                            業者選定済み
-                        </label>
-                        <!-- 部長承認のみ：この画面で承認できる行だけに絞る（処理フロー I列・初期 ON）。 -->
-                        <label
-                            v-if="mode === 'manager-approval'"
-                            class="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold backdrop-blur-md transition"
-                            :class="unapprovedOnly
-                                ? 'border-[#c4a35b] bg-[#c4a35b]/15 text-[#8a6d2f]'
-                                : 'border-primary/20 bg-white/70 text-primary hover:bg-primary/10'"
-                        >
-                            <input type="checkbox" v-model="unapprovedOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
-                            未承認
+                            <input type="checkbox" v-model="operableOnly" class="size-4 cursor-pointer accent-[#c4a35b]" />
+                            {{ operableFilterLabel }}
                         </label>
                         <!-- コメントのやり取りの有無フィルタ（全画面共通）。 -->
                         <div class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
@@ -872,15 +862,13 @@ const setComment = (value: CommentFilter): void => {
                 />
 
                 <div v-if="!displayProjects.length" class="p-8 text-center" :class="[glassPanelClass, onGlassTextClass]">
-                    {{ unapprovedOnly
-                        ? '未承認の見積先がありません。'
-                        : selectedOnly
-                            ? '選定済みの見積先がありません。'
-                            : unrequestedOnly && !provisionalOnly
-                                ? '未依頼の見積先がありません。'
-                                : provisionalOnly
-                                    ? '仮選定された見積先がありません。'
-                                    : '対象の案件がありません。' }}
+                    {{ operableOnly && operableFilterLabel
+                        ? `「${operableFilterLabel}」に該当する見積先がありません。`
+                        : unrequestedOnly && !provisionalOnly
+                            ? '未依頼の見積先がありません。'
+                            : provisionalOnly
+                                ? '仮選定された見積先がありません。'
+                                : '対象の案件がありません。' }}
                 </div>
 
                 <!-- ページネーション（下） -->

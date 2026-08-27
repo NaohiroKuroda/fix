@@ -56,6 +56,13 @@ export interface QuotationModeConfig {
     bulkSelectLabel?: string;
     /** 一括選択ボタンの表示名（全選択済み＝解除時）。例: 「全ての依頼を解除」。 */
     bulkClearLabel?: string;
+    /**
+     * 「この画面で操作できる行（`operable`）だけに絞る」チェックボックスの表示名。
+     * 例: 業者選定=「業者未選定」／部長承認=「未承認」／部長取消申請=「申請可能」。
+     * 指定した画面ではこのチェックボックスを出し、**初期表示は ON**（外すと全件表示）。
+     * 未指定の画面では出さない（見積依頼は専用の 2 フィルタ、部長取消承認は一覧自体を対象ステータスで絞るため）。
+     */
+    operableFilterLabel?: string;
 }
 
 /**
@@ -90,6 +97,7 @@ export const QUOTATION_MODE_CONFIG: Record<QuotationManagementMode, QuotationMod
         processingLabel: '確定中…',
         hint: '発注業者を選定してください',
         // 業者選定は案件ごとに 1 業者を選ぶ画面のため、一括選択（全て選定）は用意しない。
+        operableFilterLabel: '業者未選定',
     },
     'manager-approval': {
         kind: 'pick-button',
@@ -104,6 +112,7 @@ export const QUOTATION_MODE_CONFIG: Record<QuotationManagementMode, QuotationMod
         hint: '承認する見積先を選択してください',
         bulkSelectLabel: '全て承認',
         bulkClearLabel: '全ての承認を解除',
+        operableFilterLabel: '未承認',
     },
     'cancel-request': {
         kind: 'pick-button',
@@ -118,6 +127,7 @@ export const QUOTATION_MODE_CONFIG: Record<QuotationManagementMode, QuotationMod
         hint: '取消申請する見積先を選択してください',
         bulkSelectLabel: '全て取消申請',
         bulkClearLabel: '全ての取消申請を解除',
+        operableFilterLabel: '申請可能',
     },
     'cancel-approval': {
         kind: 'pick-button',

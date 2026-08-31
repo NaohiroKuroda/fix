@@ -22,12 +22,10 @@ const props = defineProps<{
     projects: OrderDeliveryProject[];
     pagination: OrderDeliveryPagination;
     filters: OrderDeliveryFilters;
-    /** ヘッダー一括アクションの送信先URL。 */
-    actionUrl: string;
+    /** ヘッダー一括アクションの送信先URL。表示のみの画面（業者承諾確認）は持たない。 */
+    actionUrl?: string | null;
     /** 否認（差し戻し）の送信先URL（該当画面のみ）。 */
     rejectUrl?: string | null;
-    /** 再通知の送信先URL（業者承諾確認画面のみ）。 */
-    renotifyUrl?: string | null;
     /**
      * 理由必須の取消アクション送信先URL。
      * 業者承諾確認画面（取消申請・追加列）／発注取消承認画面（取消承認・主操作）で使う。
@@ -73,7 +71,13 @@ const toggleSelectAll = (): void => {
 
 // ヘッダー一括アクション送信。
 const form = useForm<{ ids: number[] }>({ ids: [] });
-const actionEnabled = computed(() => !form.processing && anyChecked.value);
+// 表示のみの画面（業者承諾確認）は一括アクション・行選択を持たない。
+const isReadOnly = computed(() => config.value.readOnly === true);
+// ヘッダー一括ボタン・「全て選択」を出す画面か。
+const showBulkControls = computed(
+    () => !isReadOnly.value && !config.value.isPerRowAction && !config.value.isCompletionCheck,
+);
+const actionEnabled = computed(() => !form.processing && anyChecked.value && !!props.actionUrl);
 const submitAction = (): void => {
     if (!actionEnabled.value) {
         return;
@@ -82,7 +86,7 @@ const submitAction = (): void => {
     if (form.ids.length === 0) {
         return;
     }
-    form.post(props.actionUrl, {
+    form.post(props.actionUrl as string, {
         preserveScroll: true,
         onSuccess: () => {
             Object.keys(checked).forEach((key) => delete checked[key]);
@@ -253,14 +257,6 @@ const setBillingMonth = (value: BillingMonthFilter): void => {
     );
 };
 
-// 再通知（業者承諾確認画面）：業者へ承諾催促を通知する。
-const renotify = (row: OrderDeliveryRow): void => {
-    if (!props.renotifyUrl) {
-        return;
-    }
-    router.post(props.renotifyUrl, { id: row.companyId }, { preserveScroll: true, preserveState: true, only: ['flash'] });
-};
-
 // ===== やり取り（チャット）：見積管理と同じ項目単位コメント。companyId=t_cost_quotations.id で流用。 =====
 const page = usePage();
 const myRole = computed<'manager' | 'staff'>(() => (page.props.auth?.user?.isEstimateManager ? 'manager' : 'staff'));
@@ -405,7 +401,7 @@ const sendChat = async (): Promise<void> => {
                         ※月末１７：００までに提出された完了報告書が当月請求の対象です。
                     </span>
                     <button
-                        v-if="!config.isPerRowAction && !config.isCompletionCheck && !config.showAcceptedDate"
+                        v-if="showBulkControls"
                         type="button"
                         :class="actionEnabled
                             ? 'h-9 rounded-xl border border-[#c4a35b] bg-[#c4a35b] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b3923f]'
@@ -445,7 +441,7 @@ const sendChat = async (): Promise<void> => {
                         <button type="button" :class="pagerBtnClass" @click="toggleAllProjects">
                             {{ anyOpen ? '明細を全て閉じる' : '明細を全て開く' }}
                         </button>
-                        <button v-if="!config.isPerRowAction && !config.isCompletionCheck && !config.showAcceptedDate" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
+                        <button v-if="showBulkControls" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
                             {{ bulkAllSelected ? config.bulkClearLabel : config.bulkSelectLabel }}
                         </button>
                         <!-- 業者承諾確認のみ：承諾確認フィルタ（全て / 承諾済 / 未完了）。業者側の承諾有無で絞る。 -->

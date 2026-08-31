@@ -28,6 +28,8 @@ export interface OrderDeliveryRow {
     deadlineDays: number | null;
     orderDate: string | null;
     vendorAcceptedAt: string | null;
+    /** 発注承諾日（`Y/m/d`。t_payable_orders.contract_approved_at）。未承諾は null。 */
+    orderAcceptedAt: string | null;
     submittedAt: string | null;
     /** 完了確認画面（請求）：請求書は確認と同時に自動作成される。未作成は null。 */
     invoiceAmount: number | null;

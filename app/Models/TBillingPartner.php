@@ -53,4 +53,10 @@ class TBillingPartner extends Model
         return $this->hasOne(TBillingQuotation::class, 'billing_partner_id')
             ->where('is_latest', true);
     }
+
+    // 発注書（もらいは【請求】見積承認の時点で発行する）。金額・業者の承諾日時を持つ。
+    public function billingOrder()
+    {
+        return $this->hasOne(TBillingOrder::class, 'billing_partner_id');
+    }
 }

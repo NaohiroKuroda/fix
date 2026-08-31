@@ -127,16 +127,11 @@ Route::middleware('auth:admin')->group(function () {
         ->name('order-delivery.order-cancel-approval');     // 発注取消承認（部長）
     Route::post('/order-delivery/order-cancel-approval', [OrderCancelApprovalController::class, 'confirm'])
         ->name('order-delivery.order-cancel-approval.confirm');
+    // 業者承諾確認・【請求】発注書確認はいずれも**表示のみ**の画面（更新ルートを持たない）。
     Route::get('/order-delivery/order-acceptance', [OrderAcceptanceController::class, 'index'])
-        ->name('order-delivery.order-acceptance');          // 業者承諾記録
+        ->name('order-delivery.order-acceptance');          // 【支払】業者承諾確認
     Route::get('/order-delivery/billing-order-confirmation', [BillingOrderConfirmationController::class, 'index'])
-        ->name('order-delivery.billing-order-confirmation'); // 【請求】発注書確認（部長・モック）
-    Route::post('/order-delivery/order-acceptance', [OrderAcceptanceController::class, 'record'])
-        ->name('order-delivery.order-acceptance.record');
-    Route::post('/order-delivery/order-acceptance/renotify', [OrderAcceptanceController::class, 'renotify'])
-        ->name('order-delivery.order-acceptance.renotify');
-    Route::post('/order-delivery/order-acceptance/cancel-request', [OrderAcceptanceController::class, 'cancelRequest'])
-        ->name('order-delivery.order-acceptance.cancel-request');
+        ->name('order-delivery.billing-order-confirmation'); // 【請求】発注書確認（部長）
     Route::get('/order-delivery/delivery-report', [DeliveryReportController::class, 'index'])
         ->name('order-delivery.delivery-report');           // 完了確認（提出日・確認日・請求日）
     Route::post('/order-delivery/delivery-report', [DeliveryReportController::class, 'confirm'])

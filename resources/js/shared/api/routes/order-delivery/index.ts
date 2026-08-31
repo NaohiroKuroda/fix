@@ -3,7 +3,6 @@ import orderExecutionAeef3e from './order-execution'
 import orderApproval7db0d3 from './order-approval'
 import orderCancelRequestB63a4c from './order-cancel-request'
 import orderCancelApprovalF607e6 from './order-cancel-approval'
-import orderAcceptanceC65f40 from './order-acceptance'
 import deliveryReport0ef403 from './delivery-report'
 import deliveryApproval3c1f0b from './delivery-approval'
 import invoiceApproval4acfd2 from './invoice-approval'
@@ -333,7 +332,7 @@ orderCancelApproval.form = orderCancelApprovalForm
 
 /**
 * @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:21
 * @route '/order-delivery/order-acceptance'
 */
 export const orderAcceptance = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -348,7 +347,7 @@ orderAcceptance.definition = {
 
 /**
 * @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:21
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptance.url = (options?: RouteQueryOptions) => {
@@ -357,7 +356,7 @@ orderAcceptance.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:21
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -367,7 +366,7 @@ orderAcceptance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:21
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -377,7 +376,7 @@ orderAcceptance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
 /**
 * @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:21
 * @route '/order-delivery/order-acceptance'
 */
 const orderAcceptanceForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -387,7 +386,7 @@ const orderAcceptanceForm = (options?: RouteQueryOptions): RouteFormDefinition<'
 
 /**
 * @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:21
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptanceForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -397,7 +396,7 @@ orderAcceptanceForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 
 /**
 * @see \App\Http\Controllers\Order\Payable\OrderAcceptanceController::orderAcceptance
-* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:17
+* @see app/Http/Controllers/Order/Payable/OrderAcceptanceController.php:21
 * @route '/order-delivery/order-acceptance'
 */
 orderAcceptanceForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -741,7 +740,7 @@ const orderDelivery = {
     orderApproval: Object.assign(orderApproval, orderApproval7db0d3),
     orderCancelRequest: Object.assign(orderCancelRequest, orderCancelRequestB63a4c),
     orderCancelApproval: Object.assign(orderCancelApproval, orderCancelApprovalF607e6),
-    orderAcceptance: Object.assign(orderAcceptance, orderAcceptanceC65f40),
+    orderAcceptance: Object.assign(orderAcceptance, orderAcceptance),
     billingOrderConfirmation: Object.assign(billingOrderConfirmation, billingOrderConfirmation),
     deliveryReport: Object.assign(deliveryReport, deliveryReport0ef403),
     deliveryApproval: Object.assign(deliveryApproval, deliveryApproval3c1f0b),

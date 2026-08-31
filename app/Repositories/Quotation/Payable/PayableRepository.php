@@ -170,7 +170,7 @@ class PayableRepository implements PayableRepositoryInterface
         // 操作できるのは自区分（支払）の取引先だけ（$screenIsBilling は上で定義）。
         foreach ($paginator as $building) {
             foreach ($building->budgetItems as $item) {
-                // 確定見積＝選定済みの見積先の最新見積額（amount_excluding_tax。§settledQuoteMap）。
+                // 確定見積＝選定済みの見積先の最新見積額（subtotal_amount。§settledQuoteMap）。
                 $settledQuote = $settledQuotes[(int) $item->id] ?? null;
                 // Resource が区分に依らず同じ名前で読めるよう、表示対象を displayPartners に寄せる。
                 // all のときは支払と請求を1つの一覧に合成する（請求＝もらいを先に並べる）。
@@ -179,7 +179,7 @@ class PayableRepository implements PayableRepositoryInterface
                     $isBilling = $relation === 'billingPartners';
                     foreach ($item->getRelation($relation) as $quotation) {
                         $quotation->setAttribute('display_quote', $useLatestQuote
-                            ? optional($quotation->latestQuotation)->amount_excluding_tax
+                            ? optional($quotation->latestQuotation)->subtotal_amount
                             : $settledQuote);
                         // 区分（請求＝もらい / 支払＝はらい）。行の地色・バッジに使う。
                         $quotation->setAttribute('billing_target', $isBilling);
@@ -205,8 +205,8 @@ class PayableRepository implements PayableRepositoryInterface
      * 確定見積（項目 ID → 税抜金額）を求める。
      *
      * 確定見積＝**選定済み（`approval_status <> 'DRAFT'`）の支払見積先の最新見積額**
-     * （`t_payable_quotations` の `is_latest` の `amount_excluding_tax`）。
-     * 相見積・確定見積・見積額はいずれも対応テーブルの `amount_excluding_tax` を出す方針に揃える。
+     * （`t_payable_quotations` の `is_latest` の `subtotal_amount`）。
+     * 相見積・確定見積・見積額はいずれも対応テーブルの `subtotal_amount`（税別合計）を出す方針に揃える。
      *
      * `t_building_budget_items.quotation_amount` は使わない。同列は felix_total の実行予算画面で
      * 保存し直したときにだけ同期される（丸めた）コピーで、fix 側の選定確定では更新されないため、
@@ -243,7 +243,7 @@ class PayableRepository implements PayableRepositoryInterface
             ->where('p.approval_status', '<>', 'DRAFT')
             ->whereNull('p.deleted_at')
             ->orderBy('p.id')
-            ->get(['p.building_budget_item_id as item_id', 'q.amount_excluding_tax as amount']);
+            ->get(['p.building_budget_item_id as item_id', 'q.subtotal_amount as amount']);
 
         $map = [];
         foreach ($rows as $row) {

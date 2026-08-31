@@ -13,6 +13,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  *
  * mode は画面名：order-execution / order-approval / order-cancel-request /
  * order-cancel-approval / order-acceptance / delivery-report / delivery-approval。
+ * order-acceptance（業者承諾確認）は**表示のみ**の画面のため、対応する更新メソッドを持たない。
  */
 interface OrderDeliveryRepositoryInterface
 {
@@ -32,7 +33,7 @@ interface OrderDeliveryRepositoryInterface
     public function executeOrders(array $quotationIds): int;
 
     /**
-     * 発注承認：担当実行済（STAFF_APPROVED）の発注を承認する。
+     * 発注承認：担当実行済（STAFF_APPROVED）の発注を承認し、発注書（t_payable_orders）を発行する。
      *
      * @param  list<int>  $quotationIds
      */
@@ -54,13 +55,6 @@ interface OrderDeliveryRepositoryInterface
      * @param  list<int>  $quotationIds
      */
     public function recordCancelApprovals(array $quotationIds): int;
-
-    /**
-     * 業者承諾記録：承認済み発注に承諾日時を記録する。
-     *
-     * @param  list<int>  $quotationIds
-     */
-    public function recordVendorAcceptances(array $quotationIds): int;
 
     /**
      * 報告書受領の確認：承諾済み発注に対して納品報告を作成する（納品承認申請）。

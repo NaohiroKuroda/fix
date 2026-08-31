@@ -47,18 +47,21 @@ class OrderDeliveryResource extends JsonResource
     /** @return list<array<string, mixed>> */
     private function buildRows(): array
     {
-        $items = $this->relationLoaded('costItems') ? $this->costItems : collect();
+        // 2026-08 のスキーマ改訂で t_building_cost_items → t_building_budget_items、
+        // t_cost_quotations → t_payable_partners へ改称された（リレーション名も budgetItems /
+        // payablePartners）。旧名（costItems / quotations）のままだと明細が常に空になる。
+        $items = $this->relationLoaded('budgetItems') ? $this->budgetItems : collect();
         $rows = [];
 
         foreach ($items as $item) {
-            $quotations = $item->relationLoaded('quotations') ? $item->quotations : collect();
+            $partners = $item->relationLoaded('payablePartners') ? $item->payablePartners : collect();
 
-            if ($quotations->isEmpty()) {
+            if ($partners->isEmpty()) {
                 continue;
             }
 
-            foreach ($quotations as $quotation) {
-                $rows[] = $this->row($item, $quotation);
+            foreach ($partners as $partner) {
+                $rows[] = $this->row($item, $partner);
             }
         }
 
@@ -73,6 +76,9 @@ class OrderDeliveryResource extends JsonResource
     private function row(object $item, object $quotation): array
     {
         $order = $quotation->order;
+        // 発注書（t_payable_orders）。金額・業者の承諾日時はこちらを正とする。
+        // 旧 t_orders しか持たない移行前データのために、無い場合だけ t_orders へフォールバックする。
+        $payableOrder = $quotation->payableOrder;
         $report = $order?->deliveryReport;
         $invoice = $report?->invoice;
 
@@ -92,16 +98,20 @@ class OrderDeliveryResource extends JsonResource
             // 見積（相見積）＝業者の見積額（最新の相見積 = t_payable_quotations.is_latest）。
             // リポジトリが `latestQuotation` を eager load している（存在しない `latestHistory` を
             // 読んでいたため、この列は常に空になっていた）。
-            'quotePrice' => Format::yen(optional($quotation->latestQuotation)->amount_excluding_tax),
-            // 発注＝発注金額（発注前は null）。
-            'orderPrice' => Format::yen($order?->amount),
+            'quotePrice' => Format::yen(optional($quotation->latestQuotation)->subtotal_amount),
+            // 発注金額＝発注書の税別合計（t_payable_orders.subtotal_amount）。発注前は null。
+            'orderPrice' => Format::yen($payableOrder?->subtotal_amount ?? $order?->amount),
             // 承諾の残り期限（日数）。発注日 + 承諾期限（10日）- 今日。発注前は null。
             'deadlineDays' => $order?->order_date
                 ? (int) now()->startOfDay()->diffInDays($order->order_date->copy()->addDays(10)->startOfDay(), false)
                 : null,
             // 進捗の補助表示（発注日・承諾日時・提出日時）。
             'orderDate' => optional($order?->order_date)->format('Y-m-d'),
-            'vendorAcceptedAt' => optional($order?->vendor_accepted_at)->format('Y-m-d H:i'),
+            // 業者の承諾日時（完了確認の「報告書提出日」に使うため時刻まで持つ）。未承諾は null。
+            'vendorAcceptedAt' => optional($payableOrder?->contract_approved_at ?? $order?->vendor_accepted_at)
+                ->format('Y-m-d H:i'),
+            // 発注承諾日（業者承諾確認の列）。日付だけを出す（請求側の同名列と表記を揃える）。
+            'orderAcceptedAt' => Format::date($payableOrder?->contract_approved_at ?? $order?->vendor_accepted_at) ?: null,
             'submittedAt' => optional($report?->submitted_at)->format('Y-m-d H:i'),
             // 完了確認画面（請求）：請求書は確認と同時に自動作成される。未作成なら null。
             'invoiceAmount' => Format::yen($invoice?->amount),

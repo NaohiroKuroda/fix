@@ -65,7 +65,7 @@ export interface BillingModeConfig {
         /** 否認モーダルの説明文（「請求先「〇〇」」に続ける文）。 */
         description: string;
     };
-    /** 承諾日列を出すか（発注書確認のみ）。 */
+    /** 発注承諾日列を出すか（発注書確認のみ）。 */
     showAcceptedAt: boolean;
     /** 理由入力を必須にするか（取消系）。 */
     reasonRequired: boolean;
@@ -169,7 +169,7 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         statusLabel: '【FELIX(建設部部長)】',
         actionLabel: null,
         actionUrl: null,
-        amountColumnLabel: '発注額',
+        amountColumnLabel: '発注金額',
         columnLabel: '発注書',
         idleLabel: '発注書',
         activeLabel: '発注書',

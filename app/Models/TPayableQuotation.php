@@ -23,7 +23,10 @@ class TPayableQuotation extends Model
         'is_latest',
         'file_url',
         'quotation_date',
-        'amount_excluding_tax',
+        // 2026-08 のスキーマ改訂で `amount_excluding_tax` → `subtotal_amount`（税別合計）に改称され、
+        // 消費税額（`tax_amount`）が別列で追加された。
+        'subtotal_amount',
+        'tax_amount',
         'tax_adjust',
         'withholding_income_tax',
         'comment',
@@ -40,6 +43,12 @@ class TPayableQuotation extends Model
     public function partner()
     {
         return $this->belongsTo(TPayablePartner::class, 'payable_partner_id');
+    }
+
+    // この見積を元に発行した発注書（1見積＝1発注）
+    public function order()
+    {
+        return $this->hasOne(TPayableOrder::class, 'payable_quotation_id');
     }
 
     // 支払見積明細

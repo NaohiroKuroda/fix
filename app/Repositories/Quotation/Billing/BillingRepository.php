@@ -3,6 +3,8 @@
 namespace App\Repositories\Quotation\Billing;
 
 use App\Models\AdminUser;
+use App\Models\TBillingOrder;
+use App\Models\TBillingOrderDetail;
 use App\Models\TBillingPartner;
 use App\Models\TBillingQuotation;
 use App\Models\TBillingQuotationDetail;
@@ -13,6 +15,7 @@ use App\Utils\Blame;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +27,7 @@ use Illuminate\Support\Facades\DB;
  * docs/detailed-design/quotations/00_共通仕様_詳細設計.md を参照。
  *
  * 起点は `t_billing_partners`。見積額は `t_billing_quotations`（`is_latest`）の
- * `amount_excluding_tax`、業者の承諾日時は同テーブルの `accepted_at`。
+ * `subtotal_amount`（税別合計）、業者の承諾日時は同テーブルの `accepted_at`。
  */
 class BillingRepository implements BillingRepositoryInterface
 {
@@ -41,17 +44,6 @@ class BillingRepository implements BillingRepositoryInterface
         'billing-cancel-approval' => ['CANCEL_APPLIED'],    // 取消申請中
         'billing-order-confirmation' => ['APPROVED'],       // 承認済（かつ業者承諾あり）
     ];
-
-    /**
-     * 一覧を空で返す画面。
-     *
-     * 【請求】発注書確認は発注（Order）を起点にする画面で、**新しい発注テーブルの作成待ち**。
-     * それまでは中途半端なデータを出さないよう、一覧を空にしておく
-     * （→ docs/detailed-design/orders/02_請求_発注書確認_詳細設計.md）。
-     *
-     * @var list<string>
-     */
-    private const MODE_PENDING_TABLE = ['billing-order-confirmation'];
 
     /** 画面の既定の区分（処理フロー H列「区分が請求」）。 */
     private const DEFAULT_KIND = 'billing';
@@ -81,8 +73,8 @@ class BillingRepository implements BillingRepositoryInterface
         $filterRelation = in_array($ownRelation, $relations, true) ? $ownRelation : ($relations[0] ?? null);
 
         $operable = self::MODE_OPERABLE_STATUS[$mode] ?? null;
-        // 未知の mode、および発注テーブル待ちの画面は空で返す。
-        $empty = $operable === null || in_array($mode, self::MODE_PENDING_TABLE, true);
+        // 未知の mode は空で返す。
+        $empty = $operable === null;
 
         // 取引先の絞り込み：画面の初期表示条件（H列）＋ 請求先名。
         $makeFilter = fn (bool $isBilling): callable => function (Builder $q) use ($mode, $vendor, $isBilling): void {
@@ -112,8 +104,9 @@ class BillingRepository implements BillingRepositoryInterface
                         $filter($q->getQuery());
                         $q->orderBy('id')->with('company:id,company_name');
                         // 見積本体は請求側にしかない。明細は見積修正モーダルの初期値に使う。
+                        // 発注書（t_billing_orders）は発注書確認画面の金額・発注承諾日の表示元。
                         if ($relation === 'billingPartners') {
-                            $q->with(['latestQuotation.details' => fn ($d) => $d->orderBy('id')]);
+                            $q->with(['latestQuotation.details' => fn ($d) => $d->orderBy('id'), 'billingOrder']);
                         }
                     }]);
                 }
@@ -167,11 +160,10 @@ class BillingRepository implements BillingRepositoryInterface
                 'quotations',
                 fn (Builder $h) => $h->where('is_latest', true)->whereNotNull('accepted_at'),
             ),
-            // 承認済みで、業者が承諾済みのもの。
-            'billing-order-confirmation' => $q->whereHas(
-                'quotations',
-                fn (Builder $h) => $h->where('is_latest', true)->whereNotNull('accepted_at'),
-            ),
+            // 発注書（t_billing_orders）が発行済みのもの。もらいの発注書は【請求】見積承認の
+            // 時点で発行する（→ 02_請求_発注書確認_詳細設計.md §4）。承諾の有無では絞らない
+            // （未承諾は一覧の「発注承諾日」が「—」になる）。
+            'billing-order-confirmation' => $q->whereHas('billingOrder'),
             default => null,
         };
     }
@@ -329,6 +321,7 @@ class BillingRepository implements BillingRepositoryInterface
                 ->update(Blame::stampUpdate(['is_latest' => false]));
 
             $amount = $this->detailTotal($details);
+            $tax = $this->detailTax($details);
 
             // 作成者・更新者は HasBlameColumns が自動で押印する（Eloquent イベント経由）。
             $created = TBillingQuotation::query()->create([
@@ -336,7 +329,8 @@ class BillingRepository implements BillingRepositoryInterface
                 'is_latest' => true,
                 'file_url' => (string) ($quotation['fileUrl'] ?? ''),
                 'quotation_date' => $quotation['quotationDate'],
-                'amount_excluding_tax' => $amount,
+                'subtotal_amount' => $amount,
+                'tax_amount' => $tax,
                 'tax_adjust' => (int) ($quotation['taxAdjust'] ?? 0),
                 'withholding_income_tax' => $quotation['withholdingIncomeTax'] ?? null,
                 'comment' => (string) ($quotation['comment'] ?? ''),
@@ -364,6 +358,31 @@ class BillingRepository implements BillingRepositoryInterface
     }
 
     /**
+     * 明細から消費税額を求める（メモ行・非課税行は対象外）。
+     *
+     * 税別行（is_tax_inclusive = false）は `金額 × 税率`、税込行は金額に含まれる税額
+     * （`金額 - 金額 ÷ (1 + 税率)`）を積む。端数は円未満切り捨て。
+     *
+     * @param  list<array<string, mixed>>  $details
+     */
+    private function detailTax(array $details): int
+    {
+        $tax = 0;
+        foreach ($details as $detail) {
+            if (($detail['isMemo'] ?? false) === true || (string) ($detail['taxType'] ?? 'TAXABLE') !== 'TAXABLE') {
+                continue;
+            }
+            $price = (float) ($detail['price'] ?? 0);
+            $rate = (float) ($detail['taxRate'] ?? 0.1);
+            $tax += ($detail['isTaxInclusive'] ?? false) === true
+                ? (int) floor($price - ($price / (1 + $rate)))
+                : (int) floor($price * $rate);
+        }
+
+        return $tax;
+    }
+
+    /**
      * 明細から税抜合計を求める（メモ行は金額を持たないため除外）。
      *
      * @param  list<array<string, mixed>>  $details
@@ -379,6 +398,95 @@ class BillingRepository implements BillingRepositoryInterface
         }
 
         return $total;
+    }
+
+    /**
+     * 発注書（t_billing_orders ＋ 明細）を発行する。もらいは「見積＝発注＝請求」で同額のため、
+     * 【請求】見積承認（部長）の時点で最新見積を写して発行する
+     * （→ docs/detailed-design/orders/02_請求_発注書確認_詳細設計.md §4）。
+     *
+     * @param  list<int>  $partnerIds
+     * @return int 実際に発行した件数
+     */
+    public function issueOrders(array $partnerIds): int
+    {
+        if ($partnerIds === []) {
+            return 0;
+        }
+
+        return DB::transaction(function () use ($partnerIds): int {
+            $partners = TBillingPartner::query()
+                ->whereIn('id', $partnerIds)
+                ->where('approval_status', 'APPROVED')
+                ->whereDoesntHave('billingOrder')
+                ->with('latestQuotation.details')
+                ->get();
+
+            $issued = 0;
+            foreach ($partners as $partner) {
+                $quotation = $partner->latestQuotation;
+                // 見積が無い取引先は発注書を作れない（billing_quotation_id が NOT NULL）。
+                if ($quotation === null) {
+                    continue;
+                }
+
+                $order = TBillingOrder::create([
+                    'billing_quotation_id' => (int) $quotation->id,
+                    'billing_partner_id' => (int) $partner->id,
+                    'issued_at' => Carbon::now(),
+                    'subtotal_amount' => (int) ($quotation->subtotal_amount ?? 0),
+                    'tax_amount' => (int) ($quotation->tax_amount ?? 0),
+                    'tax_adjust' => (int) ($quotation->tax_adjust ?? 0),
+                    'status' => 'ISSUED',
+                    'withholding_tax' => $quotation->withholding_income_tax,
+                ]);
+
+                // 明細は見積明細をそのまま写す。メモ行は金額を持たないため発注書には載せない。
+                foreach ($quotation->details as $detail) {
+                    if ((bool) $detail->is_memo) {
+                        continue;
+                    }
+                    TBillingOrderDetail::create([
+                        'billing_order_id' => (int) $order->id,
+                        'name' => (string) ($detail->name ?? ''),
+                        // 発注明細は数量・単位・単価が NOT NULL。見積側は任意入力のため 0 で埋める。
+                        'quantity' => (int) ($detail->quantity ?? 0),
+                        'unit_id' => (int) ($detail->unit_id ?? 0),
+                        'unit_price' => (int) ($detail->unit_price ?? 0),
+                        'tax_type' => (string) ($detail->tax_type ?? 'TAXABLE'),
+                        'tax_rate' => $detail->tax_rate ?? '0.10',
+                        'is_tax_inclusive' => (bool) $detail->is_tax_inclusive,
+                        'price' => (int) ($detail->price ?? 0),
+                    ]);
+                }
+                $issued++;
+            }
+
+            return $issued;
+        });
+    }
+
+    /**
+     * 発注書を取り消す（見積の否認・取消承認で見積作成へ差し戻したとき）。
+     *
+     * @param  list<int>  $partnerIds
+     * @return int 取り消した件数
+     */
+    public function revokeOrders(array $partnerIds): int
+    {
+        if ($partnerIds === []) {
+            return 0;
+        }
+
+        return DB::transaction(function () use ($partnerIds): int {
+            $orders = TBillingOrder::query()->whereIn('billing_partner_id', $partnerIds)->get();
+            foreach ($orders as $order) {
+                TBillingOrderDetail::query()->where('billing_order_id', $order->id)->delete();
+                $order->delete();
+            }
+
+            return $orders->count();
+        });
     }
 
     public function pendingCounts(): array

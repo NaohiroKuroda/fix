@@ -34,6 +34,10 @@ const emit = defineEmits<{
 const isThemed = computed(() => props.glass === true);
 const isCheckbox = computed(() => props.config.kind === 'checkbox');
 const isCompletionCheck = computed(() => props.config.isCompletionCheck === true);
+// 表示のみの画面（業者承諾確認）。操作列を持たず、明細のボタンは発注書だけ。
+const isReadOnly = computed(() => props.config.readOnly === true);
+// 操作列（承認・確認などのボタン列）を出すか。
+const showActionColumn = computed(() => !isCompletionCheck.value && !isReadOnly.value);
 const showCompletionColumns = computed(() => props.config.showCompletionColumns === true);
 
 // 金額列の構成（見出しと行のキー）。
@@ -48,7 +52,7 @@ const priceColumns = computed<{ label: string; key: PriceKey }[]>(() => {
         ];
     }
     if (props.config.priceMode === 'order-only') {
-        return [{ label: '発注', key: 'orderPrice' }];
+        return [{ label: '発注金額', key: 'orderPrice' }];
     }
     return [
         { label: '予算単価', key: 'budgetPrice' },
@@ -57,14 +61,15 @@ const priceColumns = computed<{ label: string; key: PriceKey }[]>(() => {
     ];
 });
 // 空行の colspan 用。項目/パートナー の2列＋提出日・確認日・請求日（該当画面のみ3列）＋操作列
-// （isCompletionCheck の画面は操作列を持たない）＋金額列＋発注書＋発注日＋否認＋取消申請。
+// （完了確認・表示のみの画面は操作列を持たない）＋金額列＋発注承諾日＋発注書＋発注日＋否認＋取消申請。
 const columnCount = computed(
     () =>
         2 +
         (showCompletionColumns.value ? 3 : 0) +
-        (isCompletionCheck.value ? 0 : 1) +
+        (showActionColumn.value ? 1 : 0) +
         priceColumns.value.length +
         (props.config.showReject ? 1 : 0) +
+        (props.config.showAcceptedDateColumn ? 1 : 0) +
         (props.config.showOrderDocument ? 1 : 0) +
         (props.config.showOrderDate ? 1 : 0) +
         (props.config.showCancelRequest ? 1 : 0),
@@ -128,6 +133,7 @@ const chatBtnClass = (row: OrderDeliveryRow): string => {
                     <col v-if="config.showBillingKind" style="width: 8%" />
                     <col style="width: 22%" />
                     <col v-for="col in priceColumns" :key="col.key" style="width: 13%" />
+                    <col v-if="config.showAcceptedDateColumn" style="width: 14%" />
                     <col v-if="config.showOrderDocument" style="width: 10%" />
                     <col v-if="config.showOrderDate" style="width: 10%" />
                     <template v-if="showCompletionColumns">
@@ -135,17 +141,19 @@ const chatBtnClass = (row: OrderDeliveryRow): string => {
                         <col style="width: 14%" />
                         <col style="width: 14%" />
                     </template>
-                    <col v-if="!isCompletionCheck" style="width: 14%" />
+                    <col v-if="showActionColumn" style="width: 14%" />
                     <col v-if="config.showReject" style="width: 10%" />
                     <col v-if="config.showCancelRequest" style="width: 10%" />
                 </colgroup>
                 <thead class="text-center" :class="tableHeadClass">
                     <tr class="border-b-2 border-slate-300 text-[15px] font-bold uppercase tracking-wider">
-                        <th class="px-3 py-2.5">項目</th>
+                        <th class="px-3 py-2.5">{{ isReadOnly ? '項目名' : '項目' }}</th>
                         <!-- 区分（請求／支払）：業者承諾確認画面のみ。見積依頼画面と同じ位置（項目とパートナーの間）。 -->
                         <th v-if="config.showBillingKind" class="px-3 py-2.5">区分</th>
-                        <th class="px-3 py-2.5">パートナー</th>
+                        <th class="px-3 py-2.5">{{ isReadOnly ? 'パートナー名' : 'パートナー' }}</th>
                         <th v-for="col in priceColumns" :key="col.key" class="px-3 py-2.5">{{ col.label }}<br />(税抜)</th>
+                        <!-- 発注承諾日（業者の請負承認日）：業者承諾確認画面のみ・発注書の左隣。 -->
+                        <th v-if="config.showAcceptedDateColumn" class="px-3 py-2.5">発注承諾日</th>
                         <th v-if="config.showOrderDocument" class="px-3 py-2.5">発注書</th>
                         <th v-if="config.showOrderDate" class="px-3 py-2.5">発注日</th>
                         <template v-if="showCompletionColumns">
@@ -153,7 +161,7 @@ const chatBtnClass = (row: OrderDeliveryRow): string => {
                             <th class="px-3 py-2.5">担当者確認日</th>
                             <th class="px-3 py-2.5">請求書作成日</th>
                         </template>
-                        <th v-if="!isCompletionCheck" class="px-3 py-2.5">{{ config.columnLabel }}</th>
+                        <th v-if="showActionColumn" class="px-3 py-2.5">{{ config.columnLabel }}</th>
                         <th v-if="config.showReject" class="px-3 py-2.5">否認</th>
                         <th v-if="config.showCancelRequest" class="px-3 py-2.5">取消申請</th>
                     </tr>
@@ -193,14 +201,30 @@ const chatBtnClass = (row: OrderDeliveryRow): string => {
                         <td v-if="config.showBillingKind" class="px-3 py-2 text-center">
                             <BillingKindBadge :billing-target="row.billingTarget" />
                         </td>
-                        <td class="px-3 py-2 font-medium">{{ row.vendorName }}</td>
+                        <td class="px-3 py-2 font-medium">
+                            <span class="flex items-center gap-1.5">
+                                <!-- 区分列を持たない画面（業者承諾確認）で、逆区分の行が混ざったときの目印。 -->
+                                <BillingKindBadge v-if="!config.showBillingKind && row.billingTarget" :billing-target="true" />
+                                {{ row.vendorName }}
+                            </span>
+                        </td>
                         <td
                             v-for="(col, ci) in priceColumns"
                             :key="col.key"
                             class="px-3 py-2 text-right tabular-nums"
                             :class="ci === priceColumns.length - 1 ? 'font-semibold' : ''"
                         >{{ yen(row[col.key]) }}</td>
-                        <!-- 発注書（発注実行・発注承認画面のみ）。押下で felix_total の発注書画面を iframe で開く。 -->
+                        <!-- 発注承諾日：業者が発注を承諾した日（t_payable_orders.contract_approved_at）。未承諾は「—」。 -->
+                        <td
+                            v-if="config.showAcceptedDateColumn"
+                            class="px-3 py-2 text-center text-sm tabular-nums"
+                        >
+                            <span v-if="row.orderAcceptedAt" class="inline-flex items-center justify-center gap-1" :class="cellTextClass">
+                                <CheckCircle2 class="size-4 shrink-0 text-emerald-600" />{{ row.orderAcceptedAt }}
+                            </span>
+                            <span v-else :class="mutedTextClass">—</span>
+                        </td>
+                        <!-- 発注書。押下で felix_total の発注書画面を iframe で開く。 -->
                         <td v-if="config.showOrderDocument" class="px-3 py-2 text-center">
                             <button
                                 v-if="project.orderDocumentUrl"
@@ -251,7 +275,7 @@ const chatBtnClass = (row: OrderDeliveryRow): string => {
                                 <span v-else :class="mutedTextClass">—</span>
                             </td>
                         </template>
-                        <td v-if="!isCompletionCheck" class="px-3 py-2 text-center">
+                        <td v-if="showActionColumn" class="px-3 py-2 text-center">
                             <!-- 発注実行：チェックボックス（チップ）。複数選択でヘッダー一括発注。 -->
                             <label
                                 v-if="isCheckbox"
@@ -269,16 +293,6 @@ const chatBtnClass = (row: OrderDeliveryRow): string => {
                                 </span>
                                 {{ isActive(row) ? config.activeLabel : config.idleLabel }}
                             </label>
-                            <!-- 業者承諾確認：既に承諾済み（vendorAcceptedAt あり）の行はボタンの代わりに承諾日を表示する。 -->
-                            <span
-                                v-else-if="config.showAcceptedDate && row.vendorAcceptedAt"
-                                class="inline-flex items-center justify-center gap-1 text-sm tabular-nums"
-                                :class="cellTextClass"
-                            >
-                                <CheckCircle2 class="size-4 shrink-0 text-emerald-600" />{{ row.vendorAcceptedAt }}
-                            </span>
-                            <!-- 業者承諾確認：未承諾は表示のみ（承諾登録機能は廃止・ボタンなし）。 -->
-                            <span v-else-if="config.showAcceptedDate" class="text-sm" :class="mutedTextClass">—</span>
                             <!-- 承認・確認・仮締め：選択トグル（ヘッダー確定で一括）。
                                  取消承認など isPerRowAction＝true の画面は、押下で直接理由入力モーダルを開く（単体実行）。 -->
                             <button

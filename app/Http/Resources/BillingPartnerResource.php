@@ -27,6 +27,9 @@ class BillingPartnerResource extends JsonResource
             // 見出しの「No.」は felix_total（旧）実行予算 ID（t_buildings.source_id）を表示する。
             'no' => $this->source_id !== null ? (int) $this->source_id : null,
             'name' => (string) $this->name,
+            // 発注書（【請求】発注書確認画面のボタン）で開く felix_total の発注書確認画面 URL。
+            // 物件（t_buildings.source_id = 旧 estimates.id）で絞り込む。移行元が無ければ null。
+            'orderDocumentUrl' => $this->felixUrl('felix.order_document_url', $this->source_id),
             'rows' => $this->buildRows(),
         ];
     }
@@ -61,6 +64,9 @@ class BillingPartnerResource extends JsonResource
         // 見積は請求側にしか無い（支払行は latestQuotation を読み込んでいない）。
         $isBilling = (bool) ($partner->billing_target ?? false);
         $quotation = $isBilling ? $partner->latestQuotation : null;
+        // 発注書（t_billing_orders）。発注書確認画面の発注金額・発注承諾日の表示元。
+        // 支払行（区分「全て」で混ざる）は持たないため null。
+        $order = $isBilling ? $partner->billingOrder : null;
 
         return [
             'partnerId' => (int) $partner->id,
@@ -73,13 +79,17 @@ class BillingPartnerResource extends JsonResource
             // 区分（請求＝もらい / 支払＝はらい）。行の地色・バッジに使う。
             'billingTarget' => $isBilling,
             // 金額は BCMath 前提のため文字列で渡す（frontend.md §4.9）。未作成は null。
-            'quotationAmount' => $quotation?->amount_excluding_tax === null
+            'quotationAmount' => $quotation?->subtotal_amount === null
                 ? null
-                : (string) $quotation->amount_excluding_tax,
+                : (string) $quotation->subtotal_amount,
             // Format::date は未設定を '' で返すため、画面契約（null）に揃える。
             'quotationDate' => Format::date($quotation?->quotation_date) ?: null,
             // 業者の発注承諾日（t_billing_quotations.accepted_at）。未承諾は null。
             'acceptedAt' => Format::date($quotation?->accepted_at) ?: null,
+            // 発注金額＝発注書の税別合計（t_billing_orders.subtotal_amount）。未発行は null。
+            'orderAmount' => $order?->subtotal_amount === null ? null : (string) $order->subtotal_amount,
+            // 発注承諾日＝発注書の請負承認日時（t_billing_orders.contract_approved_at）。未承諾は null。
+            'orderAcceptedAt' => Format::date($order?->contract_approved_at) ?: null,
             // やり取り（コメント）のメタ情報（項目単位。リポジトリが付与）。
             'messageCount' => (int) ($partner->comments_count ?? 0),
             'hasComments' => (bool) ($partner->has_comments ?? false),
@@ -104,7 +114,8 @@ class BillingPartnerResource extends JsonResource
             'id' => (int) $quotation->id,
             // input[type=date] にそのまま入れるため `Y-m-d`（未設定は空文字）。
             'quotationDate' => $this->isoDate($quotation->quotation_date),
-            'amountExcludingTax' => (string) $quotation->amount_excluding_tax,
+            // 画面側のキーは `amountExcludingTax` のまま（税別合計＝t_billing_quotations.subtotal_amount）。
+            'amountExcludingTax' => (string) $quotation->subtotal_amount,
             'taxAdjust' => (string) ($quotation->tax_adjust ?? '0'),
             'withholdingIncomeTax' => $quotation->withholding_income_tax === null
                 ? null

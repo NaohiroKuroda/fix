@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Order\Payable;
 
-use App\Http\Requests\OrderDeliveryActionRequest;
-use App\Http\Requests\OrderDeliveryCancelActionRequest;
 use App\Http\Requests\OrderDeliveryFilterRequest;
 use App\Services\Order\Payable\OrderService;
-use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
 
-/** 業者承諾記録画面。 */
+/**
+ * 【支払】業者承諾確認画面。**表示のみ**（更新操作を持たない）。
+ *
+ * 業者の承諾は業者マイページ（felix_total）側の操作で記録され、本画面はその結果
+ * （発注書の請負承認日時）を表示するだけ。
+ *
+ * @see docs/detailed-design/orders/01_支払_業者承諾確認_詳細設計.md
+ */
 class OrderAcceptanceController extends AbstractOrderDeliveryScreenController
 {
     public function __construct(private readonly OrderService $service) {}
@@ -21,24 +25,5 @@ class OrderAcceptanceController extends AbstractOrderDeliveryScreenController
             'order/payable/order-acceptance',
             $this->service->paginate('order-acceptance', $request->filters(), self::PER_PAGE),
         );
-    }
-
-    public function record(OrderDeliveryActionRequest $request): RedirectResponse
-    {
-        $count = $this->service->recordVendorAcceptances($request->ids());
-
-        return $count === 0
-            ? back()->with('error', '業者承諾を確認できませんでした。')
-            : back()->with('success', "業者承諾を確認しました。（{$count}件）");
-    }
-
-    /** 取消申請（業者承諾待ちの発注を取消申請へ）。理由を必須で受け取り、コメントに記録する。 */
-    public function cancelRequest(OrderDeliveryCancelActionRequest $request): RedirectResponse
-    {
-        $count = $this->service->requestCancelWithReason($request->ids(), $request->reason());
-
-        return $count === 0
-            ? back()->with('error', '取消申請を実行できませんでした。対象の発注をご確認ください。')
-            : back()->with('success', "取消申請を実行しました。（{$count}件）");
     }
 }

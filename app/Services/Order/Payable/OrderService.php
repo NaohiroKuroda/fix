@@ -45,33 +45,6 @@ class OrderService
         return $this->repository->recordCancelRequests($quotationIds);
     }
 
-    /**
-     * 業者承諾確認画面からの取消申請。実行に併せて、理由を項目のやり取り（コメント）へ残す。
-     *
-     * @param  list<int>  $quotationIds
-     * @return int 実際に申請した件数
-     */
-    public function requestCancelWithReason(array $quotationIds, string $reason): int
-    {
-        $count = $this->repository->recordCancelRequests($quotationIds);
-
-        if ($count > 0) {
-            // 対象見積先が属する項目（重複排除）へ理由コメントを残す（投稿者＝操作者）。
-            $itemIds = [];
-            foreach ($quotationIds as $quotationId) {
-                $itemId = $this->repository->itemIdForQuotation($quotationId);
-                if ($itemId !== null) {
-                    $itemIds[$itemId] = true;
-                }
-            }
-            foreach (array_keys($itemIds) as $itemId) {
-                $this->comments->post($itemId, '【取消申請】'.$reason, []);
-            }
-        }
-
-        return $count;
-    }
-
     /** @param  list<int>  $quotationIds */
     public function approveCancel(array $quotationIds): int
     {
@@ -103,11 +76,5 @@ class OrderService
         }
 
         return $count;
-    }
-
-    /** @param  list<int>  $quotationIds */
-    public function recordVendorAcceptances(array $quotationIds): int
-    {
-        return $this->repository->recordVendorAcceptances($quotationIds);
     }
 }

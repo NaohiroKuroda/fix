@@ -87,12 +87,24 @@ class BillingQuotationService
     /**
      * 見積承認。`APPLIED` → `APPROVED`。
      *
+     * 承認と同時に**発注書（t_billing_orders）を発行**する。もらいは「見積＝発注＝請求」で
+     * 同額のため、承認された見積をそのまま発注書に写す。発行した発注書が
+     * 【請求】発注書確認画面の表示元になる（→ 02_請求_発注書確認_詳細設計.md §4）。
+     *
      * @param  list<int>  $partnerIds
      */
     public function approve(array $partnerIds): int
     {
         return $this->guard(
-            fn () => $this->billing->advanceStatus($partnerIds, 'APPLIED', 'APPROVED'),
+            function () use ($partnerIds): int {
+                $count = $this->billing->advanceStatus($partnerIds, 'APPLIED', 'APPROVED');
+
+                if ($count > 0) {
+                    $this->billing->issueOrders($partnerIds);
+                }
+
+                return $count;
+            },
             '請求見積の承認に失敗しました',
             ['partnerIds' => $partnerIds],
         );
@@ -144,6 +156,11 @@ class BillingQuotationService
             $count = $this->billing->advanceStatus([$partnerId], $from, $to);
 
             if ($count > 0) {
+                // 見積作成へ差し戻す遷移（否認・取消承認）では、発行済みの発注書も取り消す。
+                if ($to === 'CANCELLED') {
+                    $this->billing->revokeOrders([$partnerId]);
+                }
+
                 $itemId = $this->billing->itemIdForPartner($partnerId);
                 if ($itemId !== null) {
                     $this->comments->post($itemId, $body, []);

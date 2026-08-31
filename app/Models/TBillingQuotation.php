@@ -22,7 +22,10 @@ class TBillingQuotation extends Model
         'is_latest',
         'file_url',
         'quotation_date',
-        'amount_excluding_tax',
+        // 2026-08 のスキーマ改訂で `amount_excluding_tax` → `subtotal_amount`（税別合計）に改称され、
+        // 消費税額（`tax_amount`）が別列で追加された。
+        'subtotal_amount',
+        'tax_amount',
         'tax_adjust',
         'withholding_income_tax',
         'comment',
@@ -33,12 +36,20 @@ class TBillingQuotation extends Model
 
     protected $casts = [
         'is_latest' => 'boolean',
+        // 業者が見積を承諾した日時（もらいの ⑥ 発注承諾）。未承諾は null。
+        'accepted_at' => 'datetime',
     ];
 
     // 請求取引先
     public function partner()
     {
         return $this->belongsTo(TBillingPartner::class, 'billing_partner_id');
+    }
+
+    // この見積を元に発行した発注書（1見積＝1発注）
+    public function order()
+    {
+        return $this->hasOne(TBillingOrder::class, 'billing_quotation_id');
     }
 
     // 請求見積明細

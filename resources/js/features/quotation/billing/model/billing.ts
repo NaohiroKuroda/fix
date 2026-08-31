@@ -35,14 +35,21 @@ export interface BillingRow {
     /** 区分（true=請求／もらい、false=支払／はらい）。区分トグルで選んだ側が並ぶ。 */
     billingTarget: boolean;
     /**
-     * 請求見積の税抜合計（t_billing_quotations.amount_excluding_tax の最新版）。
+     * 請求見積の税別合計（t_billing_quotations.subtotal_amount の最新版）。
      * 金額は BCMath 前提のため **文字列**で受け取る（frontend.md §4.9）。未作成は null。
      */
     quotationAmount: string | null;
     /** 見積日（`Y/m/d` 整形済み）。未作成は null。 */
     quotationDate: string | null;
-    /** 業者の発注承諾日（`Y/m/d` 整形済み）。発注書確認画面で使う。未承諾は null。 */
+    /** 業者の発注承諾日（`Y/m/d` 整形済み。t_billing_quotations.accepted_at）。未承諾は null。 */
     acceptedAt: string | null;
+    /**
+     * 発注金額＝発注書の税別合計（t_billing_orders.subtotal_amount）。
+     * 金額は BCMath 前提のため文字列で受け取る（frontend.md §4.9）。未発行は null。
+     */
+    orderAmount: string | null;
+    /** 発注承諾日（`Y/m/d` 整形済み。t_billing_orders.contract_approved_at）。未承諾は null。 */
+    orderAcceptedAt: string | null;
     /** やり取り（コメント）の件数（項目単位）。 */
     messageCount: number;
     hasComments: boolean;
@@ -141,6 +148,8 @@ export interface BillingProject {
     id: number;
     no: number | null;
     name: string;
+    /** 発注書（発注書確認画面のボタン）で開く felix_total の発注書確認画面 URL。未設定は null。 */
+    orderDocumentUrl?: string | null;
     rows: BillingRow[];
 }
 

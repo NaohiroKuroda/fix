@@ -269,15 +269,11 @@ const submitQuotation = (payload: BillingQuotationInput): void => {
     });
 };
 
-// 発注書プレビュー（⑨）。帳票そのものは未実装のため、現状は主要項目のプレビュー表示。
-const orderDocOpen = ref(false);
-const orderDocTarget = ref<BillingRow | null>(null);
-const openOrderDoc = (row: BillingRow): void => {
-    orderDocTarget.value = row;
-    orderDocOpen.value = true;
-};
-
-/** 行ボタン（pick 以外）の押下。モードごとに開くモーダルを振り分ける。 */
+/**
+ * 行ボタン（pick 以外）の押下。モードごとに開くモーダルを振り分ける。
+ * 発注書確認（view）の「発注書」ボタンは felix_total の帳票を iframe で開くため、
+ * カード側から直接 open-iframe を投げる（支払側の発注書ボタンと同じ）。
+ */
 const onRowAction = (row: BillingRow, buildingName: string): void => {
     if (!row.operable) {
         return;
@@ -288,9 +284,6 @@ const onRowAction = (row: BillingRow, buildingName: string): void => {
             break;
         case 'per-row':
             openReasonModal(row);
-            break;
-        case 'view':
-            openOrderDoc(row);
             break;
         default:
             break;
@@ -597,34 +590,6 @@ const goToPage = (page: number): void => {
                 >
                     {{ rejectForm.processing ? '否認中…' : '否認する' }}
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ⑨ 発注書プレビュー。帳票そのものは felix_total 側のため、ここでは主要項目のみ表示する。 -->
-    <div v-if="orderDocOpen && orderDocTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="orderDocOpen = false">
-        <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div class="flex items-center gap-3 border-l-4 border-l-[#c4a35b] bg-primary px-4 py-3 text-primary-foreground">
-                <p class="min-w-0 flex-1 truncate text-sm font-bold">発注書プレビュー</p>
-                <button type="button" class="rounded-lg p-1 hover:bg-white/10" @click="orderDocOpen = false"><X class="size-5" /></button>
-            </div>
-            <div class="space-y-3 p-6">
-                <div class="relative rounded-xl border border-slate-300 p-6">
-                    <p class="text-center text-lg font-bold tracking-widest">発 注 書</p>
-                    <dl class="mt-4 space-y-1 text-sm">
-                        <div class="flex gap-2"><dt class="w-24 text-slate-500">パートナー</dt><dd>{{ orderDocTarget.vendorName }}</dd></div>
-                        <div class="flex gap-2"><dt class="w-24 text-slate-500">項目</dt><dd>{{ orderDocTarget.itemName }}</dd></div>
-                        <div class="flex gap-2"><dt class="w-24 text-slate-500">承諾日</dt><dd>{{ orderDocTarget.acceptedAt ?? '未承諾' }}</dd></div>
-                    </dl>
-                    <!-- ⑨ 業者が承諾済みなら「承認済」のハンコが押された状態になる。 -->
-                    <span
-                        v-if="orderDocTarget.acceptedAt"
-                        class="absolute right-6 top-6 rotate-[-12deg] rounded-md border-4 border-red-500 px-3 py-1 text-lg font-bold tracking-widest text-red-500 opacity-80"
-                    >承認済</span>
-                </div>
-                <p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                    実際の発注書は felix_total 側の帳票を表示します（本画面は主要項目のプレビューです）。
-                </p>
             </div>
         </div>
     </div>

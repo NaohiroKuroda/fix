@@ -37,6 +37,14 @@ export interface OrderDeliveryModeConfig {
     showReject: boolean;
     /** 発注書ボタン列を出すか（発注実行・発注承認・業者承諾確認画面）。 */
     showOrderDocument: boolean;
+    /**
+     * 表示のみの画面か（業者承諾確認）。true のとき操作列・ヘッダー一括ボタン・全て選択を出さない
+     * （明細のボタンは発注書だけ）。
+     * → docs/detailed-design/orders/01_支払_業者承諾確認_詳細設計.md §2
+     */
+    readOnly?: boolean;
+    /** 発注承諾日列（業者の請負承認日）を出すか。発注書列の左隣・業者承諾確認画面のみ。 */
+    showAcceptedDateColumn?: boolean;
     /** 発注日列を出すか（発注書の右隣・業者承諾確認画面のみ）。 */
     showOrderDate: boolean;
     /**
@@ -44,11 +52,6 @@ export interface OrderDeliveryModeConfig {
      * 見積依頼画面と同じ見た目（BillingKindBadge）・同じ元データ（is_billing_target）を使う。
      */
     showBillingKind: boolean;
-    /**
-     * 操作列（承諾確認→承諾日）で、既に承諾済み（vendorAcceptedAt あり）の行はボタンの代わりに
-     * その日付を表示するか（業者承諾確認画面のみ）。
-     */
-    showAcceptedDate: boolean;
     /** 取消申請（理由必須モーダル）列を出すか（業者承諾確認画面のみ）。 */
     showCancelRequest: boolean;
     /**
@@ -69,8 +72,9 @@ export interface OrderDeliveryModeConfig {
      * （部長完了承認は進捗3列＋承認＋否認）。
      */
     showCompletionColumns: boolean;
-    bulkSelectLabel: string;
-    bulkClearLabel: string;
+    /** 一括選択ボタンの文言。表示のみ（readOnly）・完了確認の画面では持たない。 */
+    bulkSelectLabel?: string;
+    bulkClearLabel?: string;
 }
 
 /**
@@ -93,7 +97,6 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showOrderDocument: true,
         showOrderDate: false,
         showBillingKind: false,
-        showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
         isCompletionCheck: false,
@@ -116,7 +119,6 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showOrderDocument: true,
         showOrderDate: false,
         showBillingKind: false,
-        showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
         isCompletionCheck: false,
@@ -139,7 +141,6 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showOrderDocument: false,
         showOrderDate: false,
         showBillingKind: false,
-        showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
         isCompletionCheck: false,
@@ -162,7 +163,6 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showOrderDocument: false,
         showOrderDate: false,
         showBillingKind: true,
-        showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: true,
         isCompletionCheck: false,
@@ -171,28 +171,28 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         bulkClearLabel: '全ての取消承認を解除',
     },
     'order-acceptance': {
+        // 表示のみの画面。列は 項目名 / パートナー名 / 発注金額 / 発注承諾日 / 発注書 の5つだけ。
         title: '業者承諾確認',
         statusLabel: '【発注承認済み→業者承諾待ち】',
         kind: 'pick-button',
-        columnLabel: '承諾日',
-        // 承諾日＝業者が承諾した日。未承諾は空白（ボタン自体は選択トグルとして機能する）。
+        columnLabel: '発注承諾日',
         idleLabel: '',
         activeLabel: '',
-        actionLabel: '承諾を確認',
-        processingLabel: '確認中…',
-        hint: '承諾を確認する発注を選択してください',
+        actionLabel: '',
+        processingLabel: '',
+        hint: '',
         priceMode: 'order-only',
         showReject: false,
         showOrderDocument: true,
-        showOrderDate: true,
-        showBillingKind: true,
-        showAcceptedDate: true,
-        showCancelRequest: true,
+        // 承諾は業者マイページ側の操作。この画面からは記録も取消申請もしない。
+        readOnly: true,
+        showAcceptedDateColumn: true,
+        showOrderDate: false,
+        showBillingKind: false,
+        showCancelRequest: false,
         isPerRowAction: false,
         isCompletionCheck: false,
         showCompletionColumns: false,
-        bulkSelectLabel: '全て確認',
-        bulkClearLabel: '全ての確認を解除',
     },
     'delivery-report': {
         title: '完了確認',
@@ -209,7 +209,6 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showOrderDocument: false,
         showOrderDate: false,
         showBillingKind: false,
-        showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
         isCompletionCheck: true,
@@ -232,7 +231,6 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showOrderDocument: false,
         showOrderDate: false,
         showBillingKind: false,
-        showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
         isCompletionCheck: false,
@@ -255,7 +253,6 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         showOrderDocument: false,
         showOrderDate: false,
         showBillingKind: false,
-        showAcceptedDate: false,
         showCancelRequest: false,
         isPerRowAction: false,
         isCompletionCheck: false,

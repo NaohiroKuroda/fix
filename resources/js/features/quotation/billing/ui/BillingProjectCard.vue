@@ -41,6 +41,10 @@ const isPick = computed(() => config.value.kind === 'pick');
 // 否認列を出すか（config に否認設定を持つ画面＝見積承認 / 見積取消承認）。
 const showReject = computed(() => config.value.reject != null);
 const isQuoteCreate = computed(() => props.mode === 'billing-quote-create');
+// 発注書確認は**表示のみ**の画面。列は 項目名 / パートナー名 / 発注金額 / 発注承諾日 / 発注書 の5つで、
+// 区分は独立列にせずパートナー名セル内のバッジで示す
+// （→ docs/detailed-design/orders/02_請求_発注書確認_詳細設計.md §5）。
+const isView = computed(() => config.value.kind === 'view');
 const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellTextClass, mutedTextClass } =
     useFelixTheme(isThemed);
 
@@ -131,7 +135,7 @@ const rowButtonLabel = (row: BillingRow): string =>
                 <!-- 全案件カードで列位置を揃えるため、固定レイアウト＋共通の列幅を指定する。 -->
                 <colgroup>
                     <col style="width: 30%" />
-                    <col style="width: 9%" />
+                    <col v-if="!isView" style="width: 9%" />
                     <col style="width: 27%" />
                     <col style="width: 17%" />
                     <col v-if="config.showAcceptedAt" style="width: 14%" />
@@ -140,11 +144,11 @@ const rowButtonLabel = (row: BillingRow): string =>
                 </colgroup>
                 <thead class="text-center" :class="tableHeadClass">
                     <tr class="border-b-2 border-slate-300 text-[15px] font-bold uppercase tracking-wider">
-                        <th class="px-3 py-2.5">項目</th>
-                        <th class="px-3 py-2.5">区分</th>
-                        <th class="px-3 py-2.5">パートナー</th>
+                        <th class="px-3 py-2.5">{{ isView ? '項目名' : '項目' }}</th>
+                        <th v-if="!isView" class="px-3 py-2.5">区分</th>
+                        <th class="px-3 py-2.5">{{ isView ? 'パートナー名' : 'パートナー' }}</th>
                         <th class="px-3 py-2.5">{{ config.amountColumnLabel }}<br />(税抜)</th>
-                        <th v-if="config.showAcceptedAt" class="px-3 py-2.5">承諾日</th>
+                        <th v-if="config.showAcceptedAt" class="px-3 py-2.5">発注承諾日</th>
                         <th class="px-3 py-2.5">{{ config.columnLabel }}</th>
                         <th v-if="showReject" class="px-3 py-2.5">否認</th>
                     </tr>
@@ -187,11 +191,12 @@ const rowButtonLabel = (row: BillingRow): string =>
                             </div>
                         </td>
                         <!-- 区分：区分トグルで選んだ側の取引先が並ぶ（請求 / 支払）。 -->
-                        <td class="px-3 py-2 text-center">
+                        <td v-if="!isView" class="px-3 py-2 text-center">
                             <BillingKindBadge :billing-target="row.billingTarget" />
                         </td>
-                        <!-- パートナー（見積先）。詳細は iframe で開く。 -->
+                        <!-- パートナー（見積先）。詳細は iframe で開く。表示のみの画面は区分バッジを内包する。 -->
                         <td class="px-3 py-2">
+                            <BillingKindBadge v-if="isView" :billing-target="row.billingTarget" class="mr-1.5" />
                             <button
                                 v-if="row.vendorDetailUrl"
                                 type="button"
@@ -206,20 +211,37 @@ const rowButtonLabel = (row: BillingRow): string =>
                             もらいは相見積・業者選定が無いため、標準単価 / 予算単価 / 仮選定の列は持たない
                             （docs/detailed-design/quotations/06_請求_見積作成_詳細設計.md §5）。
                         -->
-                        <!-- 見積額（税抜）。見積日は一覧には出さない（見積モーダルで確認する）。 -->
-                        <td class="px-3 py-2 text-right tabular-nums">{{ yenString(row.quotationAmount) }}</td>
+                        <!--
+                            金額（税抜）。見積系の画面は見積額、発注書確認は発注書の発注金額
+                            （t_billing_orders.subtotal_amount）。見積日は一覧には出さない。
+                        -->
+                        <td class="px-3 py-2 text-right tabular-nums">
+                            {{ yenString(isView ? row.orderAmount : row.quotationAmount) }}
+                        </td>
+                        <!-- 発注承諾日（t_billing_orders.contract_approved_at）。未承諾は「—」。 -->
                         <td v-if="config.showAcceptedAt" class="px-3 py-2 text-center tabular-nums">
-                            <span v-if="row.acceptedAt">{{ row.acceptedAt }}</span>
+                            <span v-if="row.orderAcceptedAt ?? row.acceptedAt">{{ row.orderAcceptedAt ?? row.acceptedAt }}</span>
                             <span v-else :class="mutedTextClass">—</span>
                         </td>
                         <!-- 操作列：pick はトグル選択、それ以外は押下で親がモーダルを開く。 -->
                         <td class="px-3 py-2 text-center">
+                            <!-- 発注書確認（表示のみ）：押下で felix_total の発注書を iframe で開く。 -->
+                            <button
+                                v-if="isView"
+                                type="button"
+                                :disabled="!project.orderDocumentUrl"
+                                :class="[actionBtnClass(false), project.orderDocumentUrl ? '' : 'cursor-not-allowed opacity-50']"
+                                title="発注書を表示する"
+                                @click="emit('open-iframe', { url: project.orderDocumentUrl ?? null, title: `発注書 - ${project.name}` })"
+                            >
+                                <FileText class="size-4" />発注書
+                            </button>
                             <!--
                                 操作できない行（処理フロー K列）。一覧には出すが操作させず、
                                 現在の承認ステータスをバッジで示す。
                             -->
                             <span
-                                v-if="!row.operable"
+                                v-else-if="!row.operable"
                                 class="mx-auto inline-flex h-9 w-28 items-center justify-center whitespace-nowrap rounded-xl border border-slate-300 bg-slate-100 px-2 text-sm font-semibold text-slate-500"
                                 :title="`${statusLabel(row)}のため、この画面では操作できません`"
                             >

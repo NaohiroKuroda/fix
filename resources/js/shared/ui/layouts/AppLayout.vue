@@ -69,10 +69,12 @@ const quotationMenuOpen = ref(true);
 const quotationBadgeTotal = computed(() => quotationChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 
 // 発注管理（トグル）。メニューに出すのは【支払】業者承諾確認と【請求】発注書確認のみ。
+// **発注管理はバッヂを出さない**（どちらも表示専用の画面で、担当者が処理すべき件数という概念が無い。
+// 見積管理_処理フローの「サイドメニューのバッヂの意味」も緑・赤とも「表示なし」）。
 // 発注実行・発注承認・発注取消申請・発注取消承認は画面・ルートを残したままメニューには出さない
 // （取消は業者承諾確認画面内のボタンから行う）。
 const orderChildren = computed<NavChild[]>(() => [
-    { key: 'order-acceptance', label: '【支払】業者承諾確認【発注承諾済み→FELIX(担当者)】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance'), badge: badges.value?.['order-acceptance'] },
+    { key: 'order-acceptance', label: '【支払】業者承諾確認【発注承諾済み→FELIX(担当者)】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance') },
     // 【支払】発注取消承認はメニューに出さない（画面・ルートは残す）。
     // 発注取消は業者承諾確認画面のボタンから申請するため、独立メニューを置かない方針。
     // 【請求】発注書確認（もらい）。業者が発注承諾すると承諾日（t_billing_quotations.accepted_at）が入る。
@@ -153,7 +155,6 @@ const toggleBillingMenu = (): void => {
         deliveryMenuOpen.value = false;
     }
 };
-const orderBadgeTotal = computed(() => orderChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 const deliveryBadgeTotal = computed(() => deliveryChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 const billingBadgeTotal = computed(() => billingChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 
@@ -297,12 +298,6 @@ const logout = () => router.post('/logout');
                 >
                     <ClipboardList class="size-4.5 shrink-0" />
                     <span class="flex-1 text-left">発注管理</span>
-                    <span
-                        v-if="orderBadgeTotal"
-                        class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white tabular-nums"
-                    >
-                        <span class="block translate-y-[0.5px] leading-none">{{ orderBadgeTotal > 99 ? '99+' : orderBadgeTotal }}</span>
-                    </span>
                     <ChevronDown class="size-4 shrink-0 transition-transform" :class="orderMenuOpen ? '' : '-rotate-90'" />
                 </button>
                 <div v-show="orderMenuOpen" class="mt-1 space-y-1 pl-4">

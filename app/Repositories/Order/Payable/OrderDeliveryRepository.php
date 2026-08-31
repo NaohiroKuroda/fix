@@ -359,22 +359,22 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
         return $invoices->count();
     }
 
+    /**
+     * 発注管理（発注実行・発注承認・発注取消承認・業者承諾確認・【請求】発注書確認）は
+     * **バッヂを出さない**ため件数を数えない（見積管理_処理フローの「サイドメニューのバッヂの意味」も
+     * 緑・赤とも「表示なし」）。ここで返すのは完了・納品管理のぶんだけ。
+     */
     public function pendingCounts(): array
     {
-        $countBy = fn (string $mode): int => TPayablePartner::query()->tap(fn (Builder $q) => $this->applyModeFilter($q, $mode))->count();
-
         return [
-            'order-execution' => $countBy('order-execution'),
-            'order-approval' => $countBy('order-approval'),
-            'order-cancel-approval' => $countBy('order-cancel-approval'),
-            // 業者承諾確認：発注書が発行済みで、まだ業者が承諾していないもの（既定の絞り込みと同じ）。
-            'order-acceptance' => $countBy('order-acceptance'),
             // 完了確認画面自体は業者承諾済み全件を表示するが、バッヂは「未確認」のみをカウントする。
             'delivery-report-submission' => TPayablePartner::query()
                 ->whereHas('order', fn (Builder $o) => $o->whereNotNull('vendor_accepted_at')->whereDoesntHave('deliveryReport'))
                 ->count(),
-            'delivery-approval' => $countBy('delivery-approval'),
-            // invoice-approval（請求取消承認）はバッヂ対象外（発注取消申請と同様、常時ブラウズ可能な取消確認画面のため）。
+            'delivery-approval' => TPayablePartner::query()
+                ->tap(fn (Builder $q) => $this->applyModeFilter($q, 'delivery-approval'))
+                ->count(),
+            // invoice-approval（請求取消承認）はバッヂ対象外（常時ブラウズ可能な取消確認画面のため）。
         ];
     }
 

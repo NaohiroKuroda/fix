@@ -39,10 +39,7 @@ declare module '@inertiajs/core' {
             'billing-quote-create-rejected': number;
             'billing-quote-approval': number;
             'billing-cancel-approval': number;
-            'order-execution': number;
-            'order-approval': number;
-            'order-cancel-approval': number;
-            'order-acceptance': number;
+            // 発注管理（発注実行・発注承認・発注取消承認・業者承諾確認）はバッヂを出さないためキーを持たない。
             'delivery-report-submission': number;
             'delivery-approval': number;
         } | null;

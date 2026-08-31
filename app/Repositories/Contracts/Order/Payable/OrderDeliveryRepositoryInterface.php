@@ -82,6 +82,7 @@ interface OrderDeliveryRepositoryInterface
 
     /**
      * サイドメニューのバッヂ用：各画面の未処理件数（見積先＝t_payable_partners 単位）。
+     * 発注管理の各画面はバッヂを出さないため、完了・納品管理のぶんだけを返す。
      *
      * @return array<string, int>
      */

@@ -6,6 +6,7 @@ use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
 use App\Repositories\Contracts\Quotation\Billing\BillingRepositoryInterface;
 use App\Services\Comment\CommentService;
+use App\Services\Mail\BillingNotificationMailService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 
@@ -22,6 +23,7 @@ class BillingQuotationService
     public function __construct(
         private readonly BillingRepositoryInterface $billing,
         private readonly CommentService $comments,
+        private readonly BillingNotificationMailService $mail,
     ) {}
 
     /**
@@ -108,6 +110,33 @@ class BillingQuotationService
             '請求見積の承認に失敗しました',
             ['partnerIds' => $partnerIds],
         );
+    }
+
+    /**
+     * ④ 見積承認後に、業者へ「見積確認・発注承諾のご依頼」メールをメールキューへ登録する。
+     *
+     * **承認そのものとは切り離す**。キューへの登録に失敗しても承認（ステータス更新・発注書発行）は
+     * 巻き戻さず、ログに残して false を返すだけにする。
+     *
+     * @param  list<int>  $partnerIds  承認した請求取引先（t_billing_partners.id）
+     * @return bool 登録できたか（false＝失敗。承認自体は成立している）
+     */
+    public function notifyQuoteConfirmed(array $partnerIds): bool
+    {
+        try {
+            $this->mail->sendQuoteConfirmMail($partnerIds);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('【請求】見積確認・発注承諾のご依頼メールの登録に失敗しました', [
+                'partnerIds' => $partnerIds,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return false;
+        }
     }
 
     /**

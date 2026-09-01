@@ -155,6 +155,43 @@ CROSS_AUTH_SECURE=false
 | iframe URL が古い TLD のまま | ブラウザのフルリロード（Cmd+Shift+R）。直らなければ `docker exec new_fix_dev php artisan optimize:clear` 後にコンテナ再起動 |
 | iframe 内で `/admin/auth/login` に飛ぶ | `cross_auth` が送られていない or `CROSS_AUTH_SECRET` 不一致。Cookie 送信と両アプリの secret 一致を確認 |
 
+## 業者への通知メール（メールキュー）
+
+業者へのメールは**その場で送信せず、メールキューのテーブル `mail_queues` へ予約登録**する
+（現行 felix_total の送信処理を踏襲）。実際の配信は同テーブルを見る**既存のメール送信バッチ**が行う。
+本文は blade（`resources/views/mail/notification/body.blade.php`）を描画した HTML をそのまま入れる。
+
+`mail_queues` は**本体とは別のデータベース**（現行と同じ `itplus4_list`）にあり、
+`config/database.php` の `mysql_2` 接続を使う。**接続先はコードに持たず、すべて `.env` で指定する。**
+
+| `.env` のキー | 内容 |
+| --- | --- |
+| `DB_HOST_2` | メールキューDBのホスト |
+| `DB_PORT_2` | ポート（既定 3306） |
+| `DB_DATABASE_2` | データベース名（`itplus4_list`） |
+| `DB_USERNAME_2` / `DB_PASSWORD_2` | 接続ユーザー |
+
+**本番では本番用の `.env` を用意して切り替える。** コード側の変更は不要
+（`config/database.php` / `config/mail_queue.php` は `env()` を読むだけで接続先を直接持たない）。
+社内のメールキューDBへ開発環境から接続する場合は **VPN 接続が必要**。
+
+### メールの設定（`config/mail_queue.php`）
+
+| `.env` のキー | 既定値 | 内容 |
+| --- | --- | --- |
+| `MAIL_QUEUE_CONNECTION` | `mysql_2` | キューDBの接続名 |
+| `MAIL_QUEUE_TABLE` | `mail_queues` | キューのテーブル名 |
+| `MAIL_QUEUE_FROM_MAIL` | `info@felix-japan.co.jp` | 差出人アドレス |
+| `MAIL_QUEUE_FROM_NAME` | `フィリックス株式会社` | 差出人名（件名の【】内にも使う） |
+| `MAIL_QUEUE_SEND_DELAY_MINUTES` | `10` | 送信予約の猶予（分） |
+| `MAIL_QUEUE_TIMEZONE` | `Asia/Tokyo` | `send_time` を書くタイムゾーン。**キューDB・送信バッチに合わせる**（本アプリは UTC のため、揃えないと猶予を待たず送信される） |
+| `MAIL_QUEUE_VENDOR_BASE_URL` | `FELIX_TOTAL_URL` | 業者マイページの基点 URL |
+| `MAIL_QUEUE_OVERRIDE_TO` | 空 | **テスト送信先**。設定すると全宛先をこのアドレスへ差し替える。**本番では必ず空にする** |
+| `MAIL_QUEUE_BILLING_ORDER_PREVIEW_URL` | 空 | ⑧ 発注確定メールの発注書プレビュー URL。未設定の間は ⑧ を送信しない |
+
+> **動作確認するときは必ず `MAIL_QUEUE_OVERRIDE_TO` を設定する。**
+> `mail_queues` は本番共有のキューで、`status = 0` で積むと送信バッチが実際に配信する。
+
 ## よく使うコマンド
 
 | 目的 | コマンド |

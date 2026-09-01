@@ -20,16 +20,26 @@ class BillingQuoteApprovalController extends AbstractBillingScreenController
         return $this->renderScreen($request, 'billing-quote-approval', 'quotation/billing/quote-approval');
     }
 
-    /** 見積承認（一括）。`APPLIED` → `APPROVED`。 */
+    /**
+     * 見積承認（一括）。`APPLIED` → `APPROVED`。
+     *
+     * 承認と同時に発注書を発行し（サービス側）、業者へ「見積確認・発注承諾のご依頼」メールを送る。
+     * メールの送信は承認とは切り離しており、失敗しても承認は成立させたままにする。
+     */
     public function confirm(BillingPartnerActionRequest $request): RedirectResponse
     {
-        $count = $this->service->approve($request->partnerIds());
+        $partnerIds = $request->partnerIds();
+        $count = $this->service->approve($partnerIds);
 
         if ($count === 0) {
             return back()->with('error', '見積承認を実行できませんでした。対象の請求先をご確認ください。');
         }
 
-        return back()->with('success', "見積承認を実行しました。（{$count}件）");
+        if (! $this->service->notifyQuoteConfirmed($partnerIds)) {
+            return back()->with('success', "見積承認を実行しました。（{$count}件）※業者への確認依頼メールの送信に失敗しました。");
+        }
+
+        return back()->with('success', "見積承認を実行しました。（{$count}件）業者へ確認依頼メールを送信しました。");
     }
 
     /**

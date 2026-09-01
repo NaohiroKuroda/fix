@@ -6,6 +6,7 @@ use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
 use App\Repositories\Contracts\Quotation\Billing\BillingRepositoryInterface;
 use App\Services\Comment\CommentService;
+use App\Services\FelixTotal\FelixTotalBillingQuotationGateway;
 use App\Services\Mail\BillingNotificationMailService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +25,7 @@ class BillingQuotationService
         private readonly BillingRepositoryInterface $billing,
         private readonly CommentService $comments,
         private readonly BillingNotificationMailService $mail,
+        private readonly FelixTotalBillingQuotationGateway $legacyQuotation,
     ) {}
 
     /**
@@ -110,6 +112,34 @@ class BillingQuotationService
             '請求見積の承認に失敗しました',
             ['partnerIds' => $partnerIds],
         );
+    }
+
+    /**
+     * ④ 見積承認後に、承認した見積を現行 felix_total の見積ファイルへ写すよう依頼する。
+     *
+     * もらいの業者マイページは現行の見積ファイルから見積書PDFを組み立てるため、
+     * 新テーブルへ登録しただけでは業者に見えない。**承認そのものとは切り離す**（同期に失敗しても
+     * 承認は巻き戻さず、ログに残して false を返す）。
+     *
+     * @param  list<int>  $partnerIds  承認した請求取引先（t_billing_partners.id）
+     * @return bool 同期を依頼できたか（false＝失敗。承認自体は成立している）
+     */
+    public function syncQuotationToLegacy(array $partnerIds): bool
+    {
+        try {
+            $this->legacyQuotation->syncQuotations($partnerIds);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('【請求】見積の現行への同期に失敗しました', [
+                'partnerIds' => $partnerIds,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return false;
+        }
     }
 
     /**

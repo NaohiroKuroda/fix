@@ -23,8 +23,9 @@ class BillingQuoteApprovalController extends AbstractBillingScreenController
     /**
      * 見積承認（一括）。`APPLIED` → `APPROVED`。
      *
-     * 承認と同時に発注書を発行し（サービス側）、業者へ「見積確認・発注承諾のご依頼」メールを送る。
-     * メールの送信は承認とは切り離しており、失敗しても承認は成立させたままにする。
+     * 承認と同時に発注書を発行し（サービス側）、承認した見積を現行 felix_total へ写したうえで、
+     * 業者へ「見積確認・発注承諾のご依頼」メールを送る。
+     * 現行への同期とメール送信は承認とは切り離しており、失敗しても承認は成立させたままにする。
      */
     public function confirm(BillingPartnerActionRequest $request): RedirectResponse
     {
@@ -33,6 +34,11 @@ class BillingQuoteApprovalController extends AbstractBillingScreenController
 
         if ($count === 0) {
             return back()->with('error', '見積承認を実行できませんでした。対象の請求先をご確認ください。');
+        }
+
+        // 業者マイページに見積書を出すため、承認した見積を現行の見積ファイルへ写す。
+        if (! $this->service->syncQuotationToLegacy($partnerIds)) {
+            return back()->with('success', "見積承認を実行しました。（{$count}件）※業者マイページへの見積反映に失敗しました。");
         }
 
         if (! $this->service->notifyQuoteConfirmed($partnerIds)) {

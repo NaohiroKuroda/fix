@@ -91,24 +91,16 @@ class BillingQuotationService
     /**
      * 見積承認。`APPLIED` → `APPROVED`。
      *
-     * 承認と同時に**発注書（t_billing_orders）を発行**する。もらいは「見積＝発注＝請求」で
-     * 同額のため、承認された見積をそのまま発注書に写す。発行した発注書が
-     * 【請求】発注書確認画面の表示元になる（→ 02_請求_発注書確認_詳細設計.md §4）。
+     * **発注書（t_billing_orders）はここでは作らない。** もらいの発注は業者が承諾して初めて
+     * 成立するため、業者マイページの「発注承諾する」を押した時点で発行する
+     * （→ 02_請求_発注書確認_詳細設計.md §4）。
      *
      * @param  list<int>  $partnerIds
      */
     public function approve(array $partnerIds): int
     {
         return $this->guard(
-            function () use ($partnerIds): int {
-                $count = $this->billing->advanceStatus($partnerIds, 'APPLIED', 'APPROVED');
-
-                if ($count > 0) {
-                    $this->billing->issueOrders($partnerIds);
-                }
-
-                return $count;
-            },
+            fn (): int => $this->billing->advanceStatus($partnerIds, 'APPLIED', 'APPROVED'),
             '請求見積の承認に失敗しました',
             ['partnerIds' => $partnerIds],
         );
@@ -187,6 +179,33 @@ class BillingQuotationService
     }
 
     /**
+     * 見積取消申請のあとに、業者へ「発注取消のご連絡」メールをメールキューへ登録する。
+     *
+     * **申請そのものとは切り離す**。キューへの登録に失敗しても申請は巻き戻さず、
+     * ログに残して false を返すだけにする。
+     *
+     * @param  list<int>  $partnerIds  取消申請した請求取引先（t_billing_partners.id）
+     * @return bool 登録できたか（false＝失敗。申請自体は成立している）
+     */
+    public function notifyCancelRequested(array $partnerIds): bool
+    {
+        try {
+            $this->mail->sendCancelRequestMail($partnerIds);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('【請求】発注取消のご連絡メールの登録に失敗しました', [
+                'partnerIds' => $partnerIds,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * 見積取消承認。`CANCEL_APPLIED` → `CANCELLED`（③ 見積作成へ差し戻し）。
      * 理由を `【取消承認】{理由}` で残す。
      */
@@ -196,12 +215,14 @@ class BillingQuotationService
     }
 
     /**
-     * 見積取消の否認。`CANCEL_APPLIED` → `CANCELLED`（承認と同じ差し戻し先）。
-     * 違いは理由が `【否認】{理由}` として残ること。
+     * 見積取消の否認。`CANCEL_APPLIED` → `APPROVED`（**承認済みのまま据え置く**）。
+     *
+     * 取消を認めないので見積作成へは差し戻さず、承認済みの状態に戻す（支払側の部長取消承認と同じ）。
+     * 発行済みの発注書もそのまま残す。理由は `【否認】{理由}` としてやり取りに記録する。
      */
     public function rejectCancel(int $partnerId, string $reason): int
     {
-        return $this->transition($partnerId, 'CANCEL_APPLIED', 'CANCELLED', '【否認】'.$reason, '請求見積の取消否認に失敗しました');
+        return $this->transition($partnerId, 'CANCEL_APPLIED', 'APPROVED', '【否認】'.$reason, '請求見積の取消否認に失敗しました');
     }
 
     /**

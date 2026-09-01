@@ -15,7 +15,6 @@ use App\Utils\Blame;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -401,73 +400,11 @@ class BillingRepository implements BillingRepositoryInterface
     }
 
     /**
-     * 発注書（t_billing_orders ＋ 明細）を発行する。もらいは「見積＝発注＝請求」で同額のため、
-     * 【請求】見積承認（部長）の時点で最新見積を写して発行する
-     * （→ docs/detailed-design/orders/02_請求_発注書確認_詳細設計.md §4）。
-     *
-     * @param  list<int>  $partnerIds
-     * @return int 実際に発行した件数
-     */
-    public function issueOrders(array $partnerIds): int
-    {
-        if ($partnerIds === []) {
-            return 0;
-        }
-
-        return DB::transaction(function () use ($partnerIds): int {
-            $partners = TBillingPartner::query()
-                ->whereIn('id', $partnerIds)
-                ->where('approval_status', 'APPROVED')
-                ->whereDoesntHave('billingOrder')
-                ->with('latestQuotation.details')
-                ->get();
-
-            $issued = 0;
-            foreach ($partners as $partner) {
-                $quotation = $partner->latestQuotation;
-                // 見積が無い取引先は発注書を作れない（billing_quotation_id が NOT NULL）。
-                if ($quotation === null) {
-                    continue;
-                }
-
-                $order = TBillingOrder::create([
-                    'billing_quotation_id' => (int) $quotation->id,
-                    'billing_partner_id' => (int) $partner->id,
-                    'issued_at' => Carbon::now(),
-                    'subtotal_amount' => (int) ($quotation->subtotal_amount ?? 0),
-                    'tax_amount' => (int) ($quotation->tax_amount ?? 0),
-                    'tax_adjust' => (int) ($quotation->tax_adjust ?? 0),
-                    'status' => 'ISSUED',
-                    'withholding_tax' => $quotation->withholding_income_tax,
-                ]);
-
-                // 明細は見積明細をそのまま写す。メモ行は金額を持たないため発注書には載せない。
-                foreach ($quotation->details as $detail) {
-                    if ((bool) $detail->is_memo) {
-                        continue;
-                    }
-                    TBillingOrderDetail::create([
-                        'billing_order_id' => (int) $order->id,
-                        'name' => (string) ($detail->name ?? ''),
-                        // 発注明細は数量・単位・単価が NOT NULL。見積側は任意入力のため 0 で埋める。
-                        'quantity' => (int) ($detail->quantity ?? 0),
-                        'unit_id' => (int) ($detail->unit_id ?? 0),
-                        'unit_price' => (int) ($detail->unit_price ?? 0),
-                        'tax_type' => (string) ($detail->tax_type ?? 'TAXABLE'),
-                        'tax_rate' => $detail->tax_rate ?? '0.10',
-                        'is_tax_inclusive' => (bool) $detail->is_tax_inclusive,
-                        'price' => (int) ($detail->price ?? 0),
-                    ]);
-                }
-                $issued++;
-            }
-
-            return $issued;
-        });
-    }
-
-    /**
      * 発注書を取り消す（見積の否認・取消承認で見積作成へ差し戻したとき）。
+     *
+     * 発注書は業者が発注承諾したときにだけ作られる（felix_total 側）。取消申請できるのは
+     * 承諾前だけなので通常は対象が無いが、データメンテ等で承諾済みのものが差し戻された場合の
+     * 後始末として残している。
      *
      * @param  list<int>  $partnerIds
      * @return int 取り消した件数

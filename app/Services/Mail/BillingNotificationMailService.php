@@ -28,6 +28,13 @@ class BillingNotificationMailService
 
     private const QUOTE_CONFIRM_NOTICE = '※内容にご承諾いただける場合は、ページ内の「発注承諾」ボタンを押してください。';
 
+    /** 見積取消申請メール（発注取消のご連絡）のタイトル・依頼文・注意書き。 */
+    private const CANCEL_REQUEST_TITLE = '発注取消のご連絡';
+
+    private const CANCEL_REQUEST_EXP = '先にお送りした見積について、取消のお手続きを進めております。';
+
+    private const CANCEL_REQUEST_NOTICE = '※本件はキャンセル扱いとなり、発注承諾はいただけません。';
+
     /** ⑧ 発注確定メール（発注確定のお知らせ）のタイトル・依頼文・注意書き。 */
     private const ORDER_FIXED_TITLE = '発注確定のお知らせ';
 
@@ -56,6 +63,26 @@ class BillingNotificationMailService
             self::QUOTE_CONFIRM_TITLE,
             self::QUOTE_CONFIRM_EXP,
             self::QUOTE_CONFIRM_NOTICE,
+            fn (int $legacyCompanyId, string $token): string => $this->vendorEstimateUrl($legacyCompanyId, $token),
+        );
+    }
+
+    /**
+     * 見積取消申請：業者へ「発注取消のご連絡」メールを送る。
+     * リンク先は業者マイページの見積タブ（取消申請中はキャンセル扱いで表示される）。
+     *
+     * @param  list<int>  $partnerIds  請求取引先（`t_billing_partners.id`）
+     * @return int 登録できた通数（会社単位。宛先が複数ある会社も1通と数える）
+     *
+     * @throws ServiceException 1社でもキューへの登録に失敗したとき
+     */
+    public function sendCancelRequestMail(array $partnerIds): int
+    {
+        return $this->send(
+            $partnerIds,
+            self::CANCEL_REQUEST_TITLE,
+            self::CANCEL_REQUEST_EXP,
+            self::CANCEL_REQUEST_NOTICE,
             fn (int $legacyCompanyId, string $token): string => $this->vendorEstimateUrl($legacyCompanyId, $token),
         );
     }

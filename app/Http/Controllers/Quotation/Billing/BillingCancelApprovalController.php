@@ -34,7 +34,12 @@ class BillingCancelApprovalController extends AbstractBillingScreenController
         return back()->with('success', "取消承認を実行しました。見積作成へ差し戻しました。（{$count}件）");
     }
 
-    /** 否認（1件ずつ・理由必須）。承認と同じく `CANCEL_APPLIED` → `CANCELLED`。 */
+    /**
+     * 否認（1件ずつ・理由必須）。`CANCEL_APPLIED` → `APPROVED`（**承認済みのまま据え置く**）。
+     *
+     * 取消を認めないので見積作成へは差し戻さず、発行済みの発注書もそのまま残す。
+     * 業者マイページ側もキャンセル表示が解け、発注承諾できる状態に戻る。
+     */
     public function reject(BillingReasonActionRequest $request): RedirectResponse
     {
         $count = $this->service->rejectCancel($request->partnerId(), $request->reason());
@@ -43,6 +48,6 @@ class BillingCancelApprovalController extends AbstractBillingScreenController
             return back()->with('error', '否認できませんでした。対象の請求先をご確認ください。');
         }
 
-        return back()->with('success', '取消申請を否認しました。見積作成へ差し戻しました。');
+        return back()->with('success', '取消申請を否認しました。承認済みのまま据え置きます。');
     }
 }

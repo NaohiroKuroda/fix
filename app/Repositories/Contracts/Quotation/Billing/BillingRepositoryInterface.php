@@ -57,14 +57,6 @@ interface BillingRepositoryInterface
      * @return array<string, int>
      */
     /**
-     * 発注書（t_billing_orders ＋ 明細）を発行する（【請求】見積承認と同時）。
-     *
-     * @param  list<int>  $partnerIds
-     * @return int 実際に発行した件数
-     */
-    public function issueOrders(array $partnerIds): int;
-
-    /**
      * 発注書を取り消す（見積の否認・取消承認で見積作成へ差し戻したとき）。
      *
      * @param  list<int>  $partnerIds

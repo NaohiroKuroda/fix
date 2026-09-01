@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:23
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:29
 * @route '/quotation-management/billing-cancel-request'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ confirm.definition = {
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:23
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:29
 * @route '/quotation-management/billing-cancel-request'
 */
 confirm.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ confirm.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:23
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:29
 * @route '/quotation-management/billing-cancel-request'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -35,7 +35,7 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:23
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:29
 * @route '/quotation-management/billing-cancel-request'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -45,7 +45,7 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelRequestController::confirm
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:23
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelRequestController.php:29
 * @route '/quotation-management/billing-cancel-request'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

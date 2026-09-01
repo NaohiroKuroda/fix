@@ -138,7 +138,7 @@ confirm.form = confirmForm
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelApprovalController::reject
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:38
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:43
 * @route '/quotation-management/billing-cancel-approval/reject'
 */
 export const reject = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -153,7 +153,7 @@ reject.definition = {
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelApprovalController::reject
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:38
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:43
 * @route '/quotation-management/billing-cancel-approval/reject'
 */
 reject.url = (options?: RouteQueryOptions) => {
@@ -162,7 +162,7 @@ reject.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelApprovalController::reject
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:38
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:43
 * @route '/quotation-management/billing-cancel-approval/reject'
 */
 reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ reject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelApprovalController::reject
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:38
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:43
 * @route '/quotation-management/billing-cancel-approval/reject'
 */
 const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -182,7 +182,7 @@ const rejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 
 /**
 * @see \App\Http\Controllers\Quotation\Billing\BillingCancelApprovalController::reject
-* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:38
+* @see app/Http/Controllers/Quotation/Billing/BillingCancelApprovalController.php:43
 * @route '/quotation-management/billing-cancel-approval/reject'
 */
 rejectForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

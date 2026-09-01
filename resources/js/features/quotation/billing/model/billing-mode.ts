@@ -153,12 +153,13 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         bulkSelectLabel: '全て取消承認',
         bulkClearLabel: '全ての取消承認を解除',
         operableFilterLabel: '承認可能',
-        // 承認／否認の2択。承認・否認とも CANCELLED にし、③ 見積作成へ差し戻す。
+        // 承認／否認の2択。承認は CANCELLED（③ 見積作成へ差し戻し）、
+        // 否認は APPROVED（承認済みのまま据え置き。発注書も残る）。
         reject: {
             url: '/quotation-management/billing-cancel-approval/reject',
-            hint: '否認して見積作成へ差し戻す',
-            modalTitle: '否認（見積作成へ差し戻し）',
-            description: 'の取消申請を否認し、見積作成へ差し戻します。',
+            hint: '否認して承認済みのまま据え置く',
+            modalTitle: '否認（取消を認めない）',
+            description: 'の取消申請を否認し、承認済みのまま据え置きます。',
         },
         showAcceptedAt: false,
         reasonRequired: true,

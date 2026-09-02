@@ -54,6 +54,7 @@
 - Vue コンポーネントは `<script setup lang="ts">` を使用する（Composition API）。
 - 型定義は **所属するスライスの `model/` または `api/` セグメントに置く**（§4.3.3）。レイヤ横断の共通型は `shared/api/` に置く。技術的役割で束ねた `types/` ディレクトリは作らない。
 - `any` は原則禁止。やむを得ない場合はコメントで理由を明記する。
+- 実装は **最小構成**を選ぶ（ponytail）。Vue / Inertia の標準機能・既存コンポーネント・`shared/` の既存 composable を先に探し、要求されていないラッパーや props は足さない。依存パッケージの追加は最後の手段とする（`CLAUDE.md`「実装スタイル（ponytail）」）。
 - **SFC（Single File Component）の徹底**: 必ず `<script setup lang="ts">` を使用すること。Options API（`data()`, `methods` 等）は全面禁止。
 - **JSX / TSX の全面禁止**: 将来的な Vue 3.6 Vapor モード（仮想DOMに依存しないコンパイル戦略）へのスムーズな移行を見据え、JSX/TSX および `render()` 関数によるコンポーネント記述は全面禁止とする。UIは必ず `<template>` タグを用いたHTMLライクな構文で記述すること。
 - **ロジックの排除**: ビジネスロジックや高度なデータ加工は行わず、Props から受け取ったデータをそのまま表示すること（加工は JsonResource 層で行う）。

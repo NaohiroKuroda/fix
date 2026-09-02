@@ -859,6 +859,7 @@ class StoreEstimateRequest extends FormRequest
     - リソース `XxxResource`、共通関数クラスは責務名（`Format`, `DateHelper` 等）。
 - ControllerからRepositoryクラスは呼ばない。サービスクラスを経由すること。
 - 小数点が絡む計算は `float` 演算を使わず、`App\Utils\Decimal`（BCMath）を経由する（§5.5）。
+- 実装は **最小構成**を選ぶ（ponytail）。Laravel の標準機能・既存の Service / Repository / Utils を先に探し、要求されていない抽象化（実装が1つだけの interface、設定されない config 等）は作らない。型付けと本規約はこれを理由に省略しない（`CLAUDE.md`「実装スタイル（ponytail）」）。
 
 ## 10. テスト
 

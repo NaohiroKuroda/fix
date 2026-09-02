@@ -9,6 +9,18 @@ Laravel 13（PHP 8.3）をバックエンド、Vue 3 + Inertia.js + TypeScript �
 > 🛑 **実装前に必ず [`CLAUDE.md`](CLAUDE.md) と [`docs/architecture/`](docs/architecture/README.md) を読むこと。**
 > アーキテクチャドキュメントを唯一の正（Single Source of Truth）として扱う。
 
+## 実装スタイル（ponytail）
+
+本リポジトリでは Claude Code プラグイン **[ponytail](https://github.com/DietrichGebert/ponytail)** を導入し、
+実装時に適用している。「動くうちで最も小さい実装を選ぶ」方針で、次の順に判断する。
+
+1. そもそも作る必要があるか（YAGNI） 2. 標準ライブラリ・FW標準機能で足りないか
+3. 既存の実装を流用できないか 4. それでも書くなら最小限で
+
+意図的に手を抜いた箇所は `ponytail:` コメントで限界と将来の対処を残す。
+ただし **アーキテクチャドキュメントの確認・型の付与・非自明箇所のコメントは省略しない**。
+詳細は [`CLAUDE.md`](CLAUDE.md) の「実装スタイル（ponytail）」。
+
 ## 技術スタック
 
 | レイヤ | 採用技術 |

@@ -175,6 +175,10 @@ class BillingRepository implements BillingRepositoryInterface
      */
     private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, array $filterFor, ?string $filterRelation): Builder
     {
+        // 現行でチェックを外した項目（use_flg → is_enabled = false）は、絞り込みに関わらず出さない
+        // （共通仕様 §3.4）。ユーザーの選ぶ条件では解除できない前提条件として扱う。
+        $i->where('is_enabled', true);
+
         if ($itemLabel !== false) {
             $i->where('name', 'like', "%{$itemLabel}%");
         }
@@ -426,29 +430,41 @@ class BillingRepository implements BillingRepositoryInterface
         });
     }
 
+    /**
+     * バッヂ集計の起点。表示対象の項目に属する請求取引先だけを数える。
+     *
+     * 現行でチェックを外した項目（use_flg → is_enabled = false）は一覧に出さないため、
+     * バッヂの件数からも除く（共通仕様 §3.4）。
+     */
+    private function countablePartners(): Builder
+    {
+        return TBillingPartner::query()
+            ->whereHas('budgetItem', fn (Builder $i) => $i->where('is_enabled', true));
+    }
+
     public function pendingCounts(): array
     {
         $latest = fn (Builder $h) => $h->where('is_latest', true);
 
         return [
             // 【請求】見積作成：まだ承認申請していない（DRAFT）。
-            'billing-quote-create' => TBillingPartner::query()
+            'billing-quote-create' => $this->countablePartners()
                 ->where('approval_status', 'DRAFT')
                 ->count(),
             // 【請求】見積作成（差し戻し）：見積承認で否認され、見積作成へ戻った（CANCELLED）。
             // 新スキーマに否認理由の列が無いため、項目のコメントに「【否認】」で始まる投稿が
             // あることをもって否認済みと判定する（支払側の業者選定と同じ方法）。
-            'billing-quote-create-rejected' => TBillingPartner::query()
+            'billing-quote-create-rejected' => $this->countablePartners()
                 ->where('approval_status', 'CANCELLED')
                 ->whereIn('building_budget_item_id', $this->denialItemIds())
                 ->count(),
             // 【請求】見積承認：申請中（APPLIED）で、まだ承認も否認もしていない。
-            'billing-quote-approval' => TBillingPartner::query()
+            'billing-quote-approval' => $this->countablePartners()
                 ->where('approval_status', 'APPLIED')
                 ->whereHas('quotations', $latest)
                 ->count(),
             // 【請求】見積取消承認：取消申請中（CANCEL_APPLIED）で、まだ承認も否認もしていない。
-            'billing-cancel-approval' => TBillingPartner::query()
+            'billing-cancel-approval' => $this->countablePartners()
                 ->where('approval_status', 'CANCEL_APPLIED')
                 ->count(),
             // 【請求】見積取消申請はバッヂ対象外（常時ブラウズする画面のため）。

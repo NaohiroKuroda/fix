@@ -344,6 +344,10 @@ class PayableRepository implements PayableRepositoryInterface
      */
     private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, array $filterFor, ?string $filterRelation): Builder
     {
+        // 現行でチェックを外した項目（use_flg → is_enabled = false）は、絞り込みに関わらず出さない
+        // （共通仕様 §3.4）。ユーザーの選ぶ条件では解除できない前提条件として扱う。
+        $i->where('is_enabled', true);
+
         if ($itemLabel !== false) {
             $i->where('name', 'like', "%{$itemLabel}%");
         }
@@ -665,34 +669,46 @@ class PayableRepository implements PayableRepositoryInterface
             ->update(Blame::stampUpdate(['is_drafted' => $drafted ? 1 : 0]));
     }
 
+    /**
+     * バッヂ集計の起点。表示対象の項目に属する支払取引先だけを数える。
+     *
+     * 現行でチェックを外した項目（use_flg → is_enabled = false）は一覧に出さないため、
+     * バッヂの件数からも除く（共通仕様 §3.4）。
+     */
+    private function countablePartners(): Builder
+    {
+        return TPayablePartner::query()
+            ->whereHas('budgetItem', fn (Builder $i) => $i->where('is_enabled', true));
+    }
+
     public function pendingCounts(): array
     {
         return [
             // 見積依頼：移行済み（source_id あり）かつ費用見積依頼（t_payable_quotation_requests）が無い見積先。
-            'quote-request' => TPayablePartner::query()
+            'quote-request' => $this->countablePartners()
                 ->whereNotNull('source_id')
                 ->whereNotExists(fn (QueryBuilder $sub) => $sub->selectRaw('1')
                     ->from('t_payable_quotation_requests')
                     ->whereColumn('t_payable_quotation_requests.payable_partner_id', 't_payable_partners.id'))
                 ->count(),
             // 業者選定：未選定（DRAFT）かつ業者回答あり（最新の相見積履歴 is_latest = 1 を持つ）。
-            'vendor-selection' => TPayablePartner::query()
+            'vendor-selection' => $this->countablePartners()
                 ->where('approval_status', 'DRAFT')
                 ->whereHas('quotations', fn (Builder $h) => $h->where('is_latest', true))
                 ->count(),
             // 業者選定（差し戻し）：部長承認で否認され業者選定へ戻った。
             // 新スキーマに否認理由の列が無いため、項目のコメントに「【否認】」で始まる投稿が
             // あることをもって否認済みと判定する（{@see denialItemIds}）。
-            'vendor-selection-rejected' => TPayablePartner::query()
+            'vendor-selection-rejected' => $this->countablePartners()
                 ->where('approval_status', 'DRAFT')
                 ->whereIn('building_budget_item_id', $this->denialItemIds())
                 ->count(),
             // 部長承認：担当承認済（APPLIED）で部長承認待ち。
-            'manager-approval' => TPayablePartner::query()
+            'manager-approval' => $this->countablePartners()
                 ->where('approval_status', 'APPLIED')
                 ->count(),
             // 部長取消承認：取消申請中（CANCEL_APPLIED）で承認待ち。
-            'cancel-approval' => TPayablePartner::query()
+            'cancel-approval' => $this->countablePartners()
                 ->where('approval_status', 'CANCEL_APPLIED')
                 ->count(),
         ];

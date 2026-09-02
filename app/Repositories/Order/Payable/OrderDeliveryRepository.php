@@ -148,6 +148,10 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     /** 項目（明細）の絞り込み：項目名 ＋ mode に合う見積先を持つこと。 */
     private function applyItemFilter(Builder $i, string|false $itemLabel, callable $quotationFilter): Builder
     {
+        // 現行でチェックを外した項目（use_flg → is_enabled = false）は、絞り込みに関わらず出さない
+        // （共通仕様 §3.4）。ユーザーの選ぶ条件では解除できない前提条件として扱う。
+        $i->where('is_enabled', true);
+
         if ($itemLabel !== false) {
             $i->where('name', 'like', "%{$itemLabel}%");
         }
@@ -360,6 +364,18 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     }
 
     /**
+     * バッヂ集計の起点。表示対象の項目に属する支払取引先だけを数える。
+     *
+     * 現行でチェックを外した項目（use_flg → is_enabled = false）は一覧に出さないため、
+     * バッヂの件数からも除く（共通仕様 §3.4）。
+     */
+    private function countablePartners(): Builder
+    {
+        return TPayablePartner::query()
+            ->whereHas('budgetItem', fn (Builder $i) => $i->where('is_enabled', true));
+    }
+
+    /**
      * 発注管理（発注実行・発注承認・発注取消承認・業者承諾確認・【請求】発注書確認）は
      * **バッヂを出さない**ため件数を数えない（見積管理_処理フローの「サイドメニューのバッヂの意味」も
      * 緑・赤とも「表示なし」）。ここで返すのは完了・納品管理のぶんだけ。
@@ -368,10 +384,10 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     {
         return [
             // 完了確認画面自体は業者承諾済み全件を表示するが、バッヂは「未確認」のみをカウントする。
-            'delivery-report-submission' => TPayablePartner::query()
+            'delivery-report-submission' => $this->countablePartners()
                 ->whereHas('order', fn (Builder $o) => $o->whereNotNull('vendor_accepted_at')->whereDoesntHave('deliveryReport'))
                 ->count(),
-            'delivery-approval' => TPayablePartner::query()
+            'delivery-approval' => $this->countablePartners()
                 ->tap(fn (Builder $q) => $this->applyModeFilter($q, 'delivery-approval'))
                 ->count(),
             // invoice-approval（請求取消承認）はバッヂ対象外（常時ブラウズ可能な取消確認画面のため）。

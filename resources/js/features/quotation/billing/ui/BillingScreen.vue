@@ -294,9 +294,18 @@ const onRowAction = (row: BillingRow, buildingName: string): void => {
 const iframeOpen = ref(false);
 const iframeUrl = ref<string | null>(null);
 const iframeTitle = ref('');
-const openIframe = (payload: { url: string | null; title: string }): void => {
+// 開く中身に合わせて枠の幅を変える。
+// document＝A4の帳票（発注書）。用紙は 210mm 幅で、外側は felix_total 側のグレー地。
+// 枠を用紙幅＋スクロールバー分ぴったりにして、グレーが見えないようにする。
+// 既定＝felix_total の管理画面（見積先の詳細・業者追加）。横に広い方が見やすい。
+const iframeVariant = ref<'admin' | 'document'>('admin');
+const iframeWidthClass = computed(() =>
+    iframeVariant.value === 'document' ? 'max-w-[calc(210mm+18px)]' : 'max-w-5xl',
+);
+const openIframe = (payload: { url: string | null; title: string; variant?: 'admin' | 'document' }): void => {
     iframeUrl.value = payload.url;
     iframeTitle.value = payload.title;
+    iframeVariant.value = payload.variant ?? 'admin';
     iframeOpen.value = true;
 };
 
@@ -596,7 +605,7 @@ const goToPage = (page: number): void => {
 
     <!-- iframe（見積先の詳細 / 業者追加）。移行元（source_id）が無い取引先は URL を持たない。 -->
     <div v-if="iframeOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="iframeOpen = false">
-        <div class="flex h-[80vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div class="flex h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" :class="iframeWidthClass">
             <div class="flex items-center gap-3 border-l-4 border-l-[#c4a35b] bg-primary px-4 py-3 text-primary-foreground">
                 <p class="min-w-0 flex-1 truncate text-sm font-bold">{{ iframeTitle }}</p>
                 <button type="button" class="rounded-lg p-1 hover:bg-white/10" @click="iframeOpen = false"><X class="size-5" /></button>

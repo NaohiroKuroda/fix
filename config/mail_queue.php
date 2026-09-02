@@ -52,12 +52,4 @@ return [
      */
     'vendor_base_url' => env('MAIL_QUEUE_VENDOR_BASE_URL', env('FELIX_TOTAL_URL')),
 
-    /*
-     * ⑧「発注確定のお知らせ」で案内する発注書プレビューの URL テンプレート。
-     * `{id}`（estimate_unit_companies.id）と `{token}`（company_tokens.access_token）を置換する。
-     *
-     * ※ もらいの発注書プレビュー URL は未確定。決まるまでは空にしておき、
-     *   空のときは F-2 の送信をスキップする（警告ログのみ）。
-     */
-    'billing_order_preview_url' => env('MAIL_QUEUE_BILLING_ORDER_PREVIEW_URL', ''),
 ];

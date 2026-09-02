@@ -50,6 +50,11 @@ export interface BillingRow {
     orderAmount: string | null;
     /** 発注承諾日（`Y/m/d` 整形済み。t_billing_orders.contract_approved_at）。未承諾は null。 */
     orderAcceptedAt: string | null;
+    /**
+     * 発注書プレビュー（iframe）の URL。業者マイページ 発注書タブと同じ帳票を開く。
+     * 移行元（source_id）が無い取引先は組めないため null。
+     */
+    orderDocumentUrl: string | null;
     /** やり取り（コメント）の件数（項目単位）。 */
     messageCount: number;
     hasComments: boolean;
@@ -148,8 +153,6 @@ export interface BillingProject {
     id: number;
     no: number | null;
     name: string;
-    /** 発注書（発注書確認画面のボタン）で開く felix_total の発注書確認画面 URL。未設定は null。 */
-    orderDocumentUrl?: string | null;
     rows: BillingRow[];
 }
 

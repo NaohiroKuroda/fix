@@ -35,13 +35,6 @@ class BillingNotificationMailService
 
     private const CANCEL_REQUEST_NOTICE = '※本件はキャンセル扱いとなり、発注承諾はいただけません。';
 
-    /** ⑧ 発注確定メール（発注確定のお知らせ）のタイトル・依頼文・注意書き。 */
-    private const ORDER_FIXED_TITLE = '発注確定のお知らせ';
-
-    private const ORDER_FIXED_EXP = 'ご承諾いただいた内容で発注が確定しましたのでお知らせします。';
-
-    private const ORDER_FIXED_NOTICE = '※発注書は「承認済」が押された状態でご確認いただけます。以降のお手続きはございません。';
-
     public function __construct(
         private readonly BillingMailRepositoryInterface $repository,
         private readonly SendMailService $sendMail,
@@ -84,43 +77,6 @@ class BillingNotificationMailService
             self::CANCEL_REQUEST_EXP,
             self::CANCEL_REQUEST_NOTICE,
             fn (int $legacyCompanyId, string $token): string => $this->vendorEstimateUrl($legacyCompanyId, $token),
-        );
-    }
-
-    /**
-     * ⑧ 発注確定：業者へ「発注確定のお知らせ」メールを送る。
-     * リンク先は業者マイページの発注書プレビュー。
-     *
-     * ※ プレビュー URL の作り方が未確定のため、`MAIL_QUEUE_BILLING_ORDER_PREVIEW_URL`
-     *   が未設定の間は送信せず警告ログのみ残す（承認処理は止めない）。
-     *
-     * @param  list<int>  $partnerIds  請求取引先（`t_billing_partners.id`）
-     * @return int 登録できた通数（会社単位）
-     *
-     * @throws ServiceException 1社でもキューへの登録に失敗したとき
-     */
-    public function sendOrderFixedMail(array $partnerIds): int
-    {
-        $template = (string) config('mail_queue.billing_order_preview_url');
-
-        if ($template === '') {
-            Log::warning('【請求】発注確定のお知らせメール：発注書プレビューURLが未設定のため送信しません', [
-                'partnerIds' => $partnerIds,
-                'config' => 'mail_queue.billing_order_preview_url',
-            ]);
-
-            return 0;
-        }
-
-        return $this->send(
-            $partnerIds,
-            self::ORDER_FIXED_TITLE,
-            self::ORDER_FIXED_EXP,
-            self::ORDER_FIXED_NOTICE,
-            fn (int $legacyCompanyId, string $token): string => strtr($template, [
-                '{id}' => (string) $legacyCompanyId,
-                '{token}' => $token,
-            ]),
         );
     }
 

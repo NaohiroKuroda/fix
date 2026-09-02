@@ -30,7 +30,7 @@ const emit = defineEmits<{
     /** 否認（却下）ボタンの押下。否認列を出す画面（【請求】見積取消承認）のみ。 */
     (e: 'reject', row: BillingRow): void;
     (e: 'open-chat', row: BillingRow, buildingName: string): void;
-    (e: 'open-iframe', payload: { url: string | null; title: string }): void;
+    (e: 'open-iframe', payload: { url: string | null; title: string; variant?: 'admin' | 'document' }): void;
 }>();
 
 const isThemed = computed(() => props.glass === true);
@@ -229,10 +229,10 @@ const rowButtonLabel = (row: BillingRow): string =>
                             <button
                                 v-if="isView"
                                 type="button"
-                                :disabled="!project.orderDocumentUrl"
-                                :class="[actionBtnClass(false), project.orderDocumentUrl ? '' : 'cursor-not-allowed opacity-50']"
+                                :disabled="!row.orderDocumentUrl"
+                                :class="[actionBtnClass(false), row.orderDocumentUrl ? '' : 'cursor-not-allowed opacity-50']"
                                 title="発注書を表示する"
-                                @click="emit('open-iframe', { url: project.orderDocumentUrl ?? null, title: `発注書 - ${project.name}` })"
+                                @click="emit('open-iframe', { url: row.orderDocumentUrl, title: `発注書 - ${row.vendorName}`, variant: 'document' })"
                             >
                                 <FileText class="size-4" />発注書
                             </button>

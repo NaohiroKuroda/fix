@@ -27,9 +27,6 @@ class BillingPartnerResource extends JsonResource
             // 見出しの「No.」は felix_total（旧）実行予算 ID（t_buildings.source_id）を表示する。
             'no' => $this->source_id !== null ? (int) $this->source_id : null,
             'name' => (string) $this->name,
-            // 発注書（【請求】発注書確認画面のボタン）で開く felix_total の発注書確認画面 URL。
-            // 物件（t_buildings.source_id = 旧 estimates.id）で絞り込む。移行元が無ければ null。
-            'orderDocumentUrl' => $this->felixUrl('felix.order_document_url', $this->source_id),
             'rows' => $this->buildRows(),
         ];
     }
@@ -90,6 +87,11 @@ class BillingPartnerResource extends JsonResource
             'orderAmount' => $order?->subtotal_amount === null ? null : (string) $order->subtotal_amount,
             // 発注承諾日＝発注書の請負承認日時（t_billing_orders.contract_approved_at）。未承諾は null。
             'orderAcceptedAt' => Format::date($order?->contract_approved_at) ?: null,
+            // 発注書（【請求】発注書確認画面のボタン）で iframe 表示する、業者マイページと同じ
+            // 発注書プレビューの URL。移行元（source_id）が無い取引先は組めないため null。
+            'orderDocumentUrl' => $isBilling
+                ? $this->felixUrl('felix.billing_order_document_url', $partner->source_id)
+                : null,
             // やり取り（コメント）のメタ情報（項目単位。リポジトリが付与）。
             'messageCount' => (int) ($partner->comments_count ?? 0),
             'hasComments' => (bool) ($partner->has_comments ?? false),

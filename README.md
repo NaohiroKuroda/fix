@@ -187,7 +187,6 @@ CROSS_AUTH_SECURE=false
 | `MAIL_QUEUE_TIMEZONE` | `Asia/Tokyo` | `send_time` を書くタイムゾーン。**キューDB・送信バッチに合わせる**（本アプリは UTC のため、揃えないと猶予を待たず送信される） |
 | `MAIL_QUEUE_VENDOR_BASE_URL` | `FELIX_TOTAL_URL` | 業者マイページの基点 URL |
 | `MAIL_QUEUE_OVERRIDE_TO` | 空 | **テスト送信先**。設定すると全宛先をこのアドレスへ差し替える。**本番では必ず空にする** |
-| `MAIL_QUEUE_BILLING_ORDER_PREVIEW_URL` | 空 | ⑧ 発注確定メールの発注書プレビュー URL。未設定の間は ⑧ を送信しない |
 
 > **動作確認するときは必ず `MAIL_QUEUE_OVERRIDE_TO` を設定する。**
 > `mail_queues` は本番共有のキューで、`status = 0` で積むと送信バッチが実際に配信する。

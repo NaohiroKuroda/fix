@@ -86,6 +86,10 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // メールキュー用の別DBは社内ネットワーク（VPN）越しにあり、届かないと接続だけで
+                // 既定の数十秒〜2分待たされる。画面操作から呼ぶため短めに切って早く失敗させる
+                // （失敗は通知メール側でログに握り、承認・申請そのものは巻き戻さない）。
+                PDO::ATTR_TIMEOUT => (int) env('DB_TIMEOUT_2', 5),
             ]) : [],
         ],
 

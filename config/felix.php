@@ -136,6 +136,21 @@ return [
     ),
 
     /*
+     * 【請求】発注書確認画面の「発注書」ボタンで iframe 表示する、もらいの発注書プレビューの
+     * URL テンプレート。`{id}` を請求取引先の移行元ID（t_billing_partners.source_id
+     * = 旧 estimate_unit_companies.id）に置換する。
+     *
+     * 業者マイページ 発注書タブと同じ帳票を、管理ユーザーのまま表示する
+     * （felix_total 側 NewEstimateCustomEditController@billing_order_document）。
+     * 承諾済みなら「承認済」、取消申請中なら「キャンセル」のハンコも同じ条件で出る。
+     */
+    'billing_order_document_url' => env(
+        'FELIX_BILLING_ORDER_DOCUMENT_URL',
+        rtrim((string) env('FELIX_TOTAL_URL', 'https://fix.felix-japan.co.jp'), '/')
+            .'/admin/new-estimates-custom-edit/billing_order_document?id={id}&iframe=on'
+    ),
+
+    /*
      * 完了確認・部長完了承認画面の「報告書提出日」リンクで iframe 表示する
      * felix_total の実行予算編集画面（必須ファイルタブ）の URL テンプレート。
      * `{id}` を物件ID（t_buildings.source_id = 旧 estimates.id）に置換する。

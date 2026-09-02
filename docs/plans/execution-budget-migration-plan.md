@@ -6,7 +6,7 @@
 > 対象: `new_felix_total` の実行予算一覧（`/execution-budgets`）と詳細（`/estimates/{id}`）を起点に、
 > 編集・各種操作系をすべて取り込む。
 >
-> 準拠ドキュメント: [`docs/architecture/README.md`](../architecture/README.md) / [`frontend.md`](../architecture/frontend.md) / [`backend.md`](../architecture/backend.md)
+> 準拠ドキュメント: [`ai-architecture-instructions.md`](../architecture/ai-architecture-instructions.md) / [`frontend.md`](../architecture/frontend.md) / [`backend.md`](../architecture/backend.md)
 > （※コードとドキュメントに差異が出る場合は、先にドキュメントを更新してから実装する＝Single Source of Truth）
 
 ---

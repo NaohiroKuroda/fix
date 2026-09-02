@@ -5,9 +5,10 @@
 **このリポジトリでコードを実装・変更する前に、必ず以下のアーキテクチャドキュメントを読み、準拠すること。**
 1から順に適応していくこと。
 1. [`docs/architecture/ai-architecture-instructions.md`](docs/architecture/ai-architecture-instructions.md) — 全体アーキテクチャ / 北川さん作成
-2. [`docs/architecture/README.md`](docs/architecture/README.md) — 全体アーキテクチャ / 技術スタック
-3. [`docs/architecture/frontend.md`](docs/architecture/frontend.md) — フロントエンド（Vue 3 / Inertia.js / TypeScript）
-4. [`docs/architecture/backend.md`](docs/architecture/backend.md) — バックエンド（Laravel 13 / PHP 8.3）
+2. [`docs/architecture/frontend.md`](docs/architecture/frontend.md) — フロントエンド（Vue 3 / Inertia.js / TypeScript）
+3. [`docs/architecture/backend.md`](docs/architecture/backend.md) — バックエンド（Laravel 13 / PHP 8.3）
+
+**コーディングはこれらのドキュメントを元に行うこと。** 迷ったら自分の一般論ではなくドキュメントの記述に従う。
 
 ドキュメントとコードに差異がある場合、または新しい設計判断が必要な場合は、**先にドキュメントを更新してから実装すること**。ドキュメントを唯一の正（Single Source of Truth）として扱う。
 
@@ -52,3 +53,20 @@ ponytail は**コードの量と形**に効かせるもので、次を省略す�
 - 「なぜそうしたか」が非自明な箇所の日本語コメント（`ponytail:` コメントを含む）
 
 迷ったらドキュメント側のルールを優先し、その中で最小の実装を選ぶ。
+
+## 使用するスキル
+
+実装内容に応じて、次のスキルを併用すること（`ponytail` は全てのコーディングで常時使う）。
+
+| 対象 | スキル | 使いどころ |
+| --- | --- | --- |
+| コーディング全般 | `ponytail:ponytail` | 必須。最小構成で書く |
+| Vue / `.vue` / Inertia / Vite | `vue-best-practices` | Composition API・`<script setup lang="ts">` の書き方 |
+| `resources/js/` の配置判断 | `feature-sliced-design` | FSD v2.1。どのレイヤ・スライスに置くか（frontend.md §4.3） |
+| composable の作成 | `create-adaptable-composable` | `MaybeRef` を受ける再利用可能な composable |
+| Vue の不具合調査 | `vue-debug-guides` | 実行時エラー・ハイドレーション不整合 |
+| 差分の見直し | `/ponytail-review` `/simplify` `/code-review` | 過剰実装の削除 / 品質整理 / バグ検出 |
+
+**スキルと本リポジトリのドキュメントが食い違う場合は、ドキュメントを優先する。**
+スキルは一般論、`docs/architecture/` は本プロジェクトの決定事項であるため
+（例: frontend.md の JSX/TSX 禁止・`style` ブロック禁止はスキルの一般論より優先する）。

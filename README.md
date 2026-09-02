@@ -6,7 +6,7 @@ MySQL（`fix_db`）を参照し、実行予算の一覧・検索・原価/予算
 Laravel 13（PHP 8.3）をバックエンド、Vue 3 + Inertia.js + TypeScript を
 フロントエンドとする **Monolith SPA**（Inertia.js）構成。
 
-> 🛑 **実装前に必ず [`CLAUDE.md`](CLAUDE.md) と [`docs/architecture/`](docs/architecture/README.md) を読むこと。**
+> 🛑 **実装前に必ず [`CLAUDE.md`](CLAUDE.md) と [`docs/architecture/`](docs/architecture/) を読むこと。**
 > アーキテクチャドキュメントを唯一の正（Single Source of Truth）として扱う。
 
 ## 実装スタイル（ponytail）
@@ -20,6 +20,9 @@ Laravel 13（PHP 8.3）をバックエンド、Vue 3 + Inertia.js + TypeScript �
 意図的に手を抜いた箇所は `ponytail:` コメントで限界と将来の対処を残す。
 ただし **アーキテクチャドキュメントの確認・型の付与・非自明箇所のコメントは省略しない**。
 詳細は [`CLAUDE.md`](CLAUDE.md) の「実装スタイル（ponytail）」。
+
+Vue / FSD など領域ごとに併用するスキルは [`CLAUDE.md`](CLAUDE.md) の「使用するスキル」を参照。
+スキルの一般論と [`docs/architecture/`](docs/architecture/) が食い違う場合はドキュメントを優先する。
 
 ## 技術スタック
 
@@ -245,7 +248,7 @@ docs/           … アーキテクチャ / デプロイ / CI-CD ドキュメン
 | ドキュメント | 内容 |
 | --- | --- |
 | [`CLAUDE.md`](CLAUDE.md) | 開発ガイド / 実装前の必須確認 |
-| [`docs/architecture/README.md`](docs/architecture/README.md) | 全体アーキテクチャ・技術スタック |
+| [`docs/architecture/ai-architecture-instructions.md`](docs/architecture/ai-architecture-instructions.md) | 全体アーキテクチャ・AI への設計指示 |
 | [`docs/architecture/frontend.md`](docs/architecture/frontend.md) | フロントエンド（Vue / Inertia / TS） |
 | [`docs/architecture/backend.md`](docs/architecture/backend.md) | バックエンド（Laravel / PHP） |
 | [`docs/plans/cross-auth-cookie-plan.md`](docs/plans/cross-auth-cookie-plan.md) | felix_total ⇄ fix の Cookie 同期（認証連携）設計 |

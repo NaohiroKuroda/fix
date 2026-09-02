@@ -11,8 +11,6 @@ use App\Models\TInvoice;
 use App\Models\TInvoiceApprovalAction;
 use App\Models\TOrder;
 use App\Models\TOrderApprovalAction;
-use App\Models\TPayableOrder;
-use App\Models\TPayableOrderDetail;
 use App\Models\TPayablePartner;
 use App\Repositories\Contracts\Order\Payable\OrderDeliveryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -184,8 +182,8 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     }
 
     /**
-     * 発注承認。承認と同時に**発注書（t_payable_orders）を発行**する。
-     * 発行した発注書が業者承諾確認画面の表示元になる（→ 01_支払_業者承諾確認_詳細設計.md §4）。
+     * 発注承認。発注書（t_payable_orders）は**部長承認（見積の承認）で発行済み**のため、
+     * ここでは発行しない（→ 01_支払_業者承諾確認_詳細設計.md §4）。
      */
     public function approveOrders(array $quotationIds): int
     {
@@ -194,73 +192,10 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
             foreach ($orders as $order) {
                 $order->update(['order_status' => 'APPROVED']);
                 $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'MANAGER', 'APPROVE');
-                $this->issuePayableOrder((int) $order->cost_quotation_id);
             }
 
             return $orders->count();
         });
-    }
-
-    /**
-     * 発注書（t_payable_orders ＋ 明細）を1件発行する。
-     *
-     * 金額は発注時点の最新見積（t_payable_quotations の is_latest）を写す。もらい・はらいとも
-     * 「見積＝発注」で同額のため、見積の税別合計・消費税をそのまま発注書の金額にする。
-     * 見積が無い取引先は発注書を作らない（payable_quotation_id が NOT NULL のため）。
-     *
-     * @return int 発行した件数（0=見積なし、または発行済み）
-     */
-    private function issuePayableOrder(int $partnerId): int
-    {
-        $partner = TPayablePartner::query()->with('latestQuotation.details')->find($partnerId);
-        $quotation = $partner?->latestQuotation;
-
-        if ($quotation === null || TPayableOrder::query()->where('payable_partner_id', $partnerId)->exists()) {
-            return 0;
-        }
-
-        $order = TPayableOrder::create([
-            'payable_quotation_id' => (int) $quotation->id,
-            'payable_partner_id' => $partnerId,
-            'issued_at' => Carbon::now(),
-            'subtotal_amount' => (int) ($quotation->subtotal_amount ?? 0),
-            'tax_amount' => (int) ($quotation->tax_amount ?? 0),
-            'tax_adjust' => (int) ($quotation->tax_adjust ?? 0),
-            'status' => 'ISSUED',
-            'withholding_tax' => $quotation->withholding_income_tax,
-        ]);
-
-        // 明細は見積明細をそのまま写す。メモ行（is_memo）は金額を持たないため発注書には載せない。
-        $details = $quotation->relationLoaded('details') ? $quotation->details : $quotation->details()->get();
-        foreach ($details as $detail) {
-            if ((bool) $detail->is_memo) {
-                continue;
-            }
-            TPayableOrderDetail::create([
-                'payable_order_id' => (int) $order->id,
-                'name' => (string) ($detail->name ?? ''),
-                // 発注明細は数量・単位・単価が NOT NULL。見積側は任意入力のため 0 で埋める。
-                'quantity' => (int) ($detail->quantity ?? 0),
-                'unit_id' => (int) ($detail->unit_id ?? 0),
-                'unit_price' => (int) ($detail->unit_price ?? 0),
-                'tax_type' => (string) ($detail->tax_type ?? 'TAXABLE'),
-                'tax_rate' => $detail->tax_rate ?? '0.10',
-                'is_tax_inclusive' => (bool) $detail->is_tax_inclusive,
-                'price' => (int) ($detail->price ?? 0),
-            ]);
-        }
-
-        return 1;
-    }
-
-    /** 発注書（t_payable_orders ＋ 明細）を取り消す（発注の否認・取消承認）。 */
-    private function revokePayableOrder(int $partnerId): void
-    {
-        $orders = TPayableOrder::query()->where('payable_partner_id', $partnerId)->get();
-        foreach ($orders as $order) {
-            TPayableOrderDetail::query()->where('payable_order_id', $order->id)->delete();
-            $order->delete();
-        }
     }
 
     public function rejectOrder(int $quotationId, string $reason): int
@@ -270,7 +205,6 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
             return 0;
         }
         $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'MANAGER', 'REJECT');
-        $this->revokePayableOrder($quotationId);
         $order->delete();
 
         return 1;
@@ -292,9 +226,9 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
         $orders = $this->ordersFor($quotationIds, fn (Builder $o) => $o->where('order_status', 'CANCEL_REQUESTED'));
         foreach ($orders as $order) {
             // 取消承認＝発注を取り消す。発注を削除すると見積先は「発注実行待ち」へ戻る。
-            // 発行済みの発注書（t_payable_orders）も併せて取り消す。
+            // 発注書（t_payable_orders）は部長承認の成果物なので、ここでは消さない
+            // （消すのは部長承認の否認・部長取消承認。→ PayableRepository）。
             $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'MANAGER', 'CANCEL_APPROVE');
-            $this->revokePayableOrder((int) $order->cost_quotation_id);
             $order->delete();
         }
 

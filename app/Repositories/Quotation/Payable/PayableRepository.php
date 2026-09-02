@@ -5,6 +5,8 @@ namespace App\Repositories\Quotation\Payable;
 use App\Models\AdminUser;
 use App\Models\TBuilding;
 use App\Models\TBuildingBudgetItem;
+use App\Models\TPayableOrder;
+use App\Models\TPayableOrderDetail;
 use App\Models\TPayablePartner;
 use App\Repositories\Contracts\Quotation\Payable\PayableRepositoryInterface;
 use App\Services\FelixTotal\FelixTotalQuoteRequestGateway;
@@ -13,6 +15,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -441,6 +444,8 @@ class PayableRepository implements PayableRepositoryInterface
             'APPLIED',
             'APPROVED',
             fn (int $unit, int $company) => $this->felix->tmpSelectCompany($unit, $company),
+            // 部長承認＝発注の確定。ここで発注書（t_payable_orders）を発行し、業者マイページに出す。
+            fn (int $partnerId) => $this->issuePayableOrder($partnerId),
         );
     }
 
@@ -457,8 +462,13 @@ class PayableRepository implements PayableRepositoryInterface
      * @param  callable(int, int): void  $callFelixTotal  旧 ID（unit, company）を受け取り現行処理を呼ぶ
      * @return int 実際に遷移した見積先の件数
      */
-    private function syncWithFelixTotal(array $partnerIds, string $from, string $to, callable $callFelixTotal): int
-    {
+    private function syncWithFelixTotal(
+        array $partnerIds,
+        string $from,
+        string $to,
+        callable $callFelixTotal,
+        ?callable $afterTransition = null,
+    ): int {
         // 移行元（source_id）を持つ見積先だけが felix_total 連携の対象。
         $rows = $this->mapSourceIds($partnerIds);
         if ($rows === []) {
@@ -480,6 +490,10 @@ class PayableRepository implements PayableRepositoryInterface
             // 現行処理の呼び出しで例外が出た場合はトランザクションごとロールバックされる。
             foreach ($targets as $target) {
                 $callFelixTotal($target['unit'], $target['company']);
+                // 発注書の発行・取消など、遷移した見積先ごとの後処理（同じトランザクション内）。
+                if ($afterTransition !== null) {
+                    $afterTransition((int) $target['id']);
+                }
             }
 
             return $count;
@@ -532,6 +546,9 @@ class PayableRepository implements PayableRepositoryInterface
             if ($count === 0) {
                 return 0;
             }
+
+            // 承認が取り消されたので、発行済みの発注書も取り消す。
+            $this->revokePayableOrder($partnerId);
 
             foreach ($targets as $target) {
                 $this->felix->cancelAdoption($target['unit'], $target['company']);
@@ -605,6 +622,8 @@ class PayableRepository implements PayableRepositoryInterface
                 $this->felix->cancelTmpSelection($unit, $company);
                 $this->felix->cancelAdoption($unit, $company);
             },
+            // 部長承認が取り消されたので、発行済みの発注書も取り消す。
+            fn (int $partnerId) => $this->revokePayableOrder($partnerId),
         );
     }
 
@@ -667,6 +686,72 @@ class PayableRepository implements PayableRepositoryInterface
             ->where('id', $partnerId)
             // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
             ->update(Blame::stampUpdate(['is_drafted' => $drafted ? 1 : 0]));
+    }
+
+    /**
+     * 発注書（t_payable_orders ＋ 明細）を1件発行する。
+     *
+     * **部長承認（見積の承認）で発行する。** 発行した発注書が業者マイページの発注書になり、
+     * 業者が請負承認すると felix_total 側で `contract_approved_at` が入る
+     * （→ PayableOrderAcceptService）。新Fix の業者承諾確認画面はこの発注書を表示元にする。
+     *
+     * 金額は承認時点の最新見積（t_payable_quotations の is_latest）を写す。もらい・はらいとも
+     * 「見積＝発注」で同額のため、見積の税別合計・消費税をそのまま発注書の金額にする。
+     * 見積が無い取引先は発注書を作らない（payable_quotation_id が NOT NULL のため）。
+     *
+     * @return int 発行した件数（0=見積なし、または発行済み）
+     */
+    private function issuePayableOrder(int $partnerId): int
+    {
+        $partner = TPayablePartner::query()->with('latestQuotation.details')->find($partnerId);
+        $quotation = $partner?->latestQuotation;
+
+        if ($quotation === null || TPayableOrder::query()->where('payable_partner_id', $partnerId)->exists()) {
+            return 0;
+        }
+
+        $order = TPayableOrder::create([
+            'payable_quotation_id' => (int) $quotation->id,
+            'payable_partner_id' => $partnerId,
+            'issued_at' => Carbon::now(),
+            'subtotal_amount' => (int) ($quotation->subtotal_amount ?? 0),
+            'tax_amount' => (int) ($quotation->tax_amount ?? 0),
+            'tax_adjust' => (int) ($quotation->tax_adjust ?? 0),
+            'status' => 'ISSUED',
+            'withholding_tax' => $quotation->withholding_income_tax,
+        ]);
+
+        // 明細は見積明細をそのまま写す。メモ行（is_memo）は金額を持たないため発注書には載せない。
+        $details = $quotation->relationLoaded('details') ? $quotation->details : $quotation->details()->get();
+        foreach ($details as $detail) {
+            if ((bool) $detail->is_memo) {
+                continue;
+            }
+            TPayableOrderDetail::create([
+                'payable_order_id' => (int) $order->id,
+                'name' => (string) ($detail->name ?? ''),
+                // 発注明細は数量・単位・単価が NOT NULL。見積側は任意入力のため 0 で埋める。
+                'quantity' => (int) ($detail->quantity ?? 0),
+                'unit_id' => (int) ($detail->unit_id ?? 0),
+                'unit_price' => (int) ($detail->unit_price ?? 0),
+                'tax_type' => (string) ($detail->tax_type ?? 'TAXABLE'),
+                'tax_rate' => $detail->tax_rate ?? '0.10',
+                'is_tax_inclusive' => (bool) $detail->is_tax_inclusive,
+                'price' => (int) ($detail->price ?? 0),
+            ]);
+        }
+
+        return 1;
+    }
+
+    /** 発注書（t_payable_orders ＋ 明細）を取り消す（部長承認の否認・部長取消承認）。 */
+    private function revokePayableOrder(int $partnerId): void
+    {
+        $orders = TPayableOrder::query()->where('payable_partner_id', $partnerId)->get();
+        foreach ($orders as $order) {
+            TPayableOrderDetail::query()->where('payable_order_id', $order->id)->delete();
+            $order->delete();
+        }
     }
 
     /**

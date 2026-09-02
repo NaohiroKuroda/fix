@@ -7,7 +7,7 @@ use App\Models\TBuilding;
 use App\Repositories\Contracts\Quotation\Billing\BillingRepositoryInterface;
 use App\Services\Comment\CommentService;
 use App\Services\FelixTotal\FelixTotalBillingQuotationGateway;
-use App\Services\Mail\BillingNotificationMailService;
+use App\Services\Mail\VendorNotificationMailService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 
@@ -24,7 +24,7 @@ class BillingQuotationService
     public function __construct(
         private readonly BillingRepositoryInterface $billing,
         private readonly CommentService $comments,
-        private readonly BillingNotificationMailService $mail,
+        private readonly VendorNotificationMailService $mail,
         private readonly FelixTotalBillingQuotationGateway $legacyQuotation,
     ) {}
 

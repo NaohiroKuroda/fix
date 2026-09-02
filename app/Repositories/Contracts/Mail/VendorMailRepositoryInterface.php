@@ -5,16 +5,17 @@ namespace App\Repositories\Contracts\Mail;
 use App\Models\Company;
 use App\Models\EstimateUnitCompany;
 use App\Models\TBillingPartner;
+use App\Models\TPayablePartner;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * 請求（もらい）系の通知メールを組み立てるためのデータ取得窓口。
+ * 業者への通知メールを組み立てるためのデータ取得窓口（支払・請求で共用）。
  *
- * 新スキーマ（`t_billing_partners`）と現行スキーマ（`estimate_unit_companies` /
- * `company_staff` / `company_tokens`）の両方を読むが、業務判断（会社単位のまとめ方・
- * 宛先の優先順位）は Service 側に置く。
+ * 新スキーマ（`t_billing_partners` / `t_payable_partners`）と現行スキーマ
+ * （`estimate_unit_companies` / `company_staff` / `company_tokens`）の両方を読むが、
+ * 業務判断（会社単位のまとめ方・宛先の優先順位）は Service 側に置く。
  */
-interface BillingMailRepositoryInterface
+interface VendorMailRepositoryInterface
 {
     /**
      * 通知対象の請求取引先を、物件名・項目名つきで取得する。
@@ -24,6 +25,14 @@ interface BillingMailRepositoryInterface
      * @return Collection<int, TBillingPartner>
      */
     public function findPartnersForMail(array $partnerIds): Collection;
+
+    /**
+     * 通知対象の支払取引先を、物件名・項目名つきで取得する（{@see findPartnersForMail} の支払版）。
+     *
+     * @param  list<int>  $partnerIds  `t_payable_partners.id`
+     * @return Collection<int, TPayablePartner>
+     */
+    public function findPayablePartnersForMail(array $partnerIds): Collection;
 
     /**
      * 現行の見積業者を ID で引く（`t_billing_partners.source_id` に対応）。

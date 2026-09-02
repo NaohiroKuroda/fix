@@ -6,6 +6,7 @@ use App\Exceptions\ServiceException;
 use App\Models\TBuilding;
 use App\Repositories\Contracts\Quotation\Payable\PayableRepositoryInterface;
 use App\Services\Comment\CommentService;
+use App\Services\Mail\VendorNotificationMailService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 
@@ -17,6 +18,7 @@ class CancelRequestService
     public function __construct(
         private readonly PayableRepositoryInterface $estimates,
         private readonly CommentService $comments,
+        private readonly VendorNotificationMailService $mail,
     ) {}
 
     /**
@@ -39,6 +41,33 @@ class CancelRequestService
             ]);
 
             throw new ServiceException(previous: $e);
+        }
+    }
+
+    /**
+     * 業者へ「発注取消のご連絡」メールを送る（→ 支払系_必要処理一覧 A4-3）。
+     *
+     * 取消申請そのものは成立しているので、送信に失敗しても巻き戻さない。
+     * 呼び出し側（コントローラ）が戻り値を見て画面に注意書きを出す。
+     *
+     * @param  list<int>  $partnerIds
+     * @return bool 送信予約まで成功したか
+     */
+    public function notifyCancelRequested(array $partnerIds): bool
+    {
+        try {
+            $this->mail->sendPayableCancelRequestMail($partnerIds);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('【支払】発注取消のご連絡メールの登録に失敗しました', [
+                'partnerIds' => $partnerIds,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return false;
         }
     }
 

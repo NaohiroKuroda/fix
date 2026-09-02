@@ -7,18 +7,19 @@ use App\Models\CompanyStaff;
 use App\Models\CompanyToken;
 use App\Models\EstimateUnitCompany;
 use App\Models\TBillingPartner;
-use App\Repositories\Contracts\Mail\BillingMailRepositoryInterface;
+use App\Models\TPayablePartner;
+use App\Repositories\Contracts\Mail\VendorMailRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
- * 請求（もらい）系の通知メール用データ取得。
+ * 業者への通知メール用データ取得（支払・請求で共用）。
  *
  * 現行 felix_total の `EstimateUnitCompany::$pic_mail` アクセサ・
  * `EstimateCustomDetailController::create_token()` と同じ解決規則を踏襲する。
  */
-class BillingMailRepository implements BillingMailRepositoryInterface
+class VendorMailRepository implements VendorMailRepositoryInterface
 {
     /**
      * @param  list<int>  $partnerIds
@@ -34,6 +35,26 @@ class BillingMailRepository implements BillingMailRepositoryInterface
         return TBillingPartner::query()
             ->whereIn('id', $partnerIds)
             // 移行元が無いと業者マイページの URL を組めないため対象外（現行の見積依頼と同じ扱い）。
+            ->whereNotNull('source_id')
+            ->with(['budgetItem.building'])
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * @param  list<int>  $partnerIds
+     * @return Collection<int, TPayablePartner>
+     */
+    public function findPayablePartnersForMail(array $partnerIds): Collection
+    {
+        if ($partnerIds === []) {
+            /** @var Collection<int, TPayablePartner> */
+            return new Collection;
+        }
+
+        return TPayablePartner::query()
+            ->whereIn('id', $partnerIds)
+            // 移行元が無いと業者マイページの URL を組めないため対象外（請求側と同じ扱い）。
             ->whereNotNull('source_id')
             ->with(['budgetItem.building'])
             ->orderBy('id')
@@ -117,10 +138,6 @@ class BillingMailRepository implements BillingMailRepositoryInterface
             ->all();
     }
 
-    /**
-     * @param  int  $companyId
-     * @return string
-     */
     public function firstOrCreateAccessToken(int $companyId): string
     {
         $token = CompanyToken::query()->where('company_id', $companyId)->first();

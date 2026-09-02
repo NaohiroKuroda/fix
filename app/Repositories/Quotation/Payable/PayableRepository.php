@@ -47,7 +47,7 @@ class PayableRepository implements PayableRepositoryInterface
         'quote-request' => ['DRAFT', 'CANCELLED'],   // 未申請 / 取消承認済
         'vendor-selection' => ['DRAFT'],             // 未申請（かつ業者回答あり）
         'manager-approval' => ['APPLIED'],           // 申請中（承認待ち）
-        'cancel-request' => ['APPROVED'],            // 承認済
+        'cancel-request' => ['APPROVED'],            // 承認済（かつ業者の請負承認なし）
         'cancel-approval' => ['CANCEL_APPLIED'],     // 取消申請中
     ];
 
@@ -112,6 +112,11 @@ class PayableRepository implements PayableRepositoryInterface
             if ($mode === 'vendor-selection' && ! $isBilling) {
                 // 初期表示条件：業者側から見積回答されている（支払見積にデータがある）ものだけ。
                 $q->whereHas('quotations');
+            }
+            if ($mode === 'cancel-request' && ! $isBilling) {
+                // 取消申請できるのは「部長承認されてから、業者が請負承認して発注が確定するまで」の間。
+                // 承諾済み（t_payable_orders.contract_approved_at あり）は取り消せないので一覧に出さない。
+                $q->whereDoesntHave('payableOrder', fn (Builder $o) => $o->whereNotNull('contract_approved_at'));
             }
             if ($isQuoteRequest && ! $isBilling) {
                 // 見積依頼：依頼可能な移行済み（source_id あり）の見積先を、未依頼・依頼済みともに並べる。
@@ -592,7 +597,15 @@ class PayableRepository implements PayableRepositoryInterface
      */
     public function recordCancelRequests(array $partnerIds): int
     {
-        return $this->advanceStatus($partnerIds, 'APPROVED', 'CANCEL_APPLIED');
+        // 一覧を開いたまま業者が請負承認した場合に備え、実行時にも承諾済みを除く（→ applyModeFilter）。
+        $targets = TPayablePartner::query()
+            ->whereIn('id', $partnerIds)
+            ->whereDoesntHave('payableOrder', fn (Builder $o) => $o->whereNotNull('contract_approved_at'))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return $this->advanceStatus($targets, 'APPROVED', 'CANCEL_APPLIED');
     }
 
     /**

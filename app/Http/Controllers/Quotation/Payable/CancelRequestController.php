@@ -46,6 +46,11 @@ class CancelRequestController extends AbstractPayableScreenController
             return back()->with('error', '取消申請を実行できませんでした。対象の見積先をご確認ください。');
         }
 
-        return back()->with('success', "取消申請を実行しました。（{$count}件）");
+        // 業者マイページの発注書がキャンセル扱いになるため、その旨を業者へ連絡する（A4-3）。
+        if (! $this->service->notifyCancelRequested($request->partnerIds())) {
+            return back()->with('success', "取消申請を実行しました。（{$count}件）※業者への取消連絡メールの送信に失敗しました。");
+        }
+
+        return back()->with('success', "取消申請を実行しました。（{$count}件）業者へ取消のご連絡を送信しました。");
     }
 }

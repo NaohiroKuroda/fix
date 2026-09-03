@@ -5,28 +5,25 @@ namespace App\Repositories\Order\Payable;
 use App\Models\AdminUser;
 use App\Models\TBuilding;
 use App\Models\TBuildingBudgetItem;
-use App\Models\TDeliveryReport;
-use App\Models\TDeliveryReportApprovalAction;
-use App\Models\TInvoice;
-use App\Models\TInvoiceApprovalAction;
-use App\Models\TOrder;
-use App\Models\TOrderApprovalAction;
 use App\Models\TPayablePartner;
 use App\Repositories\Contracts\Order\Payable\OrderDeliveryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * 発注〜納品フローのデータアクセス。
+ * 発注フローのデータアクセス。
  *
  * 見積管理（{@see PayableRepository}）と同じ「物件 → 項目 → 見積先」の構造で
- * 一覧を返し、各見積先に発注・納品の状態を付与する。各フェーズは「担当者が実行/確認 →
- * 承認者が承認」の固定2段階。発注の取消も見積管理と同様に「取消申請 → 取消承認」の2段階。
+ * 一覧を返し、各見積先に発注書（{@see \App\Models\TPayableOrder}）の状態を付与する。
+ *
+ * 2026-09 に旧テーブル（t_orders / t_order_approval_actions / t_delivery_reports /
+ * t_delivery_report_approval_actions / t_invoices / t_invoice_approval_actions）を廃止した
+ * （DB設計書に無いため）。現在扱えるのは **業者承諾確認（order-acceptance）** だけで、
+ * 発注実行・発注承認・発注取消・完了確認・部長完了承認・請求取消承認は停止している。
+ * これらを復活させる場合は、進行状態の持ち方を DB設計書で先に決めること。
  */
 class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
 {
@@ -54,7 +51,6 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
                         $q->orderBy('id')->with([
                             'company:id,company_name',
                             'latestQuotation',
-                            'order.deliveryReport.invoice',
                             // 発注書（金額・業者の承諾日時）。業者承諾確認画面の表示元。
                             'payableOrder',
                         ]);
@@ -77,70 +73,36 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     private function applyModeFilter(Builder $q, string $mode, array $filters = []): void
     {
         switch ($mode) {
-            case 'order-execution': // 承認済み見積・未発注
-                $q->where('approval_status', 'APPROVED')->whereDoesntHave('order');
-                break;
-            case 'order-approval': // 発注済み・担当実行済（部長承認待ち）
-                $q->whereHas('order', fn (Builder $o) => $o->where('order_status', 'STAFF_APPROVED'));
-                break;
-            case 'order-cancel-request': // 発注承認済み・取消申請可能
-                $q->whereHas('order', fn (Builder $o) => $o->where('order_status', 'APPROVED'));
-                break;
-            case 'order-cancel-approval': // 取消申請中・部長取消承認待ち
-                $q->whereHas('order', fn (Builder $o) => $o->where('order_status', 'CANCEL_REQUESTED'));
+            // 停止中の画面。旧 t_orders / t_delivery_reports / t_invoices を条件にしていたが、
+            // それらのテーブルを廃止したため絞り込めない。画面は残っているので、
+            // 落とさずに「該当0件」を返す（→ クラス doc）。
+            case 'order-execution':        // 発注実行
+            case 'order-approval':         // 発注承認
+            case 'order-cancel-request':   // 発注取消申請
+            case 'order-cancel-approval':  // 発注取消承認
+            case 'delivery-report':        // 完了確認
+            case 'delivery-approval':      // 部長完了承認
+            case 'invoice-approval':       // 請求取消承認
+                $q->whereRaw('1 = 0');
                 break;
             case 'order-acceptance':
-                // 業者承諾確認（表示のみ）：発注承認済み（t_orders.order_status）で、
-                // **発注書（t_payable_orders）が発行済み**のものを出す。
+                // 業者承諾確認（表示のみ）：**発注書（t_payable_orders）が発行済み**のものを出す。
+                // 発注書は【支払】部長承認で発行されるため、発行済み＝発注確定として扱う
+                // （status は 'ISSUED' 固定で、進行状態は持たない）。
                 // 承諾の有無は発注書の請負承認日時（contract_approved_at）で判定する
                 // （→ docs/detailed-design/orders/01_支払_業者承諾確認_詳細設計.md §4）。
                 $acceptance = $filters['acceptance'] ?? 'pending';
-                $q->whereHas('order', fn (Builder $o) => $o->where('order_status', 'APPROVED'))
-                    ->whereHas('payableOrder', function (Builder $o) use ($acceptance): void {
-                        if ($acceptance === 'confirmed') {
-                            $o->whereNotNull('contract_approved_at');
-                        } elseif ($acceptance === 'pending') {
-                            $o->whereNull('contract_approved_at');
-                        }
-                    });
-                break;
-            case 'delivery-report': // 完了確認：請求月（報告書提出日＝業者承諾日、月末17:00締め）で絞り込み
-                [$billingFrom, $billingTo] = $this->billingMonthRange($filters['billingMonth'] ?? 'current');
-                $q->whereHas('order', function (Builder $o) use ($billingFrom, $billingTo): void {
-                    $o->whereNotNull('vendor_accepted_at')
-                        ->where('vendor_accepted_at', '>', $billingFrom)
-                        ->where('vendor_accepted_at', '<=', $billingTo);
+                $q->whereHas('payableOrder', function (Builder $o) use ($acceptance): void {
+                    if ($acceptance === 'confirmed') {
+                        $o->whereNotNull('contract_approved_at');
+                    } elseif ($acceptance === 'pending') {
+                        $o->whereNull('contract_approved_at');
+                    }
                 });
-                break;
-            case 'delivery-approval': // 報告書受領済み・部長承認待ち
-                $q->whereHas('order.deliveryReport', fn (Builder $r) => $r->where('report_status', 'STAFF_APPROVED'));
-                break;
-            case 'invoice-approval': // 請求取消承認：作成済み請求書（未取消）全件
-                $q->whereHas('order.deliveryReport.invoice', fn (Builder $i) => $i->whereIn('invoice_status', ['STAFF_APPROVED', 'APPROVED']));
                 break;
             default:
                 $q->whereRaw('1 = 0');
         }
-    }
-
-    /**
-     * 請求月（先月/当月/来月）に対応する報告書提出日（vendor_accepted_at）の範囲を返す。
-     * 「月末17:00締め」：各月の最終日17:00より後の提出は翌月扱いになる。
-     *
-     * @return array{0: Carbon, 1: Carbon} [下限（この時刻より後）, 上限（この時刻以下）]
-     */
-    private function billingMonthRange(string $billingMonth): array
-    {
-        $offset = match ($billingMonth) {
-            'last' => -1,
-            'next' => 1,
-            default => 0,
-        };
-        $targetMonthStart = Carbon::now()->startOfMonth()->addMonthsNoOverflow($offset);
-        $to = $targetMonthStart->copy()->endOfMonth()->setTime(17, 0, 0);
-        $from = $targetMonthStart->copy()->subMonthNoOverflow()->endOfMonth()->setTime(17, 0, 0);
-
-        return [$from, $to];
     }
 
     /** 項目（明細）の絞り込み：項目名 ＋ mode に合う見積先を持つこと。 */
@@ -158,143 +120,64 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     }
 
     // ---- アクション（全て t_payable_partners.id 起点）----
+    //
+    // 発注実行・発注承認・発注否認・発注取消申請/承認・完了確認・部長完了承認・完了否認・請求取消承認は、
+    // 旧テーブル（t_orders / t_delivery_reports / t_invoices とその承認履歴）の廃止に伴い停止した。
+    // 画面・ルートは残っているため、呼ばれたら黙って成功したように見せず例外で落とす。
+    // 復活させる場合は進行状態の持ち先を DB設計書で決めてから実装し直すこと（→ クラス doc）。
 
     public function executeOrders(array $quotationIds): int
     {
-        $quotations = TPayablePartner::query()
-            ->whereIn('id', $quotationIds)
-            ->where('approval_status', 'APPROVED')
-            ->whereDoesntHave('order')
-            ->with('latestQuotation')
-            ->get();
-
-        foreach ($quotations as $quotation) {
-            $order = TOrder::create([
-                'cost_quotation_id' => $quotation->id,
-                'order_status' => 'STAFF_APPROVED',
-                'amount' => optional($quotation->latestQuotation)->subtotal_amount,
-                'order_date' => Carbon::now()->toDateString(),
-            ]);
-            $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'STAFF', 'SELECT');
-        }
-
-        return $quotations->count();
+        throw $this->retired('発注実行');
     }
 
-    /**
-     * 発注承認。発注書（t_payable_orders）は**部長承認（見積の承認）で発行済み**のため、
-     * ここでは発行しない（→ 01_支払_業者承諾確認_詳細設計.md §4）。
-     */
     public function approveOrders(array $quotationIds): int
     {
-        return DB::transaction(function () use ($quotationIds): int {
-            $orders = $this->ordersFor($quotationIds, fn (Builder $o) => $o->where('order_status', 'STAFF_APPROVED'));
-            foreach ($orders as $order) {
-                $order->update(['order_status' => 'APPROVED']);
-                $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'MANAGER', 'APPROVE');
-            }
-
-            return $orders->count();
-        });
+        throw $this->retired('発注承認');
     }
 
     public function rejectOrder(int $quotationId, string $reason): int
     {
-        $order = TOrder::query()->where('cost_quotation_id', $quotationId)->where('order_status', 'STAFF_APPROVED')->first();
-        if (! $order) {
-            return 0;
-        }
-        $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'MANAGER', 'REJECT');
-        $order->delete();
-
-        return 1;
+        throw $this->retired('発注否認');
     }
 
     public function recordCancelRequests(array $quotationIds): int
     {
-        $orders = $this->ordersFor($quotationIds, fn (Builder $o) => $o->where('order_status', 'APPROVED'));
-        foreach ($orders as $order) {
-            $order->update(['order_status' => 'CANCEL_REQUESTED']);
-            $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'STAFF', 'CANCEL_SUBMIT');
-        }
-
-        return $orders->count();
+        throw $this->retired('発注取消申請');
     }
 
     public function recordCancelApprovals(array $quotationIds): int
     {
-        $orders = $this->ordersFor($quotationIds, fn (Builder $o) => $o->where('order_status', 'CANCEL_REQUESTED'));
-        foreach ($orders as $order) {
-            // 取消承認＝発注を取り消す。発注を削除すると見積先は「発注実行待ち」へ戻る。
-            // 発注書（t_payable_orders）は部長承認の成果物なので、ここでは消さない
-            // （消すのは部長承認の否認・部長取消承認。→ PayableRepository）。
-            $this->action(TOrderApprovalAction::class, 'order_id', $order->id, 'MANAGER', 'CANCEL_APPROVE');
-            $order->delete();
-        }
-
-        return $orders->count();
+        throw $this->retired('発注取消承認');
     }
 
-    /**
-     * 完了確認画面の「確認」：報告書を確認済みにする（確認日を記録）と同時に、
-     * 請求書（TInvoice）を自動作成して部長の請求承認待ちにする。
-     */
     public function confirmDeliveryReports(array $quotationIds): int
     {
-        $orders = $this->ordersFor($quotationIds, fn (Builder $o) => $o->whereNotNull('vendor_accepted_at')->whereDoesntHave('deliveryReport'));
-        foreach ($orders as $order) {
-            $report = TDeliveryReport::create([
-                'order_id' => $order->id,
-                'report_status' => 'STAFF_APPROVED',
-                'submitted_at' => Carbon::now(),
-            ]);
-            $this->action(TDeliveryReportApprovalAction::class, 'delivery_report_id', $report->id, 'STAFF', 'SELECT');
-
-            $invoice = TInvoice::create([
-                'delivery_report_id' => $report->id,
-                'invoice_status' => 'STAFF_APPROVED',
-                'amount' => $order->amount,
-                'submitted_at' => Carbon::now(),
-            ]);
-            $this->action(TInvoiceApprovalAction::class, 'invoice_id', $invoice->id, 'STAFF', 'SELECT');
-        }
-
-        return $orders->count();
+        throw $this->retired('完了確認');
     }
 
     public function approveDeliveryReports(array $quotationIds): int
     {
-        $reports = $this->reportsFor($quotationIds, fn (Builder $r) => $r->where('report_status', 'STAFF_APPROVED'));
-        foreach ($reports as $report) {
-            $report->update(['report_status' => 'APPROVED']);
-            $this->action(TDeliveryReportApprovalAction::class, 'delivery_report_id', $report->id, 'MANAGER', 'APPROVE');
-        }
-
-        return $reports->count();
+        throw $this->retired('部長完了承認');
     }
 
     public function rejectDeliveryReport(int $quotationId, string $reason): int
     {
-        $report = $this->reportsFor([$quotationId], fn (Builder $r) => $r->where('report_status', 'STAFF_APPROVED'))->first();
-        if (! $report) {
-            return 0;
-        }
-        $this->action(TDeliveryReportApprovalAction::class, 'delivery_report_id', $report->id, 'MANAGER', 'REJECT');
-        $report->delete();
-
-        return 1;
+        throw $this->retired('完了否認');
     }
 
-    /** 請求取消承認：作成済み請求書（未取消）を取消確定する。発注取消承認と同様、請求書自体を削除する。 */
     public function cancelInvoices(array $quotationIds): int
     {
-        $invoices = $this->invoicesFor($quotationIds, fn (Builder $i) => $i->whereIn('invoice_status', ['STAFF_APPROVED', 'APPROVED']));
-        foreach ($invoices as $invoice) {
-            $this->action(TInvoiceApprovalAction::class, 'invoice_id', $invoice->id, 'MANAGER', 'CANCEL_APPROVE');
-            $invoice->delete();
-        }
+        throw $this->retired('請求取消承認');
+    }
 
-        return $invoices->count();
+    /** 停止中の操作を表す例外。 */
+    private function retired(string $operation): \RuntimeException
+    {
+        return new \RuntimeException(
+            "{$operation}は停止中です。発注・完了報告・請求の進行状態を持つテーブル"
+            .'（t_orders / t_delivery_reports / t_invoices）を廃止したため、この操作は実行できません。'
+        );
     }
 
     /**
@@ -310,22 +193,15 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     }
 
     /**
-     * 発注管理（発注実行・発注承認・発注取消承認・業者承諾確認・【請求】発注書確認）は
-     * **バッヂを出さない**ため件数を数えない（見積管理_処理フローの「サイドメニューのバッヂの意味」も
-     * 緑・赤とも「表示なし」）。ここで返すのは完了・納品管理のぶんだけ。
+     * 発注管理（業者承諾確認・【請求】発注書確認）は**バッヂを出さない**
+     * （見積管理_処理フローの「サイドメニューのバッヂの意味」も緑・赤とも「表示なし」）。
+     * 完了・納品管理のバッヂは旧 t_delivery_reports を数えていたが、テーブル廃止に伴い停止した。
+     * 本メソッドは全リクエスト（{@see \App\Http\Middleware\HandleInertiaRequests}）から
+     * 呼ばれるため、落とさずに空を返す。
      */
     public function pendingCounts(): array
     {
-        return [
-            // 完了確認画面自体は業者承諾済み全件を表示するが、バッヂは「未確認」のみをカウントする。
-            'delivery-report-submission' => $this->countablePartners()
-                ->whereHas('order', fn (Builder $o) => $o->whereNotNull('vendor_accepted_at')->whereDoesntHave('deliveryReport'))
-                ->count(),
-            'delivery-approval' => $this->countablePartners()
-                ->tap(fn (Builder $q) => $this->applyModeFilter($q, 'delivery-approval'))
-                ->count(),
-            // invoice-approval（請求取消承認）はバッヂ対象外（常時ブラウズ可能な取消確認画面のため）。
-        ];
+        return [];
     }
 
     public function itemIdForQuotation(int $quotationId): ?int
@@ -338,63 +214,6 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
     }
 
     // ---- 内部ヘルパ ----
-
-    /**
-     * @param  list<int>  $quotationIds
-     * @return Collection<int, TOrder>
-     */
-    private function ordersFor(array $quotationIds, callable $extra)
-    {
-        if ($quotationIds === []) {
-            return TOrder::query()->whereRaw('1 = 0')->get();
-        }
-
-        return TOrder::query()->whereIn('cost_quotation_id', $quotationIds)->tap($extra)->get();
-    }
-
-    /**
-     * @param  list<int>  $quotationIds
-     * @return Collection<int, TDeliveryReport>
-     */
-    private function reportsFor(array $quotationIds, callable $extra)
-    {
-        if ($quotationIds === []) {
-            return TDeliveryReport::query()->whereRaw('1 = 0')->get();
-        }
-
-        return TDeliveryReport::query()
-            ->whereHas('order', fn (Builder $o) => $o->whereIn('cost_quotation_id', $quotationIds))
-            ->tap($extra)
-            ->get();
-    }
-
-    /**
-     * @param  list<int>  $quotationIds
-     * @return Collection<int, TInvoice>
-     */
-    private function invoicesFor(array $quotationIds, callable $extra)
-    {
-        if ($quotationIds === []) {
-            return TInvoice::query()->whereRaw('1 = 0')->get();
-        }
-
-        return TInvoice::query()
-            ->whereHas('deliveryReport.order', fn (Builder $o) => $o->whereIn('cost_quotation_id', $quotationIds))
-            ->tap($extra)
-            ->get();
-    }
-
-    /** 承認履歴を1件記録する。 */
-    private function action(string $modelClass, string $fk, int $id, string $step, string $type): void
-    {
-        $modelClass::create([
-            $fk => $id,
-            'step_name' => $step,
-            'action_type' => $type,
-            'operator_id' => $this->currentUserId() ?? 0,
-            'action_at' => Carbon::now(),
-        ]);
-    }
 
     /**
      * 各見積先へコメント（t_comments）のメタ情報（件数・未読数）を付与する（見積管理と同じ）。

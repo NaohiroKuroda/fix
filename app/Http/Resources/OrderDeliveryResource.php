@@ -75,12 +75,8 @@ class OrderDeliveryResource extends JsonResource
      */
     private function row(object $item, object $quotation): array
     {
-        $order = $quotation->order;
-        // 発注書（t_payable_orders）。金額・業者の承諾日時はこちらを正とする。
-        // 旧 t_orders しか持たない移行前データのために、無い場合だけ t_orders へフォールバックする。
+        // 発注書（t_payable_orders）。金額・業者の承諾日時はこれだけを見る。
         $payableOrder = $quotation->payableOrder;
-        $report = $order?->deliveryReport;
-        $invoice = $report?->invoice;
 
         return [
             'unitId' => (int) $item->id,
@@ -100,24 +96,23 @@ class OrderDeliveryResource extends JsonResource
             // 読んでいたため、この列は常に空になっていた）。
             'quotePrice' => Format::yen(optional($quotation->latestQuotation)->subtotal_amount),
             // 発注金額＝発注書の税別合計（t_payable_orders.subtotal_amount）。発注前は null。
-            'orderPrice' => Format::yen($payableOrder?->subtotal_amount ?? $order?->amount),
-            // 承諾の残り期限（日数）。発注日 + 承諾期限（10日）- 今日。発注前は null。
-            'deadlineDays' => $order?->order_date
-                ? (int) now()->startOfDay()->diffInDays($order->order_date->copy()->addDays(10)->startOfDay(), false)
-                : null,
-            // 進捗の補助表示（発注日・承諾日時・提出日時）。
-            'orderDate' => optional($order?->order_date)->format('Y-m-d'),
+            'orderPrice' => Format::yen($payableOrder?->subtotal_amount),
+            // 承諾の残り期限（日数）。発注日 + 承諾期限（10日）- 今日。
+            // 発注日は旧 t_orders.order_date にしか無く、テーブル廃止に伴い出せなくなった。
+            'deadlineDays' => null,
+            // 進捗の補助表示（発注日・承諾日時）。発注日は上記のとおり保持先が無い。
+            'orderDate' => null,
             // 業者の承諾日時（完了確認の「報告書提出日」に使うため時刻まで持つ）。未承諾は null。
-            'vendorAcceptedAt' => optional($payableOrder?->contract_approved_at ?? $order?->vendor_accepted_at)
-                ->format('Y-m-d H:i'),
+            'vendorAcceptedAt' => optional($payableOrder?->contract_approved_at)->format('Y-m-d H:i'),
             // 発注承諾日（業者承諾確認の列）。日付だけを出す（請求側の同名列と表記を揃える）。
-            'orderAcceptedAt' => Format::date($payableOrder?->contract_approved_at ?? $order?->vendor_accepted_at) ?: null,
-            'submittedAt' => optional($report?->submitted_at)->format('Y-m-d H:i'),
-            // 完了確認画面（請求）：請求書は確認と同時に自動作成される。未作成なら null。
-            'invoiceAmount' => Format::yen($invoice?->amount),
-            'invoiceStatus' => $invoice?->invoice_status,
-            'invoiceSubmittedAt' => optional($invoice?->submitted_at)->format('Y-m-d H:i'),
-            'invoiceApprovedAt' => optional($invoice?->closed_at)->format('Y-m-d H:i'),
+            'orderAcceptedAt' => Format::date($payableOrder?->contract_approved_at) ?: null,
+            // 完了報告・請求の各項目は、旧 t_delivery_reports / t_invoices の廃止に伴い保持先が無い。
+            // 停止中の完了確認・請求取消承認画面が参照するキーなので、形だけ残して null を返す。
+            'submittedAt' => null,
+            'invoiceAmount' => null,
+            'invoiceStatus' => null,
+            'invoiceSubmittedAt' => null,
+            'invoiceApprovedAt' => null,
             // やり取り（コメント）メタ（費用項目単位）。
             'messageCount' => (int) ($quotation->comments_count ?? 0),
             'hasComments' => (bool) ($quotation->has_comments ?? false),

@@ -13,9 +13,9 @@ use Illuminate\Database\Eloquent\Model;
  * 金額（税別合計・消費税）と業者の請負承認日時（`contract_approved_at`）を持つ。
  * 請求（もらい）側は {@see TBillingOrder}。
  *
- * 発注の**承認フロー**（担当実行 → 部長承認 → 取消申請 → 取消承認）は引き続き
- * {@see TOrder}（t_orders.order_status）が持つ。本テーブルは承認済みの発注書そのもの
- * （＝業者に出した内容と承諾状況）を表す。
+ * `status` は発行済みを表す `ISSUED` 固定で、進行状態は持たない。
+ * 発注書の発行（＝【支払】部長承認）が発注確定であり、段階的な発注承認フローは廃止した
+ * （旧 t_orders.order_status。2026-09 にテーブルごと廃止）。
  *
  * @see docs/detailed-design/orders/01_支払_業者承諾確認_詳細設計.md §4
  */

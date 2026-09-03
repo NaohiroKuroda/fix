@@ -81,13 +81,6 @@ class TPayablePartner extends Model
         return $this->hasMany(TPayableQuotationRequest::class, 'payable_partner_id');
     }
 
-    // 発注（発注〜納品〜請求フロー）。t_orders は改称対象外のため列名は cost_quotation_id のまま。
-    // 承認ステータス（担当実行 → 部長承認 → 取消申請 → 取消承認）は本リレーションが持つ。
-    public function order()
-    {
-        return $this->hasOne(TOrder::class, 'cost_quotation_id');
-    }
-
     // 発注書（2026-08 のスキーマ改訂で追加。金額・業者の承諾日時を持つ）。
     // 部長の発注承認時に発行し、発注の否認・取消承認で削除する。
     public function payableOrder()

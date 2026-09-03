@@ -45,7 +45,7 @@ class PayableRepository implements PayableRepositoryInterface
      */
     private const MODE_OPERABLE_STATUS = [
         'quote-request' => ['DRAFT', 'CANCELLED'],   // 未申請 / 取消承認済
-        'vendor-selection' => ['DRAFT'],             // 未申請（かつ業者回答あり）
+        'vendor-selection' => ['DRAFT', 'CANCELLED'], // 未申請 / 取消承認済（かつ業者回答あり）
         'manager-approval' => ['APPLIED'],           // 申請中（承認待ち）
         'cancel-request' => ['APPROVED'],            // 承認済（かつ業者の請負承認なし）
         'cancel-approval' => ['CANCEL_APPLIED'],     // 取消申請中
@@ -428,7 +428,9 @@ class PayableRepository implements PayableRepositoryInterface
     {
         return $this->syncWithFelixTotal(
             $partnerIds,
-            'DRAFT',
+            // 取消承認済（CANCELLED）からも選定できる。部長取消承認は「選定をやり直す」ための操作で、
+            // 相見積（t_payable_quotations）は残っているため再依頼は要らない。
+            ['DRAFT', 'CANCELLED'],
             'APPLIED',
             // no_competitive_flg は現行 estimate_units に列が無いため 0（相見積あり＝単一採用）で渡す。
             fn (int $unit, int $company) => $this->felix->adoptCompany($unit, $company),
@@ -469,7 +471,7 @@ class PayableRepository implements PayableRepositoryInterface
      */
     private function syncWithFelixTotal(
         array $partnerIds,
-        string $from,
+        string|array $from,
         string $to,
         callable $callFelixTotal,
         ?callable $afterTransition = null,
@@ -511,11 +513,11 @@ class PayableRepository implements PayableRepositoryInterface
      * @param  list<array{id:int, unit:int, company:int}>  $rows
      * @return list<array{id:int, unit:int, company:int}>
      */
-    private function filterByStatus(array $rows, string $status): array
+    private function filterByStatus(array $rows, string|array $status): array
     {
         $matched = TPayablePartner::query()
             ->whereIn('id', array_column($rows, 'id'))
-            ->where('approval_status', $status)
+            ->whereIn('approval_status', (array) $status)
             ->pluck('id')
             ->all();
 
@@ -675,7 +677,7 @@ class PayableRepository implements PayableRepositoryInterface
      *
      * @param  list<int>  $ids
      */
-    private function advanceStatus(array $ids, string $from, string $to): int
+    private function advanceStatus(array $ids, string|array $from, string $to): int
     {
         if ($ids === []) {
             return 0;
@@ -683,7 +685,7 @@ class PayableRepository implements PayableRepositoryInterface
 
         return TPayablePartner::query()
             ->whereIn('id', $ids)
-            ->where('approval_status', $from)
+            ->whereIn('approval_status', (array) $from)
             // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
             ->update(Blame::stampUpdate(['approval_status' => $to]));
     }

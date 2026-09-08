@@ -488,7 +488,7 @@ class PayableRepository implements PayableRepositoryInterface
             return 0;
         }
 
-        return DB::transaction(function () use ($targets, $from, $to, $callFelixTotal): int {
+        return DB::transaction(function () use ($targets, $from, $to, $callFelixTotal, $afterTransition): int {
             $count = $this->advanceStatus(array_column($targets, 'id'), $from, $to);
             if ($count === 0) {
                 return 0;

@@ -30,6 +30,8 @@ export interface OrderDeliveryRow {
     vendorAcceptedAt: string | null;
     /** 発注承諾日（`Y/m/d`。t_payable_orders.contract_approved_at）。未承諾は null。 */
     orderAcceptedAt: string | null;
+    /** 発注書プレビュー（業者マイページと同じ帳票）を iframe で開く URL。未発行は null。 */
+    orderDocumentUrl: string | null;
     submittedAt: string | null;
     /** 完了確認画面（請求）：請求書は確認と同時に自動作成される。未作成は null。 */
     invoiceAmount: number | null;

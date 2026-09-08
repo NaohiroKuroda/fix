@@ -26,7 +26,7 @@ const emit = defineEmits<{
     (e: 'reject', row: OrderDeliveryRow): void;
     (e: 'cancel-request', row: OrderDeliveryRow): void;
     (e: 'open-chat', row: OrderDeliveryRow, buildingName: string): void;
-    (e: 'open-iframe', payload: { url: string | null; title: string }): void;
+    (e: 'open-iframe', payload: { url: string | null; title: string; variant?: 'admin' | 'document' }): void;
     /** 完了確認画面：請求日クリック（請求情報モーダルを開く）。 */
     (e: 'open-invoice', row: OrderDeliveryRow): void;
 }>();
@@ -227,11 +227,11 @@ const chatBtnClass = (row: OrderDeliveryRow): string => {
                         <!-- 発注書。押下で felix_total の発注書画面を iframe で開く。 -->
                         <td v-if="config.showOrderDocument" class="px-3 py-2 text-center">
                             <button
-                                v-if="project.orderDocumentUrl"
+                                v-if="row.orderDocumentUrl"
                                 type="button"
                                 class="relative mx-auto flex h-9 w-24 items-center justify-center gap-1 whitespace-nowrap rounded-xl border border-[#c4a35b]/50 bg-white px-2 text-sm font-semibold text-[#8a6a25] shadow-sm transition hover:border-[#c4a35b] hover:bg-[#c4a35b] hover:text-white"
                                 title="発注書を表示する"
-                                @click="emit('open-iframe', { url: project.orderDocumentUrl, title: `発注書 - ${project.name}` })"
+                                @click="emit('open-iframe', { url: row.orderDocumentUrl, title: `発注書 - ${row.vendorName}`, variant: 'document' })"
                             >
                                 <FileText class="size-4" />発注書
                             </button>

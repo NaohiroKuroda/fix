@@ -155,13 +155,21 @@ const closeInvoice = (): void => {
     invoiceTarget.value = null;
 };
 
-// 発注書（felix_total の発注書確認画面）を開く iframe モーダル。見積管理と同じ仕組み。
+// felix_total を開く iframe モーダル。見積管理（請求）と同じ仕組み。
+// document＝A4の帳票（発注書）。用紙は 210mm 幅で、外側は felix_total 側のグレー地。
+// 枠を用紙幅＋スクロールバー分ぴったりにして、グレーが見えないようにする。
+// 既定＝felix_total の管理画面（必須ファイルなど）。横に広い方が見やすい。
 const iframeOpen = ref(false);
 const iframeUrl = ref<string | null>(null);
 const iframeTitle = ref('');
-const openIframe = (payload: { url: string | null; title: string }): void => {
+const iframeVariant = ref<'admin' | 'document'>('admin');
+const iframeWidthClass = computed(() =>
+    iframeVariant.value === 'document' ? 'max-w-[calc(210mm+18px)]' : 'max-w-5xl',
+);
+const openIframe = (payload: { url: string | null; title: string; variant?: 'admin' | 'document' }): void => {
     iframeUrl.value = payload.url;
     iframeTitle.value = payload.title;
+    iframeVariant.value = payload.variant ?? 'admin';
     iframeOpen.value = true;
 };
 const closeIframe = (): void => {
@@ -692,7 +700,7 @@ const sendChat = async (): Promise<void> => {
     <!-- 発注書（felix_total の発注書確認画面）を開く iframe モーダル。 -->
     <Teleport to="body">
         <div v-if="iframeOpen" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4" @click.self="closeIframe">
-            <div class="relative flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div class="relative flex h-[88vh] w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl" :class="iframeWidthClass">
                 <div class="flex items-center justify-between border-b px-4 py-2.5">
                     <span class="text-sm font-semibold text-slate-800">{{ iframeTitle }}</span>
                     <button type="button" class="flex size-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800" title="閉じる" @click="closeIframe">

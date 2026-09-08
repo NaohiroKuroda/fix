@@ -97,6 +97,11 @@ class OrderDeliveryResource extends JsonResource
             'quotePrice' => Format::yen(optional($quotation->latestQuotation)->subtotal_amount),
             // 発注金額＝発注書の税別合計（t_payable_orders.subtotal_amount）。発注前は null。
             'orderPrice' => Format::yen($payableOrder?->subtotal_amount),
+            // 発注書（業者承諾確認の行ボタン）で iframe 表示する、業者マイページと同じ発注書プレビュー。
+            // 未発行（部長承認前）・移行元なしは null＝ボタンを出さない。
+            'orderDocumentUrl' => $payableOrder === null
+                ? null
+                : $this->felixUrl('felix.payable_order_document_url', $quotation->source_id),
             // 承諾の残り期限（日数）。発注日 + 承諾期限（10日）- 今日。
             // 発注日は旧 t_orders.order_date にしか無く、テーブル廃止に伴い出せなくなった。
             'deadlineDays' => null,

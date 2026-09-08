@@ -76,6 +76,10 @@ const isActive = (row: PayableRow): boolean => props.selectedKeys.has(payableRow
 // 状態バッジの文言（操作できない行に出す）。処理フロー K列「ステータス外表示形式」。
 const statusLabel = (row: PayableRow): string =>
     row.approvalStatus === null ? '—' : PAYABLE_STATUS_LABEL[row.approvalStatus];
+// 操作できない行に出す文言。部長取消申請は状態にかかわらず「取消不可」で揃える
+// （承認済み以外はそもそも取り消す対象が無く、状態名を出しても取消可否の判断に使えないため）。
+const notOperableLabel = (row: PayableRow): string =>
+    props.mode === 'cancel-request' ? '取消不可' : statusLabel(row);
 // 操作できない理由（ツールチップ）。画面ごとに文言を変える。
 const notOperableHint = (row: PayableRow): string => {
     const state = statusLabel(row);
@@ -374,7 +378,7 @@ const chatBtnClass = (row: PayableRow): string => {
                                 class="mx-auto inline-flex h-9 w-28 items-center justify-center whitespace-nowrap rounded-xl border border-slate-300 bg-slate-100 px-2 text-sm font-semibold text-slate-500"
                                 :title="notOperableHint(row)"
                             >
-                                {{ statusLabel(row) }}
+                                {{ notOperableLabel(row) }}
                             </span>
                             <!-- 業者選定（toggle）：サーバ状態を初期値に押下でトグル（業者の選び替え）。 -->
                             <template v-else-if="isToggleButton">

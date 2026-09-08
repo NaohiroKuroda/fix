@@ -99,8 +99,11 @@ class PayablePartnerResource extends JsonResource
             'hasComments' => (bool) ($quotation?->has_comments ?? false),
             // やり取りの未読数（ログインユーザーの最終既読より新しい他者コメント）。0=未読なし。
             'unreadCount' => (int) ($quotation?->unread_count ?? 0),
-            // 選定済み（業者未選定でない）。否認差し戻し（REJECTED）は選定前と同じ扱い。
-            'selected' => $status !== null && ! in_array($status, ['DRAFT', 'REJECTED'], true),
+            // 選定済み（業者未選定でない）。**選定前に戻った状態は選定済みにしない**：
+            // 否認差し戻し（REJECTED）と取消承認済（CANCELLED。部長取消承認で選定が取り消された）は
+            // 業者選定をやり直す対象なので、未選定として扱う（選定済みのままだと
+            // 「発注業者を確定」がサーバ状態からの変更なしと判定され押せなくなる）。
+            'selected' => $status !== null && ! in_array($status, ['DRAFT', 'REJECTED', 'CANCELLED'], true),
             // 部長承認済み（APPROVED 以降）。
             'approved' => in_array($status, ['APPROVED', 'CANCEL_APPLIED', 'CANCELLED'], true),
             // 取消申請中。

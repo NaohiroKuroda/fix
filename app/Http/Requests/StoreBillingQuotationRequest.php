@@ -87,13 +87,19 @@ class StoreBillingQuotationRequest extends FormRequest
     /**
      * 保存する明細（**使用中の行だけ**）。空の予備行（`isChanged = false`）は捨てる。
      *
+     * 見積書ファイルを送るためフォームは multipart 固定（`forceFormData`）で、真偽値は
+     * `"1"` / `"0"` の文字列で届く。下流が `=== true` で判定できるよう、ここで実際の bool に戻す。
+     *
      * @return list<array<string, mixed>>
      */
     public function details(): array
     {
         $rows = [];
         foreach ((array) $this->input('details', []) as $detail) {
-            if (($detail['isChanged'] ?? false) !== true) {
+            foreach (['isMemo', 'isChanged', 'isTaxInclusive'] as $flag) {
+                $detail[$flag] = filter_var($detail[$flag] ?? false, FILTER_VALIDATE_BOOLEAN);
+            }
+            if ($detail['isChanged'] !== true) {
                 continue;
             }
             $rows[] = $detail;

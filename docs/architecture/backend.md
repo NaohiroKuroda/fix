@@ -149,21 +149,26 @@ public function reject(int $partnerId, string $reason): int
 
 ## 1.7 サイドメニューの表示制御（ロール別）
 
-サイドメニューの各ボタンは、ログインユーザーのロール（`admin_roles.slug`）に応じて出し分ける。
-**対応表は `config/felix.php` の `menu_roles` を唯一の正（Single Source of Truth）とする。**
+サイドメニューの各ボタンは、ログインユーザーの役職に応じて出し分ける。
+**対応表は新テーブルのメニュー定義を唯一の正（Single Source of Truth）とする**（設定ファイルには持たない）。
 
-- **ロール定義（`config/felix.php`）**
-  - `staff_role_slugs`（既定 `engineer,system` = 建設部 / システム開発）: 見積依頼・業者選定・部長取消申請。
-  - `manager_role_slugs`（既定 `engineer_manager,tmp` = 建設部部長 / 建設承認）: 部長承認・部長取消承認。
-    やり取り（コメント）の発言ロール（manager/staff）・承認判定にも同じ slug を用いる（`isEstimateManager`）。
-  - `admin_role_slugs`（既定 `administrator`）: **全メニューを表示するスーパーユーザー**。
-    現行データに `administrator` slug が無い環境では、実運用の slug に合わせ `FELIX_ADMIN_ROLE_SLUGS` で上書きする。
-- **判定（`AdminUser`）**: `menuPermissions(): array<string,bool>` が「メニューキー => 表示可否」を返す。
-  administrator は全 true。それ以外は `menu_roles[キー]` と付与 slug の積集合で判定する。
+- **テーブル**（felix_total と共有の DB。定義データは felix_total のマイグレーションで投入する）
+  - `m_menu_items` … メニュー（`parent_id` / `sort_order` / `title` / `uri`）。
+    **`uri` の末尾セグメントが新Fix のメニューキー**（`/quotation-management/quote-request` → `quote-request`）。
+  - `m_permissions` … 権限。新Fix は `fix.staff`（担当者画面）/ `fix.manager`（部長画面）の2つ。
+  - `p_permission_menu_items` … 権限 → 見せるメニュー。
+  - `p_role_permissions` … 役職 → 権限。管理者（`administrator`）・システム管理者（`system`）は両方＝全画面、
+    建設部（`engineer`）は担当者画面、建設部部長（`engineer_manager`）は部長画面。
+  - `p_user_roles` / `p_user_permissions` … ユーザー → 役職 / 個別権限（`m_users.source_id = admin_users.id`）。
+- **判定（`AdminUser`）**: `menuPermissions(): array<string,bool>` が上記を辿り、**見せるメニューキーだけ**を
+  `true` で返す。定義に無いメニューは返さない＝出さない。
 - **受け渡し**: `HandleInertiaRequests` が共有プロパティ `menuPermissions`（Closure）で渡し、
   フロント（`AppLayout.vue`）は `perms[キー]` が true の項目だけ描画する。配下が 0 件のメニューグループは丸ごと隠す。
-- **拡張（発注管理など）**: 新メニューは `menu_roles` に1行（`'order-management' => [...slugs]`）足し、
-  フロントの項目に同じキーを付けて `perms['order-management']` で出し分ける。バックエンド／フロント両方の1箇所ずつで完結する。
+- **拡張（画面追加）**: `m_menu_items` に1行足して権限へ紐づけ、フロントの項目に同じキーを付けるだけ。
+  **アプリのコード変更は不要**（設定ファイルの書き換えも要らない）。
+- **`config/felix.php` に残るロール判定**: `manager_role_slugs`（既定 `engineer_manager,tmp`）は
+  **メニューではなく**部長承認・取消承認の実行可否とやり取りの発言ロール（`isEstimateManager`）に使う。
+  `president_role_slugs` も同様に入金仮締めの判定用。
 
 ## 2. ディレクトリ構成
 

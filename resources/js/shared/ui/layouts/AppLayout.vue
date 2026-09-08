@@ -24,12 +24,9 @@ interface NavChild {
 const page = usePage();
 const path = computed(() => page.url.split('?')[0]);
 const userName = computed(() => page.props.auth?.user?.name ?? 'ゲスト');
-// 建設部部長か（発注取消承認・部長完了承認・請求管理メニューの表示判定）。
-// 判定は HandleInertiaRequests::share の auth.user.isEstimateManager（config/felix.php の manager_role_slugs）が唯一の正。
-const isEstimateManager = computed(() => page.props.auth?.user?.isEstimateManager ?? false);
-
-// サイドメニューの表示可否（ロール別）。config/felix.php（menu_roles）が唯一の正。
-// メニューキー => 表示するか。administrator は全メニュー true になる。
+// サイドメニューの表示可否。新テーブルのメニュー定義（m_menu_items ＋ 権限の紐付け）が唯一の正で、
+// サーバが「見せるメニューキー => true」だけを返す（→ AdminUser::menuPermissions()）。
+// キーは m_menu_items.uri の末尾セグメント。定義に無いメニューは出さない。
 const perms = computed(() => page.props.menuPermissions ?? {});
 const canSee = (key: string): boolean => perms.value[key] === true;
 
@@ -62,9 +59,6 @@ const quotationChildren = computed<NavChild[]>(() =>
 const hasQuotationMenu = computed(() => quotationChildren.value.length > 0);
 const quotationMenuOpen = ref(true);
 
-// 発注管理（今後実装予定）は menu_roles に 'order-management' を追加し、
-// perms.value['order-management'] で同様に表示制御する（下の見積管理グループと同じ作り）。
-
 // 親「見積管理」に出す合計バッジ。
 const quotationBadgeTotal = computed(() => quotationChildren.value.reduce((sum, c) => sum + (c.badge ?? 0), 0));
 
@@ -73,29 +67,33 @@ const quotationBadgeTotal = computed(() => quotationChildren.value.reduce((sum, 
 // 見積管理_処理フローの「サイドメニューのバッヂの意味」も緑・赤とも「表示なし」）。
 // 発注実行・発注承認・発注取消申請・発注取消承認は画面・ルートを残したままメニューには出さない
 // （取消は業者承諾確認画面内のボタンから行う）。
-const orderChildren = computed<NavChild[]>(() => [
-    { key: 'order-acceptance', label: '【支払】業者承諾確認【発注承諾済み→FELIX(担当者)】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance') },
-    // 【支払】発注取消承認はメニューに出さない（画面・ルートは残す）。
-    // 発注取消は業者承諾確認画面のボタンから申請するため、独立メニューを置かない方針。
-    // 【請求】発注書確認（もらい）。業者が発注承諾すると承諾日（t_billing_quotations.accepted_at）が入る。
-    ...(isEstimateManager.value
-        ? [{ key: 'billing-order-confirmation', label: '【請求】発注書確認【FELIX(建設部部長)】', href: '/order-delivery/billing-order-confirmation', active: path.value.startsWith('/order-delivery/billing-order-confirmation') }]
-        : []),
-]);
+const orderChildren = computed<NavChild[]>(() =>
+    [
+        { key: 'order-acceptance', label: '【支払】業者承諾確認【発注承諾済み→FELIX(担当者)】', href: '/order-delivery/order-acceptance', active: path.value.startsWith('/order-delivery/order-acceptance') },
+        // 【支払】発注取消承認はメニューに出さない（画面・ルートは残す）。
+        // 発注取消は業者承諾確認画面のボタンから申請するため、独立メニューを置かない方針。
+        // 【請求】発注書確認（もらい）。業者が発注承諾すると承諾日（t_billing_quotations.accepted_at）が入る。
+        { key: 'billing-order-confirmation', label: '【請求】発注書確認【FELIX(建設部部長)】', href: '/order-delivery/billing-order-confirmation', active: path.value.startsWith('/order-delivery/billing-order-confirmation') },
+    ].filter((child) => canSee(child.key)),
+);
+// 配下メニューが1つも無いロールでは「発注管理」グループごと非表示にする。
+const hasOrderMenu = computed(() => orderChildren.value.length > 0);
 // 完了・納品管理（トグル）。完了確認（提出日・確認日・請求日）と部長完了承認。
-const deliveryChildren = computed<NavChild[]>(() => [
-    { key: 'delivery-report', label: '完了確認【業者承諾済み→提出・確認・請求】', href: '/order-delivery/delivery-report', active: path.value.startsWith('/order-delivery/delivery-report'), badge: badges.value?.['delivery-report-submission'] },
-    // 部長完了承認は建設部部長のみ表示。
-    ...(isEstimateManager.value
-        ? [{ key: 'delivery-approval', label: '部長完了承認【報告書受領済み→部長承認待ち】', href: '/order-delivery/delivery-approval', active: path.value.startsWith('/order-delivery/delivery-approval'), badge: badges.value?.['delivery-approval'] }]
-        : []),
-]);
+const deliveryChildren = computed<NavChild[]>(() =>
+    [
+        { key: 'delivery-report', label: '完了確認【業者承諾済み→提出・確認・請求】', href: '/order-delivery/delivery-report', active: path.value.startsWith('/order-delivery/delivery-report'), badge: badges.value?.['delivery-report-submission'] },
+        // 部長完了承認は建設部部長のみ表示（メニュー定義で fix.manager 権限に紐づけている）。
+        { key: 'delivery-approval', label: '部長完了承認【報告書受領済み→部長承認待ち】', href: '/order-delivery/delivery-approval', active: path.value.startsWith('/order-delivery/delivery-approval'), badge: badges.value?.['delivery-approval'] },
+    ].filter((child) => canSee(child.key)),
+);
 
 // 請求管理（トグル）。請求取消承認は建設部部長のみ表示のため、メニュー自体を部長限定にする。
-const billingChildren = computed<NavChild[]>(() => [
-    { key: 'invoice-approval', label: '請求取消承認【請求書作成済み→取消確認】', href: '/order-delivery/invoice-approval', active: path.value.startsWith('/order-delivery/invoice-approval') },
-]);
-const showBillingMenu = computed(() => isEstimateManager.value);
+const billingChildren = computed<NavChild[]>(() =>
+    [
+        { key: 'invoice-approval', label: '請求取消承認【請求書作成済み→取消確認】', href: '/order-delivery/invoice-approval', active: path.value.startsWith('/order-delivery/invoice-approval') },
+    ].filter((child) => canSee(child.key)),
+);
+const showBillingMenu = computed(() => billingChildren.value.length > 0);
 
 // 現在地の判定（発注管理＝業者承諾確認・発注取消承認、完了・納品管理＝納品系、請求管理＝請求系）。
 const isOrderPath = (p: string): boolean => p.startsWith('/order-delivery/order-acceptance') || p.startsWith('/order-delivery/order-cancel-approval') || p.startsWith('/order-delivery/billing-order-confirmation');
@@ -292,6 +290,7 @@ const logout = () => router.post('/logout');
 
                 <!-- 発注管理（トグル）。業者承諾確認のみ。 -->
                 <button
+                    v-if="hasOrderMenu"
                     type="button"
                     class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-base font-medium text-white/80 transition-colors hover:bg-white/10"
                     @click="toggleOrderMenu"
@@ -300,7 +299,7 @@ const logout = () => router.post('/logout');
                     <span class="flex-1 text-left">発注管理</span>
                     <ChevronDown class="size-4 shrink-0 transition-transform" :class="orderMenuOpen ? '' : '-rotate-90'" />
                 </button>
-                <div v-show="orderMenuOpen" class="mt-1 space-y-1 pl-4">
+                <div v-if="hasOrderMenu" v-show="orderMenuOpen" class="mt-1 space-y-1 pl-4">
                     <Link
                         v-for="child in orderChildren"
                         :key="child.label"

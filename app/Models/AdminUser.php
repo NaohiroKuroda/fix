@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -82,29 +83,43 @@ class AdminUser extends Authenticatable
     }
 
     /**
-     * 全メニューを表示する管理者ロールか。
-     * 判定基準の slug は config/felix.php（admin_role_slugs）を唯一の正とする。
-     */
-    public function isAdministrator(): bool
-    {
-        return (bool) array_intersect($this->roleSlugs(), config('felix.admin_role_slugs', []));
-    }
-
-    /**
      * サイドメニューの表示可否（メニューキー => 表示するか）。
-     * config/felix.php（menu_roles）を唯一の正とし、administrator は全メニューを表示する。
-     * 発注管理などメニューが増えても menu_roles に追記すれば自動的に反映される。
+     *
+     * 新テーブルのメニュー定義を唯一の正とする：
+     *   m_users（source_id = admin_users.id）→ p_user_roles → p_role_permissions
+     *     ┗ p_user_permissions（ユーザー個別の権限）
+     *   → p_permission_menu_items → m_menu_items.uri
+     * メニューキーは `uri` の末尾セグメント（`/quotation-management/quote-request` → `quote-request`）。
+     * 画面が増えたときは m_menu_items に1行足して権限へ紐づければ表示される（コード変更は不要）。
      *
      * @return array<string, bool>
      */
     public function menuPermissions(): array
     {
-        $slugs = $this->roleSlugs();
-        $isAdmin = (bool) array_intersect($slugs, config('felix.admin_role_slugs', []));
+        $userId = DB::table('m_users')
+            ->where('source_table', 'admin_users')
+            ->where('source_id', $this->id)
+            ->value('id');
+        if ($userId === null) {
+            return [];
+        }
+
+        $viaRoles = DB::table('p_role_permissions as rp')
+            ->join('p_user_roles as ur', 'ur.role_id', '=', 'rp.role_id')
+            ->where('ur.user_id', $userId)
+            ->pluck('rp.permission_id');
+        $direct = DB::table('p_user_permissions')->where('user_id', $userId)->pluck('permission_id');
+
+        $uris = DB::table('m_menu_items')
+            ->whereNotNull('uri')
+            ->whereIn('id', DB::table('p_permission_menu_items')
+                ->whereIn('permission_id', $viaRoles->merge($direct)->unique())
+                ->select('menu_item_id'))
+            ->pluck('uri');
 
         $permissions = [];
-        foreach ((array) config('felix.menu_roles', []) as $menuKey => $allowedSlugs) {
-            $permissions[$menuKey] = $isAdmin || (bool) array_intersect($slugs, (array) $allowedSlugs);
+        foreach ($uris as $uri) {
+            $permissions[basename((string) $uri)] = true;
         }
 
         return $permissions;

@@ -44,7 +44,9 @@ class PayableRepository implements PayableRepositoryInterface
      * 操作可否は Resource の `operable` としてフロントへ渡す。
      */
     private const MODE_OPERABLE_STATUS = [
-        'quote-request' => ['DRAFT', 'CANCELLED'],   // 未申請 / 取消承認済
+        // 見積依頼は「業者選定で選定されるまで」出し直せる。選定済み（APPLIED 以降）は不可。
+        // 未申請 / 取消承認済 / 否認差し戻し＝いずれも選定前の状態。
+        'quote-request' => ['DRAFT', 'CANCELLED', 'REJECTED'],
         // 未申請 / 取消承認済 / 否認差し戻し（REJECTED＝部長承認で否認され、選び直しを待っている）
         'vendor-selection' => ['DRAFT', 'CANCELLED', 'REJECTED'],
         'manager-approval' => ['APPLIED'],           // 申請中（承認待ち）

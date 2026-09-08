@@ -198,7 +198,8 @@ const toggleProvisional = (row: PayableRow): void => {
 
 // 一覧の表示切替フィルタ（見積依頼画面）。クライアント側で行を絞り込む。
 // - 仮選定のみ表示：チェックした仮選定の行だけ（仮選定はローカル状態）。
-// - 未依頼のみ表示：まだ見積依頼を送っていない行だけ（送信回数 0 = requested=false）。
+// - 未依頼のみ表示：まだ見積依頼を送っていない行（送信回数 0）と、否認で差し戻された行。
+//   差し戻し分は依頼済みだが「依頼し直す」対象なので、着手すべき行として残す。
 // 区分。支払系画面の初期値は「支払」。「全て」にすると請求取引先も同じ一覧に並ぶ（表示のみ）。
 type PartnerKind = 'all' | 'payable' | 'billing';
 const kind = computed<PartnerKind>(() => (props.filters.kind === 'all' ? 'all' : 'payable'));
@@ -221,7 +222,7 @@ const displayProjects = computed<PayableProject[]>(() => {
         rowFilters.push((r) => provisionalKeys.value.has(payableRowKey(r)));
     }
     if (unrequestedOnly.value) {
-        rowFilters.push((r) => r.sendCount === 0);
+        rowFilters.push((r) => r.sendCount === 0 || r.denied);
     }
     if (operableOnly.value && operableFilterLabel.value !== null) {
         rowFilters.push((r) => r.operable);

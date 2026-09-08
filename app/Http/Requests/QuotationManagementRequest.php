@@ -43,13 +43,13 @@ class QuotationManagementRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-    public function filters(string $defaultKind = 'payable'): array
+    public function filters(string $defaultKind = 'payable', string $defaultAnswer = 'all'): array
     {
         return [
             'keyword' => $this->nullIfEmpty($this->input('keyword')),
             'itemLabel' => $this->nullIfEmpty($this->input('itemLabel')),
             'vendor' => $this->nullIfEmpty($this->input('vendor')),
-            'answer' => (string) $this->input('answer', 'all'),
+            'answer' => (string) $this->input('answer', $defaultAnswer),
             'comment' => (string) $this->input('comment', 'all'),
             'kind' => $this->kind($defaultKind),
         ];
@@ -60,13 +60,13 @@ class QuotationManagementRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-    public function filtersForView(string $defaultKind = 'payable'): array
+    public function filtersForView(string $defaultKind = 'payable', string $defaultAnswer = 'all'): array
     {
         return [
             'keyword' => (string) $this->input('keyword', ''),
             'itemLabel' => (string) $this->input('itemLabel', ''),
             'vendor' => (string) $this->input('vendor', ''),
-            'answer' => (string) $this->input('answer', 'all'),
+            'answer' => (string) $this->input('answer', $defaultAnswer),
             'comment' => (string) $this->input('comment', 'all'),
             'kind' => $this->kind($defaultKind),
         ];

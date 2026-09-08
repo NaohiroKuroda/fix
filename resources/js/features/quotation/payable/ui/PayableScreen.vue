@@ -463,9 +463,12 @@ const commentFilterOptions: { value: CommentFilter; label: string }[] = [
 const commentParam = (value: CommentFilter): CommentFilter | undefined => (value === 'all' ? undefined : value);
 
 // 回答状態フィルタ（全て / 回答あり / 回答なし）。相見積額（最新の相見積履歴）の有無で絞る。
-// 業者選定・見積依頼で使用。現在値はサーバの filters から（既定=全て）。
+// 業者選定・見積依頼で使用。現在値はサーバの filters から。
 type AnswerFilter = 'all' | 'answered' | 'unanswered';
-const answer = computed<AnswerFilter>(() => props.filters.answer ?? 'all');
+// 画面ごとの既定値。業者選定は「業者が回答した見積先」を見る画面なので `answered` から始める
+// （サーバ側 VendorSelectionController::DEFAULT_ANSWER と揃えること）。
+const defaultAnswer = computed<AnswerFilter>(() => (props.mode === 'vendor-selection' ? 'answered' : 'all'));
+const answer = computed<AnswerFilter>(() => props.filters.answer ?? defaultAnswer.value);
 // 見積依頼・業者選定とも「見積回答あり/なし」のラベルにする。
 const answerOptions: { value: AnswerFilter; label: string }[] = [
     { value: 'all', label: '全て' },
@@ -481,8 +484,8 @@ const showAnswerFilter = computed(() =>
 const showProvisionalFilter = computed(() =>
     ['quote-request', 'vendor-selection', 'manager-approval'].includes(props.mode),
 );
-// answer は既定（all）のとき URL から省く。
-const answerParam = (value: AnswerFilter): AnswerFilter | undefined => (value === 'all' ? undefined : value);
+// answer は画面の既定値と同じとき URL から省く（既定が answered の業者選定でも同じ扱い）。
+const answerParam = (value: AnswerFilter): AnswerFilter | undefined => (value === defaultAnswer.value ? undefined : value);
 const onSearch = (payload: PayableFilters): void => {
     router.get(
         window.location.pathname,

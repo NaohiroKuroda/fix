@@ -27,9 +27,10 @@ abstract class AbstractPayableScreenController extends Controller
      * @param  QuotationManagementRequest  $request  絞り込み条件（filtersForView 用）
      * @param  string  $page  Inertia ページ名（例: quotation-management/quote-request）
      * @param  LengthAwarePaginator<int, TBuilding>  $paginator  案件のページネーション
+     * @param  string  $defaultAnswer  回答状態フィルタの既定値（業者選定のみ `answered`）
      * @return Response projects / pagination / filters を渡した Inertia レスポンス
      */
-    protected function renderScreen(QuotationManagementRequest $request, string $page, LengthAwarePaginator $paginator): Response
+    protected function renderScreen(QuotationManagementRequest $request, string $page, LengthAwarePaginator $paginator, string $defaultAnswer = 'all'): Response
     {
         return Inertia::render($page, [
             'projects' => PayablePartnerResource::collection($paginator->items()),
@@ -41,7 +42,7 @@ abstract class AbstractPayableScreenController extends Controller
                 'from' => $paginator->firstItem(),
                 'to' => $paginator->lastItem(),
             ],
-            'filters' => $request->filtersForView(),
+            'filters' => $request->filtersForView('payable', $defaultAnswer),
         ]);
     }
 }

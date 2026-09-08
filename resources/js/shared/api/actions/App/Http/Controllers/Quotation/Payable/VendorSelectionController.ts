@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::index
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::confirm
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:42
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:49
 * @route '/quotation-management/vendor-selection'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ confirm.definition = {
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::confirm
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:42
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:49
 * @route '/quotation-management/vendor-selection'
 */
 confirm.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ confirm.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::confirm
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:42
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:49
 * @route '/quotation-management/vendor-selection'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::confirm
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:42
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:49
 * @route '/quotation-management/vendor-selection'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::confirm
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:42
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:49
 * @route '/quotation-management/vendor-selection'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ confirm.form = confirmForm
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::provisional
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:59
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:66
 * @route '/quotation-management/vendor-selection/provisional'
 */
 export const provisional = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -153,7 +153,7 @@ provisional.definition = {
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::provisional
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:59
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:66
 * @route '/quotation-management/vendor-selection/provisional'
 */
 provisional.url = (options?: RouteQueryOptions) => {
@@ -162,7 +162,7 @@ provisional.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::provisional
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:59
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:66
 * @route '/quotation-management/vendor-selection/provisional'
 */
 provisional.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ provisional.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::provisional
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:59
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:66
 * @route '/quotation-management/vendor-selection/provisional'
 */
 const provisionalForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -182,7 +182,7 @@ const provisionalForm = (options?: RouteQueryOptions): RouteFormDefinition<'post
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::provisional
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:59
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:66
 * @route '/quotation-management/vendor-selection/provisional'
 */
 provisionalForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

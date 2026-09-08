@@ -45,7 +45,7 @@ class PayableRepository implements PayableRepositoryInterface
      */
     private const MODE_OPERABLE_STATUS = [
         'quote-request' => ['DRAFT', 'CANCELLED'],   // 未申請 / 取消承認済
-        'vendor-selection' => ['DRAFT', 'CANCELLED'], // 未申請 / 取消承認済（かつ業者回答あり）
+        'vendor-selection' => ['DRAFT', 'CANCELLED'], // 未申請 / 取消承認済
         'manager-approval' => ['APPLIED'],           // 申請中（承認待ち）
         'cancel-request' => ['APPROVED'],            // 承認済（かつ業者の請負承認なし）
         'cancel-approval' => ['CANCEL_APPLIED'],     // 取消申請中
@@ -108,10 +108,6 @@ class PayableRepository implements PayableRepositoryInterface
         $makeFilter = fn (bool $isBilling): callable => function (Builder $q) use ($operable, $hidesOther, $vendor, $answer, $mode, $isQuoteRequest, $isBilling): void {
             if ($hidesOther && $operable !== null) {
                 $q->whereIn('approval_status', $operable);
-            }
-            if ($mode === 'vendor-selection' && ! $isBilling) {
-                // 初期表示条件：業者側から見積回答されている（支払見積にデータがある）ものだけ。
-                $q->whereHas('quotations');
             }
             if ($mode === 'cancel-request' && ! $isBilling) {
                 // 取消申請できるのは「部長承認されてから、業者が請負承認して発注が確定するまで」の間。

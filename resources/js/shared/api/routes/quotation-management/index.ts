@@ -94,7 +94,7 @@ quoteRequest.form = quoteRequestForm
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 export const vendorSelection = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -109,7 +109,7 @@ vendorSelection.definition = {
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 vendorSelection.url = (options?: RouteQueryOptions) => {
@@ -118,7 +118,7 @@ vendorSelection.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 vendorSelection.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -128,7 +128,7 @@ vendorSelection.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 vendorSelection.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -138,7 +138,7 @@ vendorSelection.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 const vendorSelectionForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -148,7 +148,7 @@ const vendorSelectionForm = (options?: RouteQueryOptions): RouteFormDefinition<'
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 vendorSelectionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -158,7 +158,7 @@ vendorSelectionForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'ge
 
 /**
 * @see \App\Http\Controllers\Quotation\Payable\VendorSelectionController::vendorSelection
-* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:27
+* @see app/Http/Controllers/Quotation/Payable/VendorSelectionController.php:30
 * @route '/quotation-management/vendor-selection'
 */
 vendorSelectionForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

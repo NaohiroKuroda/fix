@@ -14,6 +14,9 @@ use Inertia\Response;
  */
 class VendorSelectionController extends AbstractPayableScreenController
 {
+    /** 回答状態フィルタの既定値（初期表示は見積回答ありのみ）。 */
+    private const DEFAULT_ANSWER = 'answered';
+
     public function __construct(
         private readonly VendorSelectionService $service,
     ) {}
@@ -26,10 +29,14 @@ class VendorSelectionController extends AbstractPayableScreenController
      */
     public function index(QuotationManagementRequest $request): Response
     {
+        // 業者選定は「業者が金額を回答した見積先」を見る画面なので、回答状態フィルタの既定を
+        // 「見積回答あり」にする。ユーザーが「全て」「見積回答なし」へ切り替えれば、
+        // この画面で操作しない行（未回答・選定済み以降）も表示する。
         return $this->renderScreen(
             $request,
             'quotation/payable/vendor-selection',
-            $this->service->paginate($request->filters(), self::PER_PAGE),
+            $this->service->paginate($request->filters('payable', self::DEFAULT_ANSWER), self::PER_PAGE),
+            self::DEFAULT_ANSWER,
         );
     }
 

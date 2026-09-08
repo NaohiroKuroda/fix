@@ -380,6 +380,27 @@ class StatusManagementController extends Controller
 - 連携先パスは `config('services.felix_total.quote_request_path')`（既定
   `/admin/estimates-custom-detail/order_estimate`、`FELIX_TOTAL_QUOTE_REQUEST_PATH` で上書き可）。
 
+#### 呼び出している現行エンドポイント
+
+| 新Fix の操作 | 現行エンドポイント（`/admin` 配下） | ゲートウェイのメソッド |
+| --- | --- | --- |
+| 見積依頼の送信 | `estimates-custom-detail/order_estimate` | `orderEstimate()` |
+| 業者選定の確定 / 差し戻し | `new-estimates-custom-edit/update_adoption_flg` | `adoptCompany()` / `cancelAdoption()` |
+| 部長承認 / 取消承認 | `new-estimates-custom-edit/update_company_select_flg` | `tmpSelectCompany()` / `cancelTmpSelection()` |
+| 部長承認（**発注書の作成・送付**） | `estimates-custom-detail/create_send_order_company` | `createAndSendOrder()` |
+| 部長取消承認（**発注書のキャンセル**） | `estimates-custom-detail/cancel_send_order`（`status=99`） | `cancelOrder()` |
+
+**発注書だけは現行 `orders` が起点**であることに注意する。業者マイページの発注書一覧は
+`order_units` から辿った現行 `orders`（`status >= 10` ＝発行済）を出し、請負承認ボタンも
+現行の `/order/{id}` 画面にある。新テーブルの `t_payable_orders` は新Fix【支払】業者承諾確認の
+表示と承諾日（`contract_approved_at`）のために持つもので、**業者には見えない**。
+そのため部長承認では両方を作る（現行＝業者に見せる実体 / 新＝新Fix の画面用）。
+
+取消承認で現行の発注書をキャンセルするのは、`create_send_order_company` が
+**既存の `orders` / `estimate_customs` があればそれを再利用する**ため。キャンセルしておかないと、
+選び直して再承認したときに古い発注書がそのまま業者に見え、新しい金額が反映されない。
+キャンセルは項目（`estimate_units`）単位で、対象項目の発注書がまとめて `status = 99` になる。
+
 ### 3.6 作成者 / 更新者（`created_by` / `updated_by`）の自動記録
 
 新見積管理系のテーブルは、`created_at` / `updated_at` と対になる形で

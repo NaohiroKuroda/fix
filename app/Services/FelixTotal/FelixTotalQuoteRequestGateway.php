@@ -153,13 +153,67 @@ class FelixTotalQuoteRequestGateway
     }
 
     /**
-     * felix_total の new-estimates-custom-edit 配下の更新系を cross_auth 付きサーバ間 HTTP（GET）で叩く。
+     * 発注書の作成・送付（部長承認）：現行の `create_send_order_company` を呼ぶ。
+     *
+     * 業者マイページの発注書表示と請負承認は**現行 `orders` が起点**のため、
+     * 新テーブルの発注書（`t_payable_orders`）だけでは業者は承認できない。
+     * 現行側で `orders` ＋ `order_units` を作り、`status = 10`（発行済）にして発注メールまで送る。
+     *
+     * @param  int  $estimateUnitCompanyId  旧 estimate_unit_companies.id（= t_payable_partners.source_id）
+     *
+     * @throws RuntimeException
+     */
+    public function createAndSendOrder(int $estimateUnitCompanyId): void
+    {
+        $this->call('estimates-custom-detail/create_send_order_company', [
+            'estimate_unit_company_ids' => (string) $estimateUnitCompanyId,
+        ]);
+    }
+
+    /**
+     * 発注書のキャンセル（部長取消承認）：現行の `cancel_send_order` を `status = 99` で呼ぶ。
+     *
+     * 現行 `orders` / `estimate_customs` をキャンセル状態にして業者マイページから発注書を消す。
+     *
+     * ponytail: 現行の `create_send_order_company` は既存 `orders` を **status を見ずに** 1件拾うため、
+     * キャンセル済みでも再利用される。そのため「取消 → **同じ見積先**を選び直して再承認」では
+     * 新しい発注書が作られない（別の見積先を選び直した場合は新規に作られる）。今回のリリースでは
+     * 発注書作成後に見積依頼からやり直す運用が無いため対応しない。必要になったら現行側の判定に
+     * `whereNotIn('status', [98, 99])` を足すか、対象の `orders` を消す（→ 05_支払_部長取消承認）。
+     *
+     * @param  int  $estimateUnitId  旧 estimate_units.id（= t_building_budget_items.source_id）
+     *
+     * @throws RuntimeException
+     */
+    public function cancelOrder(int $estimateUnitId): void
+    {
+        $this->call('estimates-custom-detail/cancel_send_order', [
+            'estimate_unit_ids' => (string) $estimateUnitId,
+            'status' => 99, // 99=キャンセル（現行 config/constant.php の report_status_list）
+        ]);
+    }
+
+    /**
+     * felix_total の new-estimates-custom-edit 配下の更新系を叩く。
      *
      * @param  array<string, int|string>  $params
      *
      * @throws RuntimeException 連携先 URL 未設定 / admin 未ログイン / 接続失敗 / 非 2xx 時
      */
     private function callEdit(string $action, array $params): void
+    {
+        $this->call('new-estimates-custom-edit/'.$action, $params);
+    }
+
+    /**
+     * felix_total の `/admin` 配下を cross_auth 付きサーバ間 HTTP（GET）で叩く。
+     *
+     * @param  string  $path  `/admin/` に続くパス（例: `estimates-custom-detail/cancel_send_order`）
+     * @param  array<string, int|string>  $params
+     *
+     * @throws RuntimeException 連携先 URL 未設定 / admin 未ログイン / 接続失敗 / 非 2xx 時
+     */
+    private function call(string $path, array $params): void
     {
         // サーバ間 HTTP はコンテナが到達できるホスト（internal_url）を使う。
         $base = (string) (config('services.felix_total.internal_url') ?: config('services.felix_total.url'));
@@ -172,7 +226,7 @@ class FelixTotalQuoteRequestGateway
             throw new RuntimeException('admin としてログインしていないため、felix_total を呼べません。');
         }
 
-        $url = rtrim($base, '/').'/admin/new-estimates-custom-edit/'.$action;
+        $url = rtrim($base, '/').'/admin/'.$path;
         $cookie = 'cross_auth='.CrossAuthCookie::mintValue((int) $adminId);
 
         try {
@@ -185,7 +239,7 @@ class FelixTotalQuoteRequestGateway
         }
 
         if (! $response->successful()) {
-            throw new RuntimeException("felix_total の処理（{$action}）に失敗しました（HTTP {$response->status()}）。");
+            throw new RuntimeException("felix_total の処理（{$path}）に失敗しました（HTTP {$response->status()}）。");
         }
     }
 }

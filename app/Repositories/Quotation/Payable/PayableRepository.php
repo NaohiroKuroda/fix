@@ -442,7 +442,12 @@ class PayableRepository implements PayableRepositoryInterface
             $partnerIds,
             'APPLIED',
             'APPROVED',
-            fn (int $unit, int $company) => $this->felix->tmpSelectCompany($unit, $company),
+            function (int $unit, int $company): void {
+                $this->felix->tmpSelectCompany($unit, $company);
+                // 業者マイページの発注書・請負承認は**現行 orders が起点**。ここで作らないと
+                // 業者は請負承認できない（→ docs/architecture/backend.md「felix_total 連携」）。
+                $this->felix->createAndSendOrder($company);
+            },
             // 部長承認＝発注の確定。ここで発注書（t_payable_orders）を発行し、業者マイページに出す。
             fn (int $partnerId) => $this->issuePayableOrder($partnerId),
         );
@@ -649,6 +654,8 @@ class PayableRepository implements PayableRepositoryInterface
                 // 承認の段を逆順に戻す（建設部選定 → 採用の順で解除）。
                 $this->felix->cancelTmpSelection($unit, $company);
                 $this->felix->cancelAdoption($unit, $company);
+                // 現行の発注書もキャンセルする。残すと選び直して再承認しても古い発注書が再利用される。
+                $this->felix->cancelOrder($unit);
             },
             // 部長承認が取り消されたので、発行済みの発注書も取り消す。
             fn (int $partnerId) => $this->revokePayableOrder($partnerId),

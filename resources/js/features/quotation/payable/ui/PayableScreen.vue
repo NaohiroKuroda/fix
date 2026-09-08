@@ -131,13 +131,15 @@ const toggleSelect = (row: PayableRow): void => {
     const key = payableRowKey(row);
     selectionOverride[key] = !isRowSelected(row);
 };
-// 現在「選定済（押下）」の行キー集合。明細カードのボタン表示に使う。
+// 現在「選定済（押下）」の行キー集合。明細カードのボタン表示・確定件数・送信対象に使う。
+// **画面に出ている行だけ**を対象にする（下の displayedPayableRows）。「業者未選定」などの
+// 絞り込みで隠れている選定済みの行まで数えると、何も押していないのに「確定（1）」と出てしまう。
 const vendorSelectedKeys = computed(
-    () => new Set(payableRows.value.filter((r) => r.partnerId != null && isRowSelected(r)).map((r) => payableRowKey(r))),
+    () => new Set(displayedPayableRows.value.filter((r) => r.partnerId != null && isRowSelected(r)).map((r) => payableRowKey(r))),
 );
 // サーバ状態から1つでも変更（押下）があるか。確定ボタンの活性判定に使う。
 const vendorDirty = computed(() =>
-    payableRows.value.some((r) => {
+    displayedPayableRows.value.some((r) => {
         const key = payableRowKey(r);
         return key in selectionOverride && selectionOverride[key] !== serverSelected(r);
     }),
@@ -237,6 +239,11 @@ const displayProjects = computed<PayableProject[]>(() => {
         })
         .filter((p) => p.rows.length > 0);
 });
+// 画面に出ている支払行。選定件数・確定送信の対象はこれに揃える（隠れている行は含めない）。
+// vendorSelectedKeys / vendorDirty / submitAction から参照する（いずれも描画後に評価される）。
+const displayedPayableRows = computed<PayableRow[]>(() =>
+    displayProjects.value.flatMap((p) => p.rows).filter((r) => !r.billingTarget),
+);
 
 // felix_total を開く汎用 iframe モーダル（見積先の詳細 / 業者追加 など）。
 // 明細カードから { url, title } を受け取って開く。閉じたら一覧を再取得して反映する。
@@ -342,7 +349,8 @@ const submitAction = (): void => {
         return;
     }
     const keys = isToggleMode.value ? vendorSelectedKeys.value : checkedKeys.value;
-    const partnerIds = payableRows.value
+    // 送信対象も画面に出ている行だけに限る（絞り込みで隠れている行を巻き込まない）。
+    const partnerIds = displayedPayableRows.value
         .filter((row) => row.partnerId != null && keys.has(payableRowKey(row)))
         .map((row) => row.partnerId as number);
     if (partnerIds.length === 0) {

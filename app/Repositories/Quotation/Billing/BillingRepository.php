@@ -37,7 +37,8 @@ class BillingRepository implements BillingRepositoryInterface
      * @var array<string, list<string>>
      */
     private const MODE_OPERABLE_STATUS = [
-        'billing-quote-create' => ['DRAFT', 'CANCELLED'],   // 未申請 / 取消承認済（差し戻し）
+        // 未申請 / 取消承認済 / 否認差し戻し（REJECTED＝見積承認で否認され、作り直しを待っている）
+        'billing-quote-create' => ['DRAFT', 'CANCELLED', 'REJECTED'],
         'billing-quote-approval' => ['APPLIED'],            // 申請中（承認待ち）
         'billing-cancel-request' => ['APPROVED'],           // 承認済（かつ業者承諾なし）
         'billing-cancel-approval' => ['CANCEL_APPLIED'],    // 取消申請中
@@ -226,7 +227,6 @@ class BillingRepository implements BillingRepositoryInterface
 
         $countMap = [];
         $unreadMap = [];
-        $deniedMap = [];
         if ($itemIds !== []) {
             $countMap = DB::table('t_comments')
                 ->where('commentable_type', $morphType)
@@ -235,15 +235,6 @@ class BillingRepository implements BillingRepositoryInterface
                 ->selectRaw('commentable_id as id, COUNT(*) as cnt')
                 ->pluck('cnt', 'id')
                 ->all();
-
-            // 否認済み判定（新スキーマに否認理由の列が無いため、コメント本文の接頭辞で判定する）。
-            $deniedMap = array_flip(array_map('intval', DB::table('t_comments')
-                ->where('commentable_type', $morphType)
-                ->whereIn('commentable_id', $itemIds)
-                ->where('body', 'like', '【否認】%')
-                ->distinct()
-                ->pluck('commentable_id')
-                ->all()));
 
             $unreadMap = DB::table('t_comments as c')
                 ->leftJoin('t_comment_read_timestamps as r', function ($join) use ($morphType, $userId): void {
@@ -267,7 +258,6 @@ class BillingRepository implements BillingRepositoryInterface
             $partner->setAttribute('comments_count', $count);
             $partner->setAttribute('has_comments', $count > 0);
             $partner->setAttribute('unread_count', (int) ($unreadMap[$itemId] ?? 0));
-            $partner->setAttribute('denied', isset($deniedMap[$itemId]));
         }
     }
 
@@ -451,12 +441,10 @@ class BillingRepository implements BillingRepositoryInterface
             'billing-quote-create' => $this->countablePartners()
                 ->where('approval_status', 'DRAFT')
                 ->count(),
-            // 【請求】見積作成（差し戻し）：見積承認で否認され、見積作成へ戻った（CANCELLED）。
-            // 新スキーマに否認理由の列が無いため、項目のコメントに「【否認】」で始まる投稿が
-            // あることをもって否認済みと判定する（支払側の業者選定と同じ方法）。
+            // 【請求】見積作成（差し戻し）：見積承認で否認され、見積作成へ戻った取引先（REJECTED）。
+            // 作り直して再申請すると APPLIED へ進むので、赤の件数はそこで減る。
             'billing-quote-create-rejected' => $this->countablePartners()
-                ->where('approval_status', 'CANCELLED')
-                ->whereIn('building_budget_item_id', $this->denialItemIds())
+                ->where('approval_status', 'REJECTED')
                 ->count(),
             // 【請求】見積承認：申請中（APPLIED）で、まだ承認も否認もしていない。
             'billing-quote-approval' => $this->countablePartners()
@@ -469,22 +457,6 @@ class BillingRepository implements BillingRepositoryInterface
                 ->count(),
             // 【請求】見積取消申請はバッヂ対象外（常時ブラウズする画面のため）。
         ];
-    }
-
-    /**
-     * 否認コメント（`【否認】` 始まり）を持つ建物予算項目の ID 一覧。
-     *
-     * @return list<int>
-     */
-    private function denialItemIds(): array
-    {
-        return DB::table('t_comments')
-            ->where('commentable_type', (new TBuildingBudgetItem)->getMorphClass())
-            ->where('body', 'like', '【否認】%')
-            ->distinct()
-            ->pluck('commentable_id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
     }
 
     /** 値が「未指定（null / 空文字）」なら false、それ以外は文字列で返す。 */

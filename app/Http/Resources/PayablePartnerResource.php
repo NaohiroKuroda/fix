@@ -99,8 +99,8 @@ class PayablePartnerResource extends JsonResource
             'hasComments' => (bool) ($quotation?->has_comments ?? false),
             // やり取りの未読数（ログインユーザーの最終既読より新しい他者コメント）。0=未読なし。
             'unreadCount' => (int) ($quotation?->unread_count ?? 0),
-            // 選定済み（業者未選定でない）。
-            'selected' => $status !== null && $status !== 'DRAFT',
+            // 選定済み（業者未選定でない）。否認差し戻し（REJECTED）は選定前と同じ扱い。
+            'selected' => $status !== null && ! in_array($status, ['DRAFT', 'REJECTED'], true),
             // 部長承認済み（APPROVED 以降）。
             'approved' => in_array($status, ['APPROVED', 'CANCEL_APPLIED', 'CANCELLED'], true),
             // 取消申請中。
@@ -111,10 +111,10 @@ class PayablePartnerResource extends JsonResource
             'provisional' => $quotation !== null && (int) $quotation->is_drafted === 1,
             // 区分（請求／支払）。絞り込みの区分トグルで選んだ側の取引先が並ぶ。
             'billingTarget' => (bool) ($quotation?->billing_target ?? false),
-            // 部長承認で否認され業者選定へ差し戻された。新スキーマに否認理由の列が無いため、
-            // 項目のコメントに「【否認】」の投稿があるかで判定する（リポジトリが付与）。
-            'denied' => (bool) ($quotation?->denied ?? false),
-            // 承認ステータス（DRAFT / APPLIED / APPROVED / CANCEL_APPLIED / CANCELLED）。
+            // 部長承認で否認され業者選定へ差し戻された見積先。否認は見積先ごとの状態なので、
+            // 同じ項目に並ぶ他の見積先は赤くしない。
+            'denied' => $status === 'REJECTED',
+            // 承認ステータス（DRAFT / APPLIED / APPROVED / CANCEL_APPLIED / CANCELLED / REJECTED）。
             // 一覧に状態バッジを出すために渡す。
             'approvalStatus' => $status === null ? null : (string) $status,
             // この画面で操作できる行か（処理フロー J列）。false は一覧に出すが操作させない（K列）。

@@ -73,7 +73,7 @@ class BillingQuotationService
     }
 
     /**
-     * 見積の承認申請（見積作成 → 見積承認へ回す）。`DRAFT` / `CANCELLED` → `APPLIED`。
+     * 見積の承認申請（見積作成 → 見積承認へ回す）。`DRAFT` / `CANCELLED` / `REJECTED` → `APPLIED`。
      *
      * @param  list<int>  $partnerIds
      * @return int 実際に申請した件数
@@ -82,7 +82,9 @@ class BillingQuotationService
     {
         return $this->guard(
             fn () => $this->billing->advanceStatus($partnerIds, 'DRAFT', 'APPLIED')
-                + $this->billing->advanceStatus($partnerIds, 'CANCELLED', 'APPLIED'),
+                + $this->billing->advanceStatus($partnerIds, 'CANCELLED', 'APPLIED')
+                // 否認で差し戻された取引先。再申請でその取引先の赤（差し戻し）は解消される。
+                + $this->billing->advanceStatus($partnerIds, 'REJECTED', 'APPLIED'),
             '請求見積の承認申請に失敗しました',
             ['partnerIds' => $partnerIds],
         );
@@ -162,12 +164,15 @@ class BillingQuotationService
     }
 
     /**
-     * 見積の否認。`APPLIED` → `CANCELLED`（③ 見積作成へ差し戻し）。
+     * 見積の否認。`APPLIED` → `REJECTED`（③ 見積作成へ差し戻し）。
      * 否認理由を項目のやり取りへ `【否認】{理由}` として残す。
+     *
+     * 取消承認と同じ `CANCELLED` にすると「どの取引先が否認されたか」が分からなくなるため、
+     * 差し戻しは専用のステータスで持つ（赤バッヂ・赤表示の判定に使う）。
      */
     public function reject(int $partnerId, string $reason): int
     {
-        return $this->transition($partnerId, 'APPLIED', 'CANCELLED', '【否認】'.$reason, '請求見積の否認に失敗しました');
+        return $this->transition($partnerId, 'APPLIED', 'REJECTED', '【否認】'.$reason, '請求見積の否認に失敗しました');
     }
 
     /**
@@ -237,7 +242,7 @@ class BillingQuotationService
 
             if ($count > 0) {
                 // 見積作成へ差し戻す遷移（否認・取消承認）では、発行済みの発注書も取り消す。
-                if ($to === 'CANCELLED') {
+                if (in_array($to, ['CANCELLED', 'REJECTED'], true)) {
                     $this->billing->revokeOrders([$partnerId]);
                 }
 

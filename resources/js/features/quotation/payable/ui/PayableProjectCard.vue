@@ -175,7 +175,7 @@ const displayRows = computed<DisplayRow[]>(() => {
     return result;
 });
 
-// 否認差し戻し（deny_comment あり）の見積先か。
+// 否認差し戻し（approval_status = REJECTED）の見積先か。否認は見積先ごと。
 const isDenied = (row: PayableRow): boolean => row.denied === true;
 // 同一項目のいずれかの見積先が選定（選択）されているか。否認差し戻しの解消判定に使う。
 const itemHasSelection = (row: PayableRow): boolean =>

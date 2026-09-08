@@ -45,7 +45,8 @@ class PayableRepository implements PayableRepositoryInterface
      */
     private const MODE_OPERABLE_STATUS = [
         'quote-request' => ['DRAFT', 'CANCELLED'],   // 未申請 / 取消承認済
-        'vendor-selection' => ['DRAFT', 'CANCELLED'], // 未申請 / 取消承認済
+        // 未申請 / 取消承認済 / 否認差し戻し（REJECTED＝部長承認で否認され、選び直しを待っている）
+        'vendor-selection' => ['DRAFT', 'CANCELLED', 'REJECTED'],
         'manager-approval' => ['APPLIED'],           // 申請中（承認待ち）
         'cancel-request' => ['APPROVED'],            // 承認済（かつ業者の請負承認なし）
         'cancel-approval' => ['CANCEL_APPLIED'],     // 取消申請中
@@ -208,7 +209,7 @@ class PayableRepository implements PayableRepositoryInterface
     /**
      * 確定見積（項目 ID → 税抜金額）を求める。
      *
-     * 確定見積＝**選定済み（`approval_status <> 'DRAFT'`）の支払見積先の最新見積額**
+     * 確定見積＝**選定済み（`approval_status` が `DRAFT` / `REJECTED` 以外）の支払見積先の最新見積額**
      * （`t_payable_quotations` の `is_latest` の `subtotal_amount`）。
      * 相見積・確定見積・見積額はいずれも対応テーブルの `subtotal_amount`（税別合計）を出す方針に揃える。
      *
@@ -244,7 +245,7 @@ class PayableRepository implements PayableRepositoryInterface
                     ->whereNull('q.deleted_at');
             })
             ->whereIn('p.building_budget_item_id', $itemIds)
-            ->where('p.approval_status', '<>', 'DRAFT')
+            ->whereNotIn('p.approval_status', ['DRAFT', 'REJECTED'])
             ->whereNull('p.deleted_at')
             ->orderBy('p.id')
             ->get(['p.building_budget_item_id as item_id', 'q.subtotal_amount as amount']);
@@ -266,7 +267,9 @@ class PayableRepository implements PayableRepositoryInterface
      * - comments_count : 項目のコメント総数（「やり取り」列・messageCount 用）
      * - has_comments   : コメントが1件以上あるか（コメントボタンの配色用）
      * - unread_count   : ログインユーザーの最終既読（t_comment_read_timestamps）より新しい他者コメント数
-     * - denied         : 「【否認】」で始まるコメントがあるか（否認差し戻しの赤色表示用）
+     *
+     * 否認差し戻し（赤色表示）はコメントではなく approval_status = REJECTED で判定する。
+     * コメントは項目単位のため、ここで判定すると同じ項目の別の見積先まで赤くなる。
      *
      * @param  LengthAwarePaginator<int, TBuilding>  $paginator
      */
@@ -292,7 +295,6 @@ class PayableRepository implements PayableRepositoryInterface
 
         $countMap = [];
         $unreadMap = [];
-        $deniedMap = [];
         if ($itemIds !== []) {
             // 項目ごとのコメント総数。
             $countMap = DB::table('t_comments')
@@ -302,15 +304,6 @@ class PayableRepository implements PayableRepositoryInterface
                 ->selectRaw('commentable_id as id, COUNT(*) as cnt')
                 ->pluck('cnt', 'id')
                 ->all();
-
-            // 否認済み判定（新スキーマに否認理由の列が無いため、コメント本文の接頭辞で判定する）。
-            $deniedMap = array_flip(array_map('intval', DB::table('t_comments')
-                ->where('commentable_type', $morphType)
-                ->whereIn('commentable_id', $itemIds)
-                ->where('body', 'like', '【否認】%')
-                ->distinct()
-                ->pluck('commentable_id')
-                ->all()));
 
             // 項目ごとの未読数（最終既読より後・かつ他者の投稿）。
             $unreadMap = DB::table('t_comments as c')
@@ -335,7 +328,6 @@ class PayableRepository implements PayableRepositoryInterface
             $quotation->setAttribute('comments_count', $count);
             $quotation->setAttribute('has_comments', $count > 0);
             $quotation->setAttribute('unread_count', (int) ($unreadMap[$itemId] ?? 0));
-            $quotation->setAttribute('denied', isset($deniedMap[$itemId]));
         }
     }
 
@@ -424,12 +416,14 @@ class PayableRepository implements PayableRepositoryInterface
     {
         return $this->syncWithFelixTotal(
             $partnerIds,
-            // 取消承認済（CANCELLED）からも選定できる。部長取消承認は「選定をやり直す」ための操作で、
-            // 相見積（t_payable_quotations）は残っているため再依頼は要らない。
-            ['DRAFT', 'CANCELLED'],
+            // 取消承認済（CANCELLED）・否認差し戻し（REJECTED）からも選定できる。どちらも
+            // 「選定をやり直す」状態で、相見積（t_payable_quotations）は残っているため再依頼は要らない。
+            ['DRAFT', 'CANCELLED', 'REJECTED'],
             'APPLIED',
             // no_competitive_flg は現行 estimate_units に列が無いため 0（相見積あり＝単一採用）で渡す。
             fn (int $unit, int $company) => $this->felix->adoptCompany($unit, $company),
+            // 同じ項目で誰かを選び直したら、その項目の否認差し戻しは解消（画面の赤→緑と同じ扱い）。
+            fn (int $partnerId) => $this->clearRejectionsInSameItem($partnerId),
         );
     }
 
@@ -523,7 +517,7 @@ class PayableRepository implements PayableRepositoryInterface
     }
 
     /**
-     * 部長承認の否認（業者選定へ差し戻し）：担当承認済（APPLIED）→ 未選定（DRAFT）。
+     * 部長承認の否認（業者選定へ差し戻し）：担当承認済（APPLIED）→ 否認差し戻し（REJECTED）。
      * felix_total の採用取消（update_adoption_flg / mode=false）
      * をサーバ間 HTTP で呼び、現行側も業者選定前の状態（adoption_flg=0）へ戻す。
      *
@@ -542,9 +536,10 @@ class PayableRepository implements PayableRepositoryInterface
                 ->where('id', $partnerId)
                 ->where('approval_status', 'APPLIED')
                 // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
-                // 否認理由は新スキーマに列が無いため、項目単位のコメントスレッド
-                // （t_comments に「【否認】{理由}」で投稿）を唯一の記録とする。投稿は Service 側で行う。
-                ->update(Blame::stampUpdate(['approval_status' => 'DRAFT']));
+                // 否認理由は項目単位のコメントスレッド（t_comments に「【否認】{理由}」で投稿。
+                // 投稿は Service 側）に残すが、コメントは項目単位のため**どの見積先が否認されたか**は
+                // 表せない。差し戻し先の未選定と区別できる REJECTED を見積先の状態として持つ。
+                ->update(Blame::stampUpdate(['approval_status' => 'REJECTED']));
 
             if ($count === 0) {
                 return 0;
@@ -574,6 +569,26 @@ class PayableRepository implements PayableRepositoryInterface
     public function rejectCancelApproval(int $partnerId, string $reason): int
     {
         return $this->advanceStatus([$partnerId], 'CANCEL_APPLIED', 'APPROVED');
+    }
+
+    /**
+     * 選定し直した見積先と同じ項目に残っている否認差し戻し（REJECTED）を未選定（DRAFT）へ戻す。
+     *
+     * 差し戻しは「その項目の選定をやり直す」ための状態なので、別の見積先を選び直した時点で
+     * 役目を終える。残したままだと赤バッヂが減らない。
+     */
+    private function clearRejectionsInSameItem(int $partnerId): int
+    {
+        $itemId = $this->itemIdForPartner($partnerId);
+        if ($itemId === null) {
+            return 0;
+        }
+
+        return TPayablePartner::query()
+            ->where('building_budget_item_id', $itemId)
+            ->where('approval_status', 'REJECTED')
+            // 一括更新はモデルイベントが発火しないため、更新者（updated_by）を明示的に押印する。
+            ->update(Blame::stampUpdate(['approval_status' => 'DRAFT']));
     }
 
     /**
@@ -792,12 +807,10 @@ class PayableRepository implements PayableRepositoryInterface
                 ->where('approval_status', 'DRAFT')
                 ->whereHas('quotations', fn (Builder $h) => $h->where('is_latest', true))
                 ->count(),
-            // 業者選定（差し戻し）：部長承認で否認され業者選定へ戻った。
-            // 新スキーマに否認理由の列が無いため、項目のコメントに「【否認】」で始まる投稿が
-            // あることをもって否認済みと判定する（{@see denialItemIds}）。
+            // 業者選定（差し戻し）：部長承認で否認され業者選定へ戻った見積先（REJECTED）。
+            // 選び直して再申請すると APPLIED へ進むので、赤の件数はそこで減る。
             'vendor-selection-rejected' => $this->countablePartners()
-                ->where('approval_status', 'DRAFT')
-                ->whereIn('building_budget_item_id', $this->denialItemIds())
+                ->where('approval_status', 'REJECTED')
                 ->count(),
             // 部長承認：担当承認済（APPLIED）で部長承認待ち。
             'manager-approval' => $this->countablePartners()
@@ -808,27 +821,6 @@ class PayableRepository implements PayableRepositoryInterface
                 ->where('approval_status', 'CANCEL_APPLIED')
                 ->count(),
         ];
-    }
-
-    /**
-     * 否認済み（部長承認で差し戻された）とみなす項目 ID の一覧。
-     *
-     * 2026-08 のスキーマ改訂で否認理由の列（旧 t_payable_partners.deny_comment）が無くなったため、
-     * 項目単位のコメントスレッドに「【否認】」で始まる投稿があることをもって否認済みと判定する。
-     * コメントは項目単位のため、同一項目に複数の見積先がある場合は全て否認扱いになる
-     * （見積先単位の否認履歴が必要になったら t_approval_actions への記録を検討すること）。
-     *
-     * @return list<int>
-     */
-    private function denialItemIds(): array
-    {
-        return DB::table('t_comments')
-            ->where('commentable_type', (new TBuildingBudgetItem)->getMorphClass())
-            ->where('body', 'like', '【否認】%')
-            ->distinct()
-            ->pluck('commentable_id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
     }
 
     /** 値が「未指定（null/空文字/'all'）」でなければ文字列として返す。 */

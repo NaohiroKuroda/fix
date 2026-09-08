@@ -17,7 +17,8 @@ export type BillingApprovalStatus =
     | 'APPLIED'
     | 'APPROVED'
     | 'CANCEL_APPLIED'
-    | 'CANCELLED';
+    | 'CANCELLED'
+    | 'REJECTED';
 
 /** 案件 → 項目 → 請求取引先 を展開した1行。 */
 export interface BillingRow {
@@ -78,6 +79,7 @@ export const BILLING_STATUS_LABEL: Record<BillingApprovalStatus, string> = {
     APPROVED: '承認済',
     CANCEL_APPLIED: '取消申請中',
     CANCELLED: '取消承認済',
+    REJECTED: '否認差し戻し',
 };
 
 /** 課税区分（t_billing_quotation_details.tax_type）。 */

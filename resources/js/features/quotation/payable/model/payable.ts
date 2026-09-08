@@ -53,7 +53,7 @@ export interface PayableRow {
      * 操作列はチェック不要で即時送信する「見積送信」ボタンにする。
      */
     billingTarget: boolean;
-    /** 部長承認で否認され業者選定へ差し戻された（項目に「【否認】」コメントあり）。ボタンの赤色表示に使う。 */
+    /** 部長承認で否認され業者選定へ差し戻された見積先か（`approval_status = 'REJECTED'`）。ボタンの赤色表示に使う。 */
     denied: boolean;
     /**
      * 承認ステータス（t_payable_partners.approval_status）。状態バッジの表示に使う。
@@ -73,7 +73,8 @@ export type PayableApprovalStatus =
     | 'APPLIED'
     | 'APPROVED'
     | 'CANCEL_APPLIED'
-    | 'CANCELLED';
+    | 'CANCELLED'
+    | 'REJECTED';
 
 /** 状態バッジの表示名。 */
 export const PAYABLE_STATUS_LABEL: Record<PayableApprovalStatus, string> = {
@@ -82,6 +83,7 @@ export const PAYABLE_STATUS_LABEL: Record<PayableApprovalStatus, string> = {
     APPROVED: '承認済',
     CANCEL_APPLIED: '取消申請中',
     CANCELLED: '取消承認済',
+    REJECTED: '否認差し戻し',
 };
 
 /** 案件（実行予算）1件。 */

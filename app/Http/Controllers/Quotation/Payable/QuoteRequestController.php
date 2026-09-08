@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Quotation\Payable;
 
+use App\Http\Requests\PayablePartnerActionRequest;
 use App\Http\Requests\QuotationManagementRequest;
-use App\Http\Requests\SendQuoteRequestRequest;
 use App\Services\Quotation\Payable\QuoteRequestService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
@@ -35,10 +35,10 @@ class QuoteRequestController extends AbstractPayableScreenController
     /**
      * 見積依頼送信（選択業者へ相見積依頼）。
      *
-     * @param  SendQuoteRequestRequest  $request  送信対象の支払取引先（t_payable_partners）ID 配列
+     * @param  PayablePartnerActionRequest  $request  送信対象の支払取引先（t_payable_partners）ID 配列
      * @return RedirectResponse 元画面へ戻し、成功 / エラーのフラッシュメッセージを表示
      */
-    public function send(SendQuoteRequestRequest $request): RedirectResponse
+    public function send(PayablePartnerActionRequest $request): RedirectResponse
     {
         // 例外時は Service がログ記録のうえ ServiceException を投げ、bootstrap/app.php が
         // 画面右上のトースト（flash.error）へ変換する。

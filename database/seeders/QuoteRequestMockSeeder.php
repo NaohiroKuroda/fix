@@ -94,7 +94,7 @@ class QuoteRequestMockSeeder extends Seeder
                 $item->forceFill([
                     'building_id' => $building->id,
                     'item_kind' => 6,
-                    'sort' => $sort + 1,
+                    'sort_order' => $sort + 1,
                     'is_enabled' => true,
                     'name' => (string) $unit->label,
                     'master_price' => $master,

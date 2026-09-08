@@ -96,7 +96,7 @@ class BillingRepository implements BillingRepositoryInterface
             ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $filterFor, $filterRelation))
             ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $comment, $filterFor, $relations, $filterRelation): void {
                 $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $filterFor, $filterRelation);
-                $i->orderBy('sort')->orderBy('id');
+                $i->orderBy('sort_order')->orderBy('id');
                 foreach ($relations as $relation) {
                     $filter = $filterFor[$relation];
                     $i->with([$relation => function (HasMany $q) use ($filter, $relation): void {

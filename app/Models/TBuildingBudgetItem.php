@@ -23,7 +23,7 @@ class TBuildingBudgetItem extends Model
 
     protected $fillable = [
         'building_id',
-        'sort',
+        'sort_order',
         'is_enabled',
         'name',
         'is_shared',

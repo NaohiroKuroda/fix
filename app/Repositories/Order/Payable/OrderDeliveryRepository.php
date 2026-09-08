@@ -45,7 +45,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
             ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $quotationFilter))
             ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $quotationFilter): void {
                 $this->applyItemFilter($i->getQuery(), $itemLabel, $quotationFilter);
-                $i->orderBy('sort')->orderBy('id')
+                $i->orderBy('sort_order')->orderBy('id')
                     ->with(['payablePartners' => function (HasMany $q) use ($quotationFilter): void {
                         $quotationFilter($q->getQuery());
                         $q->orderBy('id')->with([

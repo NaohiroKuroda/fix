@@ -31,6 +31,8 @@ const emit = defineEmits<{
     (e: 'reject', row: BillingRow): void;
     (e: 'open-chat', row: BillingRow, buildingName: string): void;
     (e: 'open-iframe', payload: { url: string | null; title: string; variant?: 'admin' | 'document' }): void;
+    /** 見積内容の確認（閲覧専用モーダル）。見積作成以外の画面で使う。 */
+    (e: 'open-quotation', row: BillingRow): void;
 }>();
 
 const isThemed = computed(() => props.glass === true);
@@ -216,7 +218,18 @@ const rowButtonLabel = (row: BillingRow): string =>
                             （t_billing_orders.subtotal_amount）。見積日は一覧には出さない。
                         -->
                         <td class="px-3 py-2 text-right tabular-nums">
-                            {{ yenString(isView ? row.orderAmount : row.quotationAmount) }}
+                            <!-- 金額を押すと見積の内訳を閲覧専用モーダルで開く。
+                                 見積作成画面は行ボタン自体が編集モーダルを開くため、リンクにしない。 -->
+                            <button
+                                v-if="!isQuoteCreate && !isView && row.quotation"
+                                type="button"
+                                class="font-semibold text-[#8a6a25] underline underline-offset-2 transition hover:text-[#b3923f]"
+                                title="見積の内訳を確認する"
+                                @click="emit('open-quotation', row)"
+                            >
+                                {{ yenString(row.quotationAmount) }}
+                            </button>
+                            <template v-else>{{ yenString(isView ? row.orderAmount : row.quotationAmount) }}</template>
                         </td>
                         <!-- 発注承諾日（t_billing_orders.contract_approved_at）。未承諾は「—」。 -->
                         <td v-if="config.showAcceptedAt" class="px-3 py-2 text-center tabular-nums">

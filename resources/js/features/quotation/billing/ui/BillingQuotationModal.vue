@@ -23,6 +23,8 @@ const props = defineProps<{
     buildingName: string;
     masters: BillingMasters;
     processing?: boolean;
+    /** 閲覧専用（見積承認などから内容確認だけで開く）。入力とボタンを無効化する。 */
+    readonly?: boolean;
 }>();
 const emit = defineEmits<{
     (e: 'close'): void;
@@ -258,7 +260,9 @@ const yen = (n: number): string => `¥${n.toLocaleString('ja-JP')}`;
             <!-- ヘッダー：見積管理の他モーダルと同じ紺帯＋金のキーライン -->
             <div class="flex items-center gap-3 border-l-4 border-l-[#c4a35b] bg-primary px-4 py-3 text-primary-foreground">
                 <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-bold">【請求】見積{{ row.quotation ? '修正' : '作成' }}</p>
+                    <p class="truncate text-sm font-bold">
+                        {{ readonly ? '【請求】見積内容' : `【請求】見積${row.quotation ? '修正' : '作成'}` }}
+                    </p>
                     <p class="truncate text-xs opacity-80">{{ buildingName }}／{{ row.itemName }}／{{ row.vendorName }}</p>
                 </div>
                 <button type="button" class="rounded-lg p-1 hover:bg-white/10" @click="emit('close')">
@@ -266,7 +270,8 @@ const yen = (n: number): string => `¥${n.toLocaleString('ja-JP')}`;
                 </button>
             </div>
 
-            <div class="flex-1 space-y-4 overflow-y-auto p-4">
+            <!-- 閲覧専用のときは fieldset ごと無効化して、中の入力・追加/削除ボタンをまとめて止める。 -->
+            <fieldset :disabled="readonly" class="flex-1 space-y-4 overflow-y-auto p-4">
                 <!-- ヘッダー項目（t_billing_quotations） -->
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
                     <label class="text-sm">
@@ -437,17 +442,18 @@ const yen = (n: number): string => `¥${n.toLocaleString('ja-JP')}`;
                     <span class="mb-1 block text-xs text-slate-500">コメント</span>
                     <textarea v-model="form.comment" rows="3" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"></textarea>
                 </label>
-            </div>
+            </fieldset>
 
             <div class="flex items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
                 <p class="text-xs text-slate-500">
-                    入力のある行だけが保存されます（空行は一覧に出ません）。
+                    {{ readonly ? '内容の確認のみ。ここでは編集できません。' : '入力のある行だけが保存されます（空行は一覧に出ません）。' }}
                 </p>
                 <div class="flex gap-2">
                     <button type="button" class="h-9 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" @click="emit('close')">
-                        キャンセル
+                        {{ readonly ? '閉じる' : 'キャンセル' }}
                     </button>
                     <button
+                        v-if="!readonly"
                         type="button"
                         class="h-9 rounded-xl px-4 text-sm font-semibold transition"
                         :class="canSubmit

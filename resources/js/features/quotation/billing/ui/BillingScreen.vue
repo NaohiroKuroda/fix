@@ -249,9 +249,20 @@ const submitReject = (): void => {
 const quotationModalOpen = ref(false);
 const quotationTarget = ref<BillingRow | null>(null);
 const quotationBuilding = ref('');
+// 閲覧専用で開いているか（見積承認などの「内訳」ボタン）。
+const quotationReadonly = ref(false);
 const openQuotationModal = (row: BillingRow, buildingName: string): void => {
     quotationTarget.value = row;
     quotationBuilding.value = buildingName;
+    quotationReadonly.value = false;
+    quotationModalOpen.value = true;
+};
+// 内訳の確認だけ（保存しない）。データは一覧が持っている最新の見積（row.quotation）なので、
+// 現行への同期を待たずに承認前の修正内容がそのまま見られる。
+const openQuotationView = (row: BillingRow, buildingName: string): void => {
+    quotationTarget.value = row;
+    quotationBuilding.value = buildingName;
+    quotationReadonly.value = true;
     quotationModalOpen.value = true;
 };
 const submitQuotation = (payload: BillingQuotationInput): void => {
@@ -492,6 +503,7 @@ const goToPage = (page: number): void => {
                     @reject="openReject"
                     @open-chat="(row, buildingName) => openChat(row, buildingName)"
                     @open-iframe="openIframe"
+                    @open-quotation="(row) => openQuotationView(row, project.name)"
                 />
 
                 <div v-if="!displayProjects.length" class="p-8 text-center" :class="[glassPanelClass, onGlassTextClass]">
@@ -514,6 +526,7 @@ const goToPage = (page: number): void => {
         :building-name="quotationBuilding"
         :masters="modalMasters"
         :processing="form.processing"
+        :readonly="quotationReadonly"
         @close="quotationModalOpen = false"
         @submit="submitQuotation"
     />

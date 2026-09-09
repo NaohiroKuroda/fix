@@ -429,7 +429,8 @@ const goToPage = (page: number): void => {
                                 {{ opt.label }}
                             </button>
                         </div>
-                        <button v-if="config.kind === 'pick'" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
+                        <!-- 一括選択。ラベルが空のモード（見積承認・発注書確認）ではボタンを出さない。 -->
+                        <button v-if="config.kind === 'pick' && config.bulkSelectLabel" type="button" :class="pagerBtnClass" @click="toggleSelectAll">
                             {{ bulkAllSelected ? config.bulkClearLabel : config.bulkSelectLabel }}
                         </button>
                         <!-- 【請求】見積作成：見積の有無（処理フロー I列・初期＝全て）。 -->

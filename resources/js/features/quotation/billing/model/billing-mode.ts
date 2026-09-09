@@ -107,8 +107,9 @@ export const BILLING_MODE_CONFIG: Record<BillingMode, BillingModeConfig> = {
         activeLabel: '承認',
         processingLabel: '承認中…',
         hint: '承認する請求先を選択してください',
-        bulkSelectLabel: '全て承認',
-        bulkClearLabel: '全ての承認を解除',
+        // 一括承認は出さない（1件ずつ内容を確認して承認する運用のため）。空文字＝ボタン非表示。
+        bulkSelectLabel: '',
+        bulkClearLabel: '',
         operableFilterLabel: '未承認',
         // 承認／否認の2択。否認＝承認せず CANCELLED にし、③ 見積作成へ差し戻す。
         reject: {

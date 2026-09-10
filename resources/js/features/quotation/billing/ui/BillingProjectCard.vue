@@ -197,28 +197,31 @@ const rowButtonLabel = (row: BillingRow): string =>
                             <BillingKindBadge :billing-target="row.billingTarget" />
                         </td>
                         <!-- パートナー（見積先）。詳細は iframe で開く。
-                             会社名と「業者マイページ」を折り返さず1行に収める（テーブルは横スクロールする）。 -->
-                        <td class="whitespace-nowrap px-3 py-2">
+                             会社名と「業者マイページ」を1行に収める（長い社名は省略記号。全文は title）。 -->
+                        <td class="px-3 py-2">
+                            <div class="flex min-w-0 items-center gap-2">
                             <button
                                 v-if="row.vendorDetailUrl"
                                 type="button"
-                                class="text-left underline-offset-2 hover:underline"
+                                class="min-w-0 flex-1 truncate text-left underline-offset-2 hover:underline"
+                                :title="row.vendorName"
                                 @click="emit('open-iframe', { url: row.vendorDetailUrl, title: '見積先の詳細' })"
                             >
                                 {{ row.vendorName }}
                             </button>
-                            <span v-else>{{ row.vendorName }}</span>
+                            <span v-else class="min-w-0 flex-1 truncate" :title="row.vendorName">{{ row.vendorName }}</span>
                             <!-- 業者マイページ（見積依頼画面と同じゴールドのゴーストピル）。
                                  URL は業者へのメールに載せているログインURLと同じもの。iframe で開く。 -->
                             <button
                                 v-if="isView && row.vendorUrl"
                                 type="button"
                                 title="業者マイページを表示する"
-                                class="ml-1.5 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#c4a35b]/50 px-2.5 py-0.5 text-xs font-semibold text-[#8a6a25] transition-colors hover:border-[#c4a35b] hover:bg-[#c4a35b] hover:text-white"
+                                class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#c4a35b]/50 px-2.5 py-0.5 text-xs font-semibold text-[#8a6a25] transition-colors hover:border-[#c4a35b] hover:bg-[#c4a35b] hover:text-white"
                                 @click="emit('open-iframe', { url: row.vendorUrl, title: `業者マイページ - ${row.vendorName}` })"
                             >
                                 <ExternalLink class="size-3" />業者マイページ
                             </button>
+                            </div>
                         </td>
                         <!--
                             もらいは相見積・業者選定が無いため、標準単価 / 予算単価 / 仮選定の列は持たない

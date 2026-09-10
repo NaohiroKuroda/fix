@@ -322,18 +322,19 @@ const chatBtnClass = (row: PayableRow): string => {
                             <BillingKindBadge v-if="row.partnerId != null" :billing-target="row.billingTarget" />
                             <span v-else :class="mutedTextClass">—</span>
                         </td>
-                        <!-- 見積先セル：会社名と「業者マイページ」を折り返さず1行に収める
-                             （狭いと社名が数行に割れてボタンが改行されるため。テーブルは横スクロールする）。 -->
-                        <td class="whitespace-nowrap px-3 py-2">
-                            <div class="flex items-center justify-between gap-2">
+                        <!-- 見積先セル：会社名と「業者マイページ」を1行に収める。テーブルは table-fixed なので
+                             折り返さないとはみ出す。長い社名は省略記号にして、全文は title で見せる。 -->
+                        <td class="px-3 py-2">
+                            <div class="flex min-w-0 items-center gap-2">
                                 <!-- 会社名：見積先の詳細を iframe で開く（URL 未設定時はプレーン表示）。 -->
                                 <button
                                     v-if="row.vendorDetailUrl"
                                     type="button"
-                                    class="text-left font-medium text-[#8a6a25] underline decoration-[#c4a35b]/50 underline-offset-2 transition hover:text-[#c4a35b] hover:decoration-[#c4a35b]"
+                                    class="min-w-0 flex-1 truncate text-left font-medium text-[#8a6a25] underline decoration-[#c4a35b]/50 underline-offset-2 transition hover:text-[#c4a35b] hover:decoration-[#c4a35b]"
+                                    :title="row.vendorName"
                                     @click="emit('open-iframe', { url: row.vendorDetailUrl, title: '見積先の詳細' })"
                                 >{{ row.vendorName }}</button>
-                                <span v-else class="font-medium">{{ row.vendorName }}</span>
+                                <span v-else class="min-w-0 flex-1 truncate font-medium" :title="row.vendorName">{{ row.vendorName }}</span>
                                 <!-- 右端：業者マイページを別タブで開く（ゴールドのゴーストピル）。 -->
                                 <a
                                     v-if="row.vendorUrl"

@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\CompanyStaff;
 use App\Models\CompanyToken;
 use App\Models\EstimateUnitCompany;
+use App\Models\Order;
 use App\Models\TBillingPartner;
 use App\Models\TPayablePartner;
 use App\Repositories\Contracts\Mail\VendorMailRepositoryInterface;
@@ -135,6 +136,30 @@ class VendorMailRepository implements VendorMailRepositoryInterface
                     });
             })
             ->pluck('email')
+            ->all();
+    }
+
+    /**
+     * 見積業者ID（estimate_unit_companies.id）→ 現行の発注書ID（orders.id）。
+     *
+     * 業者マイページの発注書タブのリンク（/order/{id}/?estimate_unit_company_id=…）に使う。
+     * キャンセル・変更済み（98 / 99）は業者に出ないため除き、最新の1件を返す。
+     *
+     * @param  list<int>  $legacyCompanyIds
+     * @return array<int, int>
+     */
+    public function findOrderIdsByLegacyCompanyIds(array $legacyCompanyIds): array
+    {
+        if ($legacyCompanyIds === []) {
+            return [];
+        }
+
+        return Order::query()
+            ->whereIn('estimate_unit_company_id', $legacyCompanyIds)
+            ->whereNotIn('status', Order::HIDDEN_STATUSES)
+            ->orderBy('id')
+            ->pluck('id', 'estimate_unit_company_id')
+            ->map(fn ($id) => (int) $id)
             ->all();
     }
 

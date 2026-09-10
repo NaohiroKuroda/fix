@@ -59,6 +59,15 @@ interface VendorMailRepositoryInterface
     public function findActiveStaffEmails(array $staffIds): array;
 
     /**
+     * 見積業者ID（`estimate_unit_companies.id`）→ 現行の発注書ID（`orders.id`）。
+     * 業者マイページの発注書タブのリンクに使う。キャンセル・変更済みは除く。
+     *
+     * @param  list<int>  $legacyCompanyIds
+     * @return array<int, int>
+     */
+    public function findOrderIdsByLegacyCompanyIds(array $legacyCompanyIds): array;
+
+    /**
      * 業者マイページのアクセストークンを取得する（会社単位。無ければ発行して使い回す）。
      */
     public function firstOrCreateAccessToken(int $companyId): string;

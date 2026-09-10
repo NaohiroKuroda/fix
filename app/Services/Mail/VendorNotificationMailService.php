@@ -63,7 +63,7 @@ class VendorNotificationMailService
             self::QUOTE_CONFIRM_TITLE,
             self::QUOTE_CONFIRM_EXP,
             self::QUOTE_CONFIRM_NOTICE,
-            fn (int $legacyCompanyId, string $token): string => $this->vendorEstimateUrl($legacyCompanyId, $token),
+            fn (int $legacyCompanyId, string $token): string => $this->vendorQuotationUrl($legacyCompanyId, $token),
         );
     }
 
@@ -83,7 +83,7 @@ class VendorNotificationMailService
             self::CANCEL_REQUEST_TITLE,
             self::CANCEL_REQUEST_EXP,
             self::CANCEL_REQUEST_NOTICE,
-            fn (int $legacyCompanyId, string $token): string => $this->vendorEstimateUrl($legacyCompanyId, $token),
+            fn (int $legacyCompanyId, string $token): string => $this->vendorQuotationUrl($legacyCompanyId, $token),
         );
     }
 
@@ -109,7 +109,7 @@ class VendorNotificationMailService
             self::CANCEL_REQUEST_TITLE,
             self::PAYABLE_CANCEL_EXP,
             self::PAYABLE_CANCEL_NOTICE,
-            fn (int $legacyCompanyId, string $token): string => $this->vendorEstimateUrl($legacyCompanyId, $token),
+            fn (int $legacyCompanyId, string $token): string => $this->vendorOrderUrl($legacyCompanyId, $token),
         );
     }
 
@@ -309,13 +309,45 @@ class VendorNotificationMailService
     }
 
     /**
-     * 業者マイページ（見積タブ）のログイン URL。
+     * 業者マイページのログイン URL。
      * 現行と同じ `{APP_URL}/estimate/login/{estimate_unit_companies.id}/{access_token}`。
+     *
+     * `$target` を渡すとログイン後にそこへ遷移する（`redirect`）。未指定だと `file_cate` 無しの
+     * 着地になり、**もらいは見積書も発注承諾ボタンも出ない**ため、用途ごとに着地先を指定する。
      */
-    private function vendorEstimateUrl(int $legacyCompanyId, string $token): string
+    private function vendorLoginUrl(int $legacyCompanyId, string $token, ?string $target = null): string
     {
         $base = rtrim((string) config('mail_queue.vendor_base_url'), '/');
+        $url = $base.'/estimate/login/'.$legacyCompanyId.'/'.$token;
 
-        return $base.'/estimate/login/'.$legacyCompanyId.'/'.$token;
+        return $target === null ? $url : $url.'?redirect='.urlencode($target);
+    }
+
+    /**
+     * 【請求】見積タブ（FELIX が作った見積書のプレビュー＋「発注承諾する」ボタン）。
+     * 現行の見積タブのリンクと同じ形にする。
+     */
+    private function vendorQuotationUrl(int $legacyCompanyId, string $token): string
+    {
+        return $this->vendorLoginUrl($legacyCompanyId, $token,
+            '/estimate/edit/'.$legacyCompanyId
+                .'?file_cate=estimate&url=/estimate/print/?id='.$legacyCompanyId);
+    }
+
+    /**
+     * 【支払】発注書タブ（取消申請中はキャンセル表示になり、請負承認ボタンが出ない）。
+     * 発注書（現行 orders）が無い業者は着地先を組めないため、従来どおり着地指定なしにする。
+     */
+    private function vendorOrderUrl(int $legacyCompanyId, string $token): string
+    {
+        $orderId = $this->repository->findOrderIdsByLegacyCompanyIds([$legacyCompanyId])[$legacyCompanyId] ?? null;
+
+        if ($orderId === null) {
+            return $this->vendorLoginUrl($legacyCompanyId, $token);
+        }
+
+        return $this->vendorLoginUrl($legacyCompanyId, $token,
+            '/estimate/edit/'.$legacyCompanyId
+                .'?file_cate=order&url=/order/'.$orderId.'/?estimate_unit_company_id='.$legacyCompanyId);
     }
 }

@@ -29,6 +29,12 @@ class TBillingPartner extends Model
         'source_id',
     ];
 
+    /** 業者マイページのアクセストークン（会社単位。メールのログインURLと同じものを使う）。 */
+    public function companyToken()
+    {
+        return $this->hasOne(CompanyToken::class, 'company_id', 'company_id');
+    }
+
     // 建物予算項目
     public function budgetItem()
     {

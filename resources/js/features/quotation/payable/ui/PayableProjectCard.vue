@@ -322,7 +322,9 @@ const chatBtnClass = (row: PayableRow): string => {
                             <BillingKindBadge v-if="row.partnerId != null" :billing-target="row.billingTarget" />
                             <span v-else :class="mutedTextClass">—</span>
                         </td>
-                        <td class="px-3 py-2">
+                        <!-- 見積先セル：会社名と「業者マイページ」を折り返さず1行に収める
+                             （狭いと社名が数行に割れてボタンが改行されるため。テーブルは横スクロールする）。 -->
+                        <td class="whitespace-nowrap px-3 py-2">
                             <div class="flex items-center justify-between gap-2">
                                 <!-- 会社名：見積先の詳細を iframe で開く（URL 未設定時はプレーン表示）。 -->
                                 <button

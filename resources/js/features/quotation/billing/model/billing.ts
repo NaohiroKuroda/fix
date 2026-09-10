@@ -30,6 +30,8 @@ export interface BillingRow {
     vendorName: string;
     /** 見積先の詳細（iframe で開く felix_total の編集フォーム）。null ならプレーン表示。 */
     vendorDetailUrl: string | null;
+    /** 業者マイページ（felix_total）。iframe で開く。移行元が無ければ null。 */
+    vendorUrl: string | null;
     /** 「業者を追加」リンク先（iframe）。項目単位。見積作成画面のみ使う。 */
     addVendorUrl: string | null;
     approvalStatus: BillingApprovalStatus;

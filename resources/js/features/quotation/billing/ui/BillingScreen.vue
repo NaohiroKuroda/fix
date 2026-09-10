@@ -426,8 +426,9 @@ const goToPage = (page: number): void => {
                         <!--
                             区分（支払 / 請求）の切り替え。請求系画面の初期値は「請求」。
                             「支払」に切り替えると支払取引先を表示のみで参照できる（操作は不可）。
+                            発注書確認は請求の発注書だけを見る画面なので出さない。
                         -->
-                        <div class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
+                        <div v-if="mode !== 'billing-order-confirmation'" class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
                             <button
                                 v-for="opt in kindOptions"
                                 :key="opt.value"

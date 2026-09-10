@@ -71,6 +71,10 @@ class BillingPartnerResource extends JsonResource
             'vendorName' => (string) ($partner->company?->company_name ?? '（取引先未設定）'),
             // felix_total（旧画面）リンクは source_id で組む。
             'vendorDetailUrl' => $this->felixUrl('felix.vendor_detail_url', $partner->source_id),
+            // 業者マイページ（iframe で開く）。**業者へのメールに載せているログインURLと同じもの**
+            // （{@see \App\Services\Mail\VendorNotificationMailService} と同じ組み立て）。
+            // トークンが未発行の業者は組めないため null（ボタンを出さない）。
+            'vendorUrl' => $this->vendorMyPageUrl($partner),
             'addVendorUrl' => $this->felixUrl('felix.add_vendor_url', $item->source_id),
             'approvalStatus' => (string) ($partner->approval_status ?? 'DRAFT'),
             // 区分（請求＝もらい / 支払＝はらい）。行の地色・バッジに使う。
@@ -155,6 +159,29 @@ class BillingPartnerResource extends JsonResource
         } catch (\Throwable) {
             return '';
         }
+    }
+
+    /**
+     * 業者マイページのログイン URL。業者へ送るメールに載せているものと同じ
+     * `{vendor_base_url}/estimate/login/{estimate_unit_companies.id}/{access_token}`。
+     */
+    private function vendorMyPageUrl(?object $partner): ?string
+    {
+        $base = rtrim((string) config('mail_queue.vendor_base_url'), '/');
+        $token = $partner?->companyToken?->access_token;
+
+        if ($base === '' || $partner?->source_id === null || $token === null) {
+            return null;
+        }
+
+        // 見積タブ（見積書プレビュー＋発注承諾ボタン）を開く。file_cate 未指定だと
+        // 見積の入力テーブルだけが出て、発注承諾ボタンのあるブロックが描画されない。
+        // 現行の見積タブのリンクと同じ形（?file_cate=estimate&url=/estimate/print/?id=）にする。
+        $target = '/estimate/edit/'.$partner->source_id
+            .'?file_cate=estimate&url=/estimate/print/?id='.$partner->source_id;
+
+        return $base.'/estimate/login/'.$partner->source_id.'/'.$token
+            .'?redirect='.urlencode($target);
     }
 
     /** config テンプレートの {id} を source_id に置換した felix_total URL（未設定/不在は null）。 */

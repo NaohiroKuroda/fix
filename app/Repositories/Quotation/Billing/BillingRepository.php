@@ -106,7 +106,8 @@ class BillingRepository implements BillingRepositoryInterface
                         // 見積本体は請求側にしかない。明細は見積修正モーダルの初期値に使う。
                         // 発注書（t_billing_orders）は発注書確認画面の金額・発注承諾日の表示元。
                         if ($relation === 'billingPartners') {
-                            $q->with(['latestQuotation.details' => fn ($d) => $d->orderBy('id'), 'billingOrder']);
+                            // companyToken は業者マイページ（メールと同じログインURL）の組み立てに使う。
+                            $q->with(['latestQuotation.details' => fn ($d) => $d->orderBy('id'), 'billingOrder', 'companyToken']);
                         }
                     }]);
                 }

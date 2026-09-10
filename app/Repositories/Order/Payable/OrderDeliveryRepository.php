@@ -2,9 +2,11 @@
 
 namespace App\Repositories\Order\Payable;
 
-use App\Models\AdminUser;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Models\Legacy\AdminUser;
 use App\Models\TBuilding;
 use App\Models\TBuildingBudgetItem;
+use App\Models\TPayableOrder;
 use App\Models\TPayablePartner;
 use App\Repositories\Contracts\Order\Payable\OrderDeliveryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  * 発注フローのデータアクセス。
  *
  * 見積管理（{@see PayableRepository}）と同じ「物件 → 項目 → 見積先」の構造で
- * 一覧を返し、各見積先に発注書（{@see \App\Models\TPayableOrder}）の状態を付与する。
+ * 一覧を返し、各見積先に発注書（{@see TPayableOrder}）の状態を付与する。
  *
  * 2026-09 に旧テーブル（t_orders / t_order_approval_actions / t_delivery_reports /
  * t_delivery_report_approval_actions / t_invoices / t_invoice_approval_actions）を廃止した
@@ -196,7 +198,7 @@ class OrderDeliveryRepository implements OrderDeliveryRepositoryInterface
      * 発注管理（業者承諾確認・【請求】発注書確認）は**バッヂを出さない**
      * （見積管理_処理フローの「サイドメニューのバッヂの意味」も緑・赤とも「表示なし」）。
      * 完了・納品管理のバッヂは旧 t_delivery_reports を数えていたが、テーブル廃止に伴い停止した。
-     * 本メソッドは全リクエスト（{@see \App\Http\Middleware\HandleInertiaRequests}）から
+     * 本メソッドは全リクエスト（{@see HandleInertiaRequests}）から
      * 呼ばれるため、落とさずに空を返す。
      */
     public function pendingCounts(): array

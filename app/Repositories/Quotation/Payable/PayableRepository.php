@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Quotation\Payable;
 
-use App\Models\AdminUser;
+use App\Models\Legacy\AdminUser;
 use App\Models\TBuilding;
 use App\Models\TBuildingBudgetItem;
 use App\Models\TPayableOrder;

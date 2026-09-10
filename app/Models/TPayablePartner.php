@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasBlameColumns;
+use App\Models\Legacy\Company;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

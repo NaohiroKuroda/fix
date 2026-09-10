@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\AdminUser;
-use App\Models\Company;
+use App\Models\Legacy\AdminUser;
+use App\Models\Legacy\Company;
 use App\Models\TAttachment;
 use App\Models\TBuilding;
 use App\Models\TBuildingCostItem;

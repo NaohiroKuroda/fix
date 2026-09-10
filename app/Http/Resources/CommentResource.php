@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources;
 
-use App\Models\AdminUser;
+use App\Models\Legacy\AdminUser;
 use App\Models\TAttachment;
 use App\Models\TComment;
 use Illuminate\Http\Request;

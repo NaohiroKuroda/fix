@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Quotation\Billing;
 
-use App\Models\AdminUser;
+use App\Models\Legacy\AdminUser;
 use App\Models\TBillingOrder;
 use App\Models\TBillingOrderDetail;
 use App\Models\TBillingPartner;

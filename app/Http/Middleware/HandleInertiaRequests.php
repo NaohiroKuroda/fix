@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\AdminUser;
+use App\Models\Legacy\AdminUser;
 use App\Repositories\Contracts\Order\Payable\OrderDeliveryRepositoryInterface;
 use App\Repositories\Contracts\Quotation\Billing\BillingRepositoryInterface;
 use App\Repositories\Contracts\Quotation\Payable\PayableRepositoryInterface;

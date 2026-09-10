@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\AdminUser;
 use App\Models\Concerns\HasBlameColumns;
+use App\Models\Legacy\AdminUser;
 use App\Models\TComment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\AdminUser;
+use App\Models\Legacy\AdminUser;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Legacy;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;

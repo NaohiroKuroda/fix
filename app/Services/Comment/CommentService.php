@@ -3,7 +3,7 @@
 namespace App\Services\Comment;
 
 use App\Exceptions\ServiceException;
-use App\Models\AdminUser;
+use App\Models\Legacy\AdminUser;
 use App\Models\TBuildingBudgetItem;
 use App\Models\TComment;
 use App\Repositories\Contracts\Comment\CommentRepositoryInterface;

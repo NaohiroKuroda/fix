@@ -212,7 +212,10 @@ app/
 │   └── StatusLabel.php
 ├── Helpers/                # ヘルパークラス（コンテキスト依存・状態あり・インスタンス化）
 │   └── SampleHelper.php
-├── Models/                 # Eloquent モデル
+├── Models/                 # Eloquent モデル（**新テーブル `t_*` のモデルはここ**）
+│   ├── Legacy/             # **現行 felix_total のテーブル**を参照するモデル
+│   │                       #   admin_users / admin_roles / companies / company_staff /
+│   │                       #   company_tokens / estimate_unit_companies / orders
 │   └── Concerns/           # モデル横断の振る舞い（トレイト）
 │       └── HasBlameColumns.php   # created_by / updated_by の自動記録
 └── Providers/
@@ -401,7 +404,22 @@ class StatusManagementController extends Controller
 選び直して再承認したときに古い発注書がそのまま業者に見え、新しい金額が反映されない。
 キャンセルは項目（`estimate_units`）単位で、対象項目の発注書がまとめて `status = 99` になる。
 
-### 3.6 作成者 / 更新者（`created_by` / `updated_by`）の自動記録
+#### 3.5.1 モデルの置き場所（新テーブル / 現行テーブル）
+
+同じ DB を新Fix と現行 felix_total が共有しているため、**どちらのテーブルのモデルか**が
+ディレクトリと名前空間で分かるようにする（2026-09-10）。
+
+| リポジトリ | 新テーブル（`t_*`） | 現行テーブル |
+| --- | --- | --- |
+| **fix**（新側） | `App\Models`（`TBuilding` など） | **`App\Models\Legacy`**（`AdminUser` / `Company` / `Order` など） |
+| **felix_total**（現行側） | **`App\Models\Fix2`**（`TBuilding` など） | `App\Models`（`Estimate` / `EstimateUnit` など） |
+
+- 新Fix の `Legacy` 配下は**参照が中心**（作成・更新は現行側の責務。トークン発行など一部を除く）。
+- モーフ型（`t_comments.commentable_type` など）に保存されている FQCN は
+  `App\Models\TBuildingBudgetItem`（fix の新テーブルモデル）で、**この整理では移動していない**ため
+  既存データへの影響はない。
+
+## 3.6 作成者 / 更新者（`created_by` / `updated_by`）の自動記録
 
 新見積管理系のテーブルは、`created_at` / `updated_at` と対になる形で
 **`created_by`（作成者 ID）/ `updated_by`（更新者 ID）** を持つ（値は `admin_users.id`・いずれも nullable）。

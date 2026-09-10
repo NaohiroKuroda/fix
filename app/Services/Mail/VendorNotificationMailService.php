@@ -3,8 +3,8 @@
 namespace App\Services\Mail;
 
 use App\Exceptions\ServiceException;
-use App\Models\Company;
-use App\Models\EstimateUnitCompany;
+use App\Models\Legacy\Company;
+use App\Models\Legacy\EstimateUnitCompany;
 use App\Models\TBillingPartner;
 use App\Models\TPayablePartner;
 use App\Repositories\Contracts\Mail\VendorMailRepositoryInterface;

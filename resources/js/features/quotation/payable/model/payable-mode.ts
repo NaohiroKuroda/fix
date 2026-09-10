@@ -95,8 +95,8 @@ export const PAYABLE_MODE_CONFIG: Record<PayableMode, PayableModeConfig> = {
         appliedLabel: '依頼済み',
         processingLabel: '送信中…',
         hint: '送信する行をチェックしてください',
-        bulkSelectLabel: '全て依頼',
-        bulkClearLabel: '全ての依頼を解除',
+        // 一括依頼は出さない（項目ごとに設計ファイルの充足を見て1件ずつ依頼する運用のため）。
+        // ラベルを持たないモードは一括選択ボタンを出さない（→ showBulkSelect）。
     },
     'vendor-selection': {
         kind: 'toggle-button',

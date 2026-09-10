@@ -171,7 +171,7 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         bulkClearLabel: '全ての取消承認を解除',
     },
     'order-acceptance': {
-        // 表示のみの画面。列は 項目名 / パートナー名 / 発注金額 / 発注承諾日 / 発注書 の5つだけ。
+        // 表示のみの画面。列は 項目名 / 区分 / パートナー名 / 発注金額 / 発注承諾日 / 発注書。
         title: '業者承諾確認',
         statusLabel: '【発注承認済み→業者承諾待ち】',
         kind: 'pick-button',
@@ -188,7 +188,8 @@ export const ORDER_DELIVERY_MODE_CONFIG: Record<OrderDeliveryMode, OrderDelivery
         readOnly: true,
         showAcceptedDateColumn: true,
         showOrderDate: false,
-        showBillingKind: false,
+        // 区分（支払 / 請求）は見積管理の各画面と同じ位置（項目とパートナーの間）に出す。
+        showBillingKind: true,
         showCancelRequest: false,
         isPerRowAction: false,
         isCompletionCheck: false,

@@ -2,10 +2,10 @@
 // 1案件分の明細カード（タイトル帯＋テーブル）。請求（もらい）専用。
 // 支払側（PayableProjectCard）との違い:
 //   - もらいは相見積・業者選定が無いため、標準単価 / 予算単価 / 仮選定は「—」固定
-//   - 区分は常に「請求」
+//   - 区分は常に「請求」（区分トグルで「全て」にすると支払も表示のみで並ぶ）
 //   - 操作列は mode（BILLING_MODE_CONFIG.kind）で出し分ける
 import { computed } from 'vue';
-import { ChevronDown, MessageSquare, Plus, FileText, Ban } from 'lucide-vue-next';
+import { ChevronDown, MessageSquare, Plus, FileText, Ban, ExternalLink } from 'lucide-vue-next';
 import { useFelixTheme } from '@/shared/lib/felix-theme';
 import { yenString } from '@/shared/lib/format-money';
 import { BillingKindBadge } from '@/shared/ui/billing-kind-badge';
@@ -44,7 +44,7 @@ const isPick = computed(() => config.value.kind === 'pick');
 const showReject = computed(() => config.value.reject != null);
 const isQuoteCreate = computed(() => props.mode === 'billing-quote-create');
 // 発注書確認は**表示のみ**の画面。列は 項目名 / パートナー名 / 発注金額 / 発注承諾日 / 発注書 の5つで、
-// 区分は独立列にせずパートナー名セル内のバッジで示す
+// 区分は他画面と同じく独立列で出す
 // （→ docs/detailed-design/orders/02_請求_発注書確認_詳細設計.md §5）。
 const isView = computed(() => config.value.kind === 'view');
 const { detailCardClass, cardHeadClass, tableHeadClass, rowBorderClass, cellTextClass, mutedTextClass } =
@@ -137,7 +137,7 @@ const rowButtonLabel = (row: BillingRow): string =>
                 <!-- 全案件カードで列位置を揃えるため、固定レイアウト＋共通の列幅を指定する。 -->
                 <colgroup>
                     <col style="width: 30%" />
-                    <col v-if="!isView" style="width: 9%" />
+                    <col style="width: 9%" />
                     <col style="width: 27%" />
                     <col style="width: 17%" />
                     <col v-if="config.showAcceptedAt" style="width: 14%" />
@@ -147,7 +147,7 @@ const rowButtonLabel = (row: BillingRow): string =>
                 <thead class="text-center" :class="tableHeadClass">
                     <tr class="border-b-2 border-slate-300 text-[15px] font-bold uppercase tracking-wider">
                         <th class="px-3 py-2.5">{{ isView ? '項目名' : '項目' }}</th>
-                        <th v-if="!isView" class="px-3 py-2.5">区分</th>
+                        <th class="px-3 py-2.5">区分</th>
                         <th class="px-3 py-2.5">{{ isView ? 'パートナー名' : 'パートナー' }}</th>
                         <th class="px-3 py-2.5">{{ config.amountColumnLabel }}<br />(税抜)</th>
                         <th v-if="config.showAcceptedAt" class="px-3 py-2.5">発注承諾日</th>
@@ -192,13 +192,13 @@ const rowButtonLabel = (row: BillingRow): string =>
                                 </div>
                             </div>
                         </td>
-                        <!-- 区分：区分トグルで選んだ側の取引先が並ぶ（請求 / 支払）。 -->
-                        <td v-if="!isView" class="px-3 py-2 text-center">
+                        <!-- 区分：区分トグルで選んだ側の取引先が並ぶ（請求 / 支払）。表示のみの画面でも列で出す。 -->
+                        <td class="px-3 py-2 text-center">
                             <BillingKindBadge :billing-target="row.billingTarget" />
                         </td>
-                        <!-- パートナー（見積先）。詳細は iframe で開く。表示のみの画面は区分バッジを内包する。 -->
-                        <td class="px-3 py-2">
-                            <BillingKindBadge v-if="isView" :billing-target="row.billingTarget" class="mr-1.5" />
+                        <!-- パートナー（見積先）。詳細は iframe で開く。
+                             会社名と「業者マイページ」を折り返さず1行に収める（テーブルは横スクロールする）。 -->
+                        <td class="whitespace-nowrap px-3 py-2">
                             <button
                                 v-if="row.vendorDetailUrl"
                                 type="button"

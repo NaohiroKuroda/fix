@@ -14,7 +14,7 @@
 // - 確定値はサーバ側（BCMath）で計算する。ここの合計は**入力確認用の目安**（frontend.md §4.9）。
 // - 目安の計算も誤差を出さないよう整数演算だけで行う（× 0.1 のような小数倍を避ける）。
 import { computed, reactive, ref, watch } from 'vue';
-import { X, Plus, Trash2, Upload, Paperclip } from 'lucide-vue-next';
+import { X, Plus, Trash2 } from 'lucide-vue-next';
 import type { BillingMasters, BillingQuotationDetail, BillingRow, BillingTaxType } from '../model/billing';
 
 const props = defineProps<{
@@ -110,9 +110,9 @@ watch(
         form.quotationDate = quotation?.quotationDate ?? '';
         form.withholdingIncomeTax = toNum(quotation?.withholdingIncomeTax);
         form.comment = quotation?.comment ?? '';
+        // 見積書ファイルは画面から選ばせないが、既存の file_url は保存時にそのまま返して消さない。
         form.fileUrl = quotation?.fileUrl ?? '';
         form.file = null;
-        fileError.value = null;
         form.taxOverride = null;
 
         const rows = (quotation?.details ?? [])
@@ -133,38 +133,6 @@ watch(
         form.details = rows.length > 0 ? rows : [emptyDetail()];
     },
 );
-
-// 見積書ファイル（端末からアップロード）。上限は添付ファイル仕様（99_添付ファイル_詳細設計 §2）に合わせる。
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const fileInput = ref<HTMLInputElement | null>(null);
-const fileError = ref<string | null>(null);
-const onFileChange = (event: Event): void => {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    input.value = ''; // 同じファイルを選び直せるようクリアする。
-    if (file === null) {
-        return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-        fileError.value = `${file.name} は 10MB を超えています。`;
-        return;
-    }
-    fileError.value = null;
-    form.file = file;
-};
-const clearFile = (): void => {
-    form.file = null;
-    fileError.value = null;
-};
-const fileSize = (bytes: number): string => {
-    if (bytes < 1024) {
-        return `${bytes} B`;
-    }
-    if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-};
 
 const addDetail = (): void => {
     form.details = [...form.details, emptyDetail()];
@@ -273,44 +241,13 @@ const yen = (n: number): string => `¥${n.toLocaleString('ja-JP')}`;
             <!-- 閲覧専用のときは fieldset ごと無効化して、中の入力・追加/削除ボタンをまとめて止める。 -->
             <fieldset :disabled="readonly" class="flex-1 space-y-4 overflow-y-auto p-4">
                 <!-- ヘッダー項目（t_billing_quotations） -->
+                <!-- 見積書ファイルの選択は出さない（作成・修正・閲覧いずれも非表示）。
+                     既にアップロード済みの file_url は保存時にそのまま送り、消さない。 -->
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
                     <label class="text-sm">
                         <span class="mb-1 block text-xs text-slate-500">日付 <span class="text-red-600">*</span></span>
                         <input v-model="form.quotationDate" type="date" :class="inputClass" />
                     </label>
-                    <div class="text-sm md:col-span-2">
-                        <span class="mb-1 block text-xs text-slate-500">見積書ファイル</span>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <!-- 端末から選択したファイルをアップロードする（保存時に file_url が入る）。 -->
-                            <input ref="fileInput" type="file" class="hidden" @change="onFileChange" />
-                            <button
-                                type="button"
-                                class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                                @click="fileInput?.click()"
-                            >
-                                <Upload class="size-4" />ファイルを選択
-                            </button>
-                            <span v-if="form.file" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-700">
-                                <Paperclip class="size-3.5 shrink-0" />
-                                <span class="max-w-[280px] truncate">{{ form.file.name }}</span>
-                                <span class="shrink-0 text-slate-500">{{ fileSize(form.file.size) }}</span>
-                                <button type="button" class="shrink-0 rounded p-0.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600" title="選択を取り消す" @click="clearFile">
-                                    <X class="size-3.5" />
-                                </button>
-                            </span>
-                            <a
-                                v-else-if="form.fileUrl"
-                                :href="form.fileUrl"
-                                target="_blank"
-                                rel="noopener"
-                                class="inline-flex items-center gap-1.5 text-xs text-primary underline-offset-2 hover:underline"
-                            >
-                                <Paperclip class="size-3.5" />アップロード済みのファイルを開く
-                            </a>
-                            <span v-else class="text-xs text-slate-400">未選択</span>
-                        </div>
-                        <p v-if="fileError" class="mt-1 text-xs text-red-600">{{ fileError }}</p>
-                    </div>
                 </div>
 
                 <!-- 明細（t_billing_quotation_details）。列は felix_total の見積タブと同じ並び。 -->

@@ -164,6 +164,12 @@ public function reject(int $partnerId, string $reason): int
   `true` で返す。定義に無いメニューは返さない＝出さない。
 - **受け渡し**: `HandleInertiaRequests` が共有プロパティ `menuPermissions`（Closure）で渡し、
   フロント（`AppLayout.vue`）は `perms[キー]` が true の項目だけ描画する。配下が 0 件のメニューグループは丸ごと隠す。
+- **ログイン後の着地先**: `/` は**その人が最初に見られるメニュー**へリダイレクトする
+  （`AdminUser::firstMenuUri()`）。順番は **`m_menu_items` の並び（親 `sort_order` → 子 `sort_order`）**が
+  決めるので、着地先を変えたいときは**メニューの並びを変えるだけ**でよい（コード変更不要）。
+- **URL 直打ちの遮断**: `EnsureMenuPermitted` ミドルウェアが、パスの2番目のセグメント
+  （`/quotation-management/{キー}/…`）を同じ判定にかけ、メニューに無い画面は自分の最初の画面へ戻す。
+  実行系（POST の confirm / reject など）も同じキー配下なのでまとめて守れる。
 - **拡張（画面追加）**: `m_menu_items` に1行足して権限へ紐づけ、フロントの項目に同じキーを付けるだけ。
   **アプリのコード変更は不要**（設定ファイルの書き換えも要らない）。
 - **`config/felix.php` に残るロール判定**: `manager_role_slugs`（既定 `engineer_manager,tmp`）は

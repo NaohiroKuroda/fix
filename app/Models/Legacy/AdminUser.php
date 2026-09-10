@@ -38,6 +38,20 @@ class AdminUser extends Authenticatable
         'avatar',
     ];
 
+    /**
+     * 見られるメニュー（キー => true）。1リクエスト内で使い回す。
+     *
+     * @var array<string, bool>|null
+     */
+    private ?array $menuUris = null;
+
+    /**
+     * 見られるメニューの URI（メニュー定義の並び順）。着地先の決定に使う。
+     *
+     * @var list<string>|null
+     */
+    private ?array $menuUriList = null;
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -96,6 +110,31 @@ class AdminUser extends Authenticatable
      */
     public function menuPermissions(): array
     {
+        // 1リクエストで何度も呼ばれる（サイドメニュー・権限チェック）ため、取得結果を持ち回る。
+        return $this->menuUris ??= $this->loadMenuUris();
+    }
+
+    /**
+     * ログイン直後に開く画面（メニュー定義の並びで最初に見られるもの）の URI。
+     *
+     * 着地先は **`m_menu_items` の並び順（親 sort_order → 子 sort_order）** が決める。
+     * 並びを変えれば着地先も変わり、コードの修正は要らない。
+     * 見られるメニューが1件も無ければ null。
+     */
+    public function firstMenuUri(): ?string
+    {
+        $this->menuPermissions();   // menuUriList を埋める（結果は使い回される）
+
+        return $this->menuUriList[0] ?? null;
+    }
+
+    /**
+     * メニュー定義から「見られるメニューキー => true」を作る。並び順は親 → 子。
+     *
+     * @return array<string, bool>
+     */
+    private function loadMenuUris(): array
+    {
         $userId = DB::table('m_users')
             ->where('source_table', 'admin_users')
             ->where('source_id', $this->id)
@@ -110,12 +149,19 @@ class AdminUser extends Authenticatable
             ->pluck('rp.permission_id');
         $direct = DB::table('p_user_permissions')->where('user_id', $userId)->pluck('permission_id');
 
-        $uris = DB::table('m_menu_items')
-            ->whereNotNull('uri')
-            ->whereIn('id', DB::table('p_permission_menu_items')
+        // 親メニューの並び（sort_order）→ 子の並び の順に取る。先頭がログイン後の着地先になる。
+        $uris = DB::table('m_menu_items as mi')
+            ->leftJoin('m_menu_items as parent', 'parent.id', '=', 'mi.parent_id')
+            ->whereNotNull('mi.uri')
+            ->whereIn('mi.id', DB::table('p_permission_menu_items')
                 ->whereIn('permission_id', $viaRoles->merge($direct)->unique())
                 ->select('menu_item_id'))
-            ->pluck('uri');
+            ->orderBy('parent.sort_order')
+            ->orderBy('mi.sort_order')
+            ->orderBy('mi.id')
+            ->pluck('mi.uri');
+
+        $this->menuUriList = $uris->all();
 
         $permissions = [];
         foreach ($uris as $uri) {

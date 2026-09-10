@@ -22,6 +22,8 @@ use App\Http\Controllers\Quotation\Payable\ManagerApprovalController;
 use App\Http\Controllers\Quotation\Payable\PayableMessageController;
 use App\Http\Controllers\Quotation\Payable\QuoteRequestController;
 use App\Http\Controllers\Quotation\Payable\VendorSelectionController;
+use App\Http\Middleware\EnsureMenuPermitted;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // 未認証（ゲスト）— ログイン画面 / ログイン処理
@@ -31,9 +33,14 @@ Route::middleware('guest:admin')->group(function () {
 });
 
 // 認証必須（admin ガード = admin_users）
-Route::middleware('auth:admin')->group(function () {
-    // トップはサイドメニュー先頭（見積依頼）へ。
-    Route::get('/', fn () => redirect()->route('quotation-management.quote-request'))->name('home');
+// EnsureMenuPermitted：メニュー定義に無い画面は URL 直打ちでも開かせない（トップは除外）。
+Route::middleware(['auth:admin', EnsureMenuPermitted::class])->group(function () {
+    // トップは**その人が最初に見られるメニュー**へ。着地先は m_menu_items の並び順が決める。
+    Route::get('/', function () {
+        $admin = Auth::guard('admin')->user();
+
+        return redirect($admin?->firstMenuUri() ?? route('quotation-management.quote-request'));
+    })->name('home');
 
     // 見積管理（申請/承認専用。felix_total 実行予算の見積部分を切り出した画面群）。
     // 画面ごとに Controller を分離（GET=一覧 index / POST=実行 send|confirm）。

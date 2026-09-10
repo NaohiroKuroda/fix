@@ -122,8 +122,8 @@ export const PAYABLE_MODE_CONFIG: Record<PayableMode, PayableModeConfig> = {
         appliedLabel: '承認済',
         processingLabel: '承認中…',
         hint: '承認する見積先を選択してください',
-        bulkSelectLabel: '全て承認',
-        bulkClearLabel: '全ての承認を解除',
+        // 一括承認は出さない（1件ずつ内容を確認して承認する運用のため）。
+        // ラベルを持たないモードは一括選択ボタンを出さない（→ showBulkSelect）。
         operableFilterLabel: '未承認',
         reject: {
             hint: '否認して業者選定へ差し戻す',

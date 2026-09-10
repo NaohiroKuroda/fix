@@ -203,7 +203,10 @@ const toggleProvisional = (row: PayableRow): void => {
 //   差し戻し分は依頼済みだが「依頼し直す」対象なので、着手すべき行として残す。
 // 区分。支払系画面の初期値は「支払」。「全て」にすると請求取引先も同じ一覧に並ぶ（表示のみ）。
 type PartnerKind = 'all' | 'payable' | 'billing';
-const kind = computed<PartnerKind>(() => (props.filters.kind === 'all' ? 'all' : 'payable'));
+// 部長への取消申請・取消承認は支払の取消フローだけを扱うため、区分の切り替えを出さない
+// （PayableRepository::MODE_OWN_KIND_ONLY と対応）。
+const crossKindAllowed = !['cancel-request', 'cancel-approval'].includes(props.mode);
+const kind = computed<PartnerKind>(() => (crossKindAllowed && props.filters.kind === 'all' ? 'all' : 'payable'));
 const kindOptions: { value: PartnerKind; label: string }[] = [
     { value: 'all', label: '全て' },
     { value: 'payable', label: '支払' },
@@ -232,12 +235,11 @@ const displayProjects = computed<PayableProject[]>(() => {
         return props.projects;
     }
     // 絞り込みは**自区分（支払）の行にだけ**効かせる。区分「全て」で並ぶ請求行は「表示のみ」なので
-    // 絞り込み対象にせず、絞り込み後も支払行が残った項目（budgetItemId）にだけそのまま並べる。
+    // 絞り込み対象にせず常に残す（支払取引先が無い項目の請求行も消さない）。
     return props.projects
         .map((p) => {
             const keep = (r: PayableRow): boolean => rowFilters.every((f) => f(r));
-            const budgetItemIds = new Set(p.rows.filter((r) => !r.billingTarget && keep(r)).map((r) => r.budgetItemId));
-            return { ...p, rows: p.rows.filter((r) => (r.billingTarget ? budgetItemIds.has(r.budgetItemId) : keep(r))) };
+            return { ...p, rows: p.rows.filter((r) => r.billingTarget || keep(r)) };
         })
         .filter((p) => p.rows.length > 0);
 });
@@ -266,16 +268,6 @@ const closeIframe = (): void => {
     // flash も併せて取り直す。部分リロードで返却しないと前回値が引き継がれ、
     // 直前の送信成功トーストが再表示されてしまう。
     router.reload({ only: ['projects', 'pagination', 'flash'] });
-};
-
-// 請求先行（billingTarget・見積依頼画面のみ）：チェック不要、押下で即座に単体で見積送信する。
-const billingSendForm = useForm<{ partnerIds: number[] }>({ partnerIds: [] });
-const submitBillingSend = (row: PayableRow): void => {
-    if (row.partnerId == null || billingSendForm.processing) {
-        return;
-    }
-    billingSendForm.partnerIds = [row.partnerId];
-    billingSendForm.submit(sendQuoteRequestRoute(), { preserveScroll: true });
 };
 
 // 一括「全て選択」。対象は未処理の業者行（見積依頼 / 部長承認）。
@@ -630,7 +622,7 @@ const setComment = (value: CommentFilter): void => {
                             区分（支払 / 請求）の切り替え。支払系画面の初期値は「支払」。
                             「請求」に切り替えると請求取引先を表示のみで参照できる（操作は不可）。
                         -->
-                        <div class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
+                        <div v-if="crossKindAllowed" class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
                             <button
                                 v-for="opt in kindOptions"
                                 :key="opt.value"
@@ -739,7 +731,6 @@ const setComment = (value: CommentFilter): void => {
                     @reject="openReject"
                     @open-chat="openChat"
                     @open-iframe="openIframe"
-                    @billing-send="submitBillingSend"
                 />
 
                 <div v-if="!displayProjects.length" class="p-8 text-center" :class="[glassPanelClass, onGlassTextClass]">

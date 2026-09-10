@@ -28,7 +28,6 @@ const emit = defineEmits<{
     (e: 'open-chat', row: PayableRow, buildingName: string): void;
     (e: 'open-iframe', payload: { url: string | null; title: string }): void;
     /** 請求先行（billingTarget）：チェック不要で押下即座に見積を送信する。見積依頼画面のみ。 */
-    (e: 'billing-send', row: PayableRow): void;
 }>();
 
 const isThemed = computed(() => props.glass === true);
@@ -348,10 +347,11 @@ const chatBtnClass = (row: PayableRow): string => {
                                 </a>
                             </div>
                         </td>
-                        <!-- 請求先行（billingTarget）：金額3列は常に「ー」表示（見積の対象ではないため）。 -->
+                        <!-- 請求先行（billingTarget）：標準単価・予算単価は支払側の値なので「—」。
+                             見積列は請求見積の合計（t_billing_quotations.subtotal_amount）を出す。 -->
                         <td class="px-3 py-2 text-right tabular-nums">{{ row.billingTarget ? '—' : yen(row.masterPrice) }}</td>
                         <td class="px-3 py-2 text-right tabular-nums">{{ row.billingTarget ? '—' : yen(row.budgetPrice) }}</td>
-                        <td v-if="config.showQuote" class="px-3 py-2 text-right tabular-nums">{{ row.billingTarget ? '—' : yen(row.quotePrice) }}</td>
+                        <td v-if="config.showQuote" class="px-3 py-2 text-right tabular-nums">{{ yen(row.quotePrice) }}</td>
                         <!-- 仮選定（FELIXが依頼したい業者の印。現状はローカル状態、DB保存は将来）。 -->
                         <td v-if="showProvisional" class="px-3 py-2 text-center">
                             <label
@@ -373,11 +373,16 @@ const chatBtnClass = (row: PayableRow): string => {
                         </td>
                         <td class="px-3 py-2 text-center">
                             <!--
+                                区分「全て」で並ぶ請求行（逆区分）は**表示のみ**。この画面の操作対象では
+                                ないため、操作列は「—」にする（支払側のステータスも持たない）。
+                            -->
+                            <span v-if="row.billingTarget" :class="mutedTextClass">—</span>
+                            <!--
                                 操作できない行（処理フロー K列「ステータス外表示形式」）。
                                 一覧には出すが操作させず、現在の承認ステータスをバッジで示す。
                             -->
                             <span
-                                v-if="row.partnerId != null && !row.operable"
+                                v-else-if="row.partnerId != null && !row.operable"
                                 class="mx-auto inline-flex h-9 w-28 items-center justify-center whitespace-nowrap rounded-xl border border-slate-300 bg-slate-100 px-2 text-sm font-semibold text-slate-500"
                                 :title="notOperableHint(row)"
                             >
@@ -404,19 +409,9 @@ const chatBtnClass = (row: PayableRow): string => {
                                     <CheckCircle2 class="size-4" />{{ config.appliedLabel }}
                                 </span>
                                 <template v-else-if="row.partnerId != null">
-                                    <!-- 請求先行（billingTarget・見積依頼画面のみ）：チェック不要、押下で即座に見積送信。 -->
-                                    <button
-                                        v-if="row.billingTarget"
-                                        type="button"
-                                        class="mx-auto flex h-9 w-28 items-center justify-center whitespace-nowrap rounded-xl border border-[#c4a35b] bg-[#c4a35b] px-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b3923f]"
-                                        title="請求先へ見積を送信する"
-                                        @click="emit('billing-send', row)"
-                                    >
-                                        見積送信
-                                    </button>
                                     <!-- 見積依頼：選択チップ（枠付き）。中身はネイティブ checkbox のままで多重選択を維持。 -->
                                     <label
-                                        v-else-if="isCheckbox"
+                                        v-if="isCheckbox"
                                         class="mx-auto inline-flex h-9 w-28 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-2 text-sm font-semibold shadow-sm backdrop-blur-md transition focus-within:ring-2 focus-within:ring-[#c4a35b]/40"
                                         :title="row.filesReady ? '' : '必要な見積グループの設計ファイルが揃っていないため依頼できません'"
                                         :class="[
@@ -451,7 +446,10 @@ const chatBtnClass = (row: PayableRow): string => {
                         </td>
                         <!-- 見積依頼送信回数（見積依頼画面のみ）。0=未依頼は淡色で表示。 -->
                         <td v-if="showSendCount" class="px-3 py-2 text-center tabular-nums">
-                            <span v-if="row.partnerId != null" :class="row.sendCount === 0 ? mutedTextClass : 'font-semibold'">
+                            <span
+                                v-if="row.partnerId != null && !row.billingTarget"
+                                :class="row.sendCount === 0 ? mutedTextClass : 'font-semibold'"
+                            >
                                 {{ row.sendCount }}回
                             </span>
                             <span v-else :class="mutedTextClass">—</span>

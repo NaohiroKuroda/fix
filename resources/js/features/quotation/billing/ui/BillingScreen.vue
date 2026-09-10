@@ -71,7 +71,12 @@ const allRows = computed<BillingRow[]>(() => props.projects.flatMap((p) => p.row
 
 // 区分。請求系画面の初期値は「請求」。「全て」にすると支払取引先も同じ一覧に並ぶ（表示のみ）。
 type PartnerKind = 'all' | 'payable' | 'billing';
-const kind = computed<PartnerKind>(() => (props.filters.kind === 'all' ? 'all' : 'billing'));
+// 見積取消申請・取消承認・発注書確認は請求だけを扱うため、区分の切り替えを出さない
+// （BillingRepository::MODE_OWN_KIND_ONLY と対応）。
+const crossKindAllowed = !['billing-cancel-request', 'billing-cancel-approval', 'billing-order-confirmation'].includes(
+    props.mode,
+);
+const kind = computed<PartnerKind>(() => (crossKindAllowed && props.filters.kind === 'all' ? 'all' : 'billing'));
 const kindOptions: { value: PartnerKind; label: string }[] = [
     { value: 'all', label: '全て' },
     { value: 'billing', label: '請求' },
@@ -128,12 +133,11 @@ const displayProjects = computed(() => {
         return props.projects;
     }
     // 絞り込みは**自区分（請求）の行にだけ**効かせる。区分「全て」で並ぶ支払行は「表示のみ」なので
-    // 絞り込み対象にせず、絞り込み後も請求行が残った項目（itemName）にだけそのまま並べる。
+    // 絞り込み対象にせず常に残す（請求取引先が無い項目の支払行も消さない）。
     return props.projects
         .map((p) => {
             const keep = (r: BillingRow): boolean => rowFilters.every((f) => f(r));
-            const items = new Set(p.rows.filter((r) => r.billingTarget && keep(r)).map((r) => r.itemName));
-            return { ...p, rows: p.rows.filter((r) => (r.billingTarget ? keep(r) : items.has(r.itemName))) };
+            return { ...p, rows: p.rows.filter((r) => !r.billingTarget || keep(r)) };
         })
         .filter((p) => p.rows.length > 0);
 });
@@ -428,7 +432,7 @@ const goToPage = (page: number): void => {
                             「支払」に切り替えると支払取引先を表示のみで参照できる（操作は不可）。
                             発注書確認は請求の発注書だけを見る画面なので出さない。
                         -->
-                        <div v-if="mode !== 'billing-order-confirmation'" class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
+                        <div v-if="crossKindAllowed" class="inline-flex items-center gap-0.5 rounded-lg border border-primary/20 bg-white/70 p-0.5 backdrop-blur-md">
                             <button
                                 v-for="opt in kindOptions"
                                 :key="opt.value"

@@ -48,6 +48,20 @@ class BillingRepository implements BillingRepositoryInterface
     /** 画面の既定の区分（処理フロー H列「区分が請求」）。 */
     private const DEFAULT_KIND = 'billing';
 
+    /**
+     * mode → 区分（支払 / 請求）の切り替えを出さない＝**自区分だけ**を扱う画面。
+     *
+     * 見積取消申請・見積取消承認は請求の取消フローだけを、発注書確認は請求の発注書だけを扱うため、
+     * 支払取引先は並べない（画面側でも区分トグルを出さない）。
+     *
+     * @var list<string>
+     */
+    private const MODE_OWN_KIND_ONLY = [
+        'billing-cancel-request',
+        'billing-cancel-approval',
+        'billing-order-confirmation',
+    ];
+
     public function forBillingManagement(array $filters, int $perPage, string $mode): LengthAwarePaginator
     {
         $keyword = $this->nonEmpty($filters['keyword'] ?? null);     // 実行予算名（t_buildings.name）
@@ -58,6 +72,10 @@ class BillingRepository implements BillingRepositoryInterface
         // 請求系画面の既定は billing。all のとき支払行は表示のみ（操作不可）。
         $kind = (string) ($filters['kind'] ?? self::DEFAULT_KIND);
         if (! in_array($kind, ['all', 'payable', 'billing'], true)) {
+            $kind = self::DEFAULT_KIND;
+        }
+        // 自区分だけの画面（見積取消申請 / 取消承認 / 発注書確認）は URL に kind が付いていても既定へ戻す。
+        if (in_array($mode, self::MODE_OWN_KIND_ONLY, true)) {
             $kind = self::DEFAULT_KIND;
         }
         /** @var list<string> $relations 読み込む取引先リレーション（all は両方）。 */
@@ -71,6 +89,8 @@ class BillingRepository implements BillingRepositoryInterface
         // 取引先レベルの絞り込みを効かせる区分。**自区分だけに効かせる**（共通仕様 §3.3）。
         // 逆区分は「表示のみ」なので絞り込まず、自区分が残った項目にだけ並べる。
         $filterRelation = in_array($ownRelation, $relations, true) ? $ownRelation : ($relations[0] ?? null);
+        // 区分「全て」のときの逆区分。項目の表示判定に使う（逆区分しか取引先が無い項目も出すため）。
+        $otherRelation = count($relations) === 2 ? 'payablePartners' : null;
 
         $operable = self::MODE_OPERABLE_STATUS[$mode] ?? null;
         // 未知の mode は空で返す。
@@ -94,9 +114,9 @@ class BillingRepository implements BillingRepositoryInterface
         $paginator = TBuilding::query()
             ->when($empty, fn (Builder $q) => $q->whereRaw('1 = 0'))
             ->when($keyword, fn (Builder $q, string $kw) => $q->where('name', 'like', "%{$kw}%"))
-            ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $filterFor, $filterRelation))
-            ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $comment, $filterFor, $relations, $filterRelation): void {
-                $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $filterFor, $filterRelation);
+            ->whereHas('budgetItems', fn (Builder $i) => $this->applyItemFilter($i, $itemLabel, $comment, $filterFor, $filterRelation, $otherRelation))
+            ->with(['budgetItems' => function (HasMany $i) use ($itemLabel, $comment, $filterFor, $relations, $filterRelation, $otherRelation): void {
+                $this->applyItemFilter($i->getQuery(), $itemLabel, $comment, $filterFor, $filterRelation, $otherRelation);
                 $i->orderBy('sort_order')->orderBy('id');
                 foreach ($relations as $relation) {
                     $filter = $filterFor[$relation];
@@ -108,6 +128,9 @@ class BillingRepository implements BillingRepositoryInterface
                         if ($relation === 'billingPartners') {
                             // companyToken は業者マイページ（メールと同じログインURL）の組み立てに使う。
                             $q->with(['latestQuotation.details' => fn ($d) => $d->orderBy('id'), 'billingOrder', 'companyToken']);
+                        } else {
+                            // 支払行（区分「全て」で並ぶ逆区分）は金額列に相見積の合計を出すため、最新見積だけ読む。
+                            $q->with('latestQuotation');
                         }
                     }]);
                 }
@@ -174,8 +197,9 @@ class BillingRepository implements BillingRepositoryInterface
      *
      * @param  array<string, callable>  $filterFor  リレーション名 → 絞り込みクロージャ
      * @param  string|null  $filterRelation  絞り込みを効かせる（＝項目の存在判定に使う）自区分のリレーション
+     * @param  string|null  $otherRelation  区分「全て」のときの逆区分。指定時は逆区分の取引先だけを持つ項目も出す。
      */
-    private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, array $filterFor, ?string $filterRelation): Builder
+    private function applyItemFilter(Builder $i, string|false $itemLabel, string $comment, array $filterFor, ?string $filterRelation, ?string $otherRelation = null): Builder
     {
         // 現行でチェックを外した項目（use_flg → is_enabled = false）は、絞り込みに関わらず出さない
         // （共通仕様 §3.4）。ユーザーの選ぶ条件では解除できない前提条件として扱う。
@@ -197,6 +221,14 @@ class BillingRepository implements BillingRepositoryInterface
         }
 
         $filter = $filterFor[$filterRelation];
+
+        // 区分「全て」は、自区分の取引先がゼロでも**逆区分の取引先があれば項目ごと出す**（表示のみ）。
+        // 自区分だけで判定すると、逆区分にしか取引先が無い項目が「全て」でも一覧から消えてしまうため。
+        if ($otherRelation !== null) {
+            return $i->where(fn (Builder $q) => $q
+                ->whereHas($filterRelation, fn (Builder $p) => $filter($p))
+                ->orWhereHas($otherRelation));
+        }
 
         return $i->whereHas($filterRelation, fn (Builder $p) => $filter($p));
     }

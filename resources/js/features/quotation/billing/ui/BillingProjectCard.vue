@@ -255,9 +255,14 @@ const rowButtonLabel = (row: BillingRow): string =>
                         </td>
                         <!-- 操作列：pick はトグル選択、それ以外は押下で親がモーダルを開く。 -->
                         <td class="px-3 py-2 text-center">
+                            <!--
+                                区分「全て」で並ぶ支払行（逆区分）は**表示のみ**。この画面の操作対象では
+                                ないため、操作列は「—」にする。
+                            -->
+                            <span v-if="!row.billingTarget" :class="mutedTextClass">—</span>
                             <!-- 発注書確認（表示のみ）：押下で felix_total の発注書を iframe で開く。 -->
                             <button
-                                v-if="isView"
+                                v-else-if="isView"
                                 type="button"
                                 :disabled="!row.orderDocumentUrl"
                                 :class="[actionBtnClass(false), row.orderDocumentUrl ? '' : 'cursor-not-allowed opacity-50']"

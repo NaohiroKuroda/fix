@@ -49,8 +49,8 @@ export interface PayableRow {
     provisional: boolean;
     /**
      * 請求先（新スキーマ t_cost_quotations.is_billing_target）。
-     * 業者追加時に「請求先とする」をONにした業者。見積依頼画面では金額3列・仮選定を「ー」表示にし、
-     * 操作列はチェック不要で即時送信する「見積送信」ボタンにする。
+     * 業者追加時に「請求先とする」をONにした業者。支払系画面では**表示のみ**の行なので、
+     * 支払側にしか無い列（金額3列・仮選定・送信回数・最終依頼日時）と操作列を「—」で表示する。
      */
     billingTarget: boolean;
     /** 部長承認で否認され業者選定へ差し戻された見積先か（`approval_status = 'REJECTED'`）。ボタンの赤色表示に使う。 */

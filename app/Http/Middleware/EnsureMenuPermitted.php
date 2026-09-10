@@ -18,12 +18,25 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureMenuPermitted
 {
+    /**
+     * 画面ではない（メニューに紐づかない）2番目のセグメント。素通しする。
+     *
+     * コメント（やり取り）は**項目単位のスレッド**で、どの画面からでも同じものを読み書きする。
+     * 取引先 ID を切るため URL が `/quotation-management/payable-partners/...` になり、
+     * メニューキーとして判定すると**画面は見られるのにコメントの取得・送信だけ弾かれる**。
+     *
+     * ponytail: 見積管理配下にサブリソースを足すときはここにも足す（メニュー定義からは判別できない）。
+     *
+     * @var list<string>
+     */
+    private const NON_SCREEN_KEYS = ['payable-partners', 'billing-partners', 'comment-attachments'];
+
     public function handle(Request $request, Closure $next): Response
     {
         $admin = Auth::guard('admin')->user();
         $key = $request->segment(2);
 
-        if (! $admin instanceof AdminUser || $key === null) {
+        if (! $admin instanceof AdminUser || $key === null || in_array($key, self::NON_SCREEN_KEYS, true)) {
             return $next($request);
         }
 

@@ -22,6 +22,17 @@ use RuntimeException;
 class FelixTotalQuoteRequestGateway
 {
     /**
+     * サーバ間 HTTP に必ず付けるヘッダ（Cookie 以外）。
+     *
+     * `X-Requested-With` が無いと、felix_total（laravel-admin）は**権限拒否を HTTP 200 の
+     * HTML**（「権限がありません」画面）で返すため、こちらが成功と誤認して連携失敗を握り潰す。
+     * ajax として送ると 403 が返り、下の `successful()` 判定で例外になる。
+     *
+     * @var array<string, string>
+     */
+    private const AJAX_HEADERS = ['X-Requested-With' => 'XMLHttpRequest'];
+
+    /**
      * felix_total の見積依頼処理を実行する。
      *
      * @param  list<string>  $estimateUnitPairs  "{estimate_units.id}:{estimate_unit_companies.id}" の配列
@@ -52,7 +63,7 @@ class FelixTotalQuoteRequestGateway
         $cookie = 'cross_auth='.CrossAuthCookie::mintValue((int) $adminId);
 
         try {
-            $response = Http::withHeaders(['Cookie' => $cookie])
+            $response = Http::withHeaders(['Cookie' => $cookie] + self::AJAX_HEADERS)
                 ->acceptJson()
                 ->timeout(30)
                 ->get($url, [
@@ -230,7 +241,7 @@ class FelixTotalQuoteRequestGateway
         $cookie = 'cross_auth='.CrossAuthCookie::mintValue((int) $adminId);
 
         try {
-            $response = Http::withHeaders(['Cookie' => $cookie])
+            $response = Http::withHeaders(['Cookie' => $cookie] + self::AJAX_HEADERS)
                 ->acceptJson()
                 ->timeout(30)
                 ->get($url, $params);

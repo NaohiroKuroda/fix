@@ -5,7 +5,7 @@
 //   - 区分は常に「請求」（区分トグルで「全て」にすると支払も表示のみで並ぶ）
 //   - 操作列は mode（BILLING_MODE_CONFIG.kind）で出し分ける
 import { computed } from 'vue';
-import { ChevronDown, MessageSquare, Plus, FileText, Ban, ExternalLink } from 'lucide-vue-next';
+import { ChevronDown, MessageSquare, Plus, FileText, Ban, ExternalLink, CheckCircle2 } from 'lucide-vue-next';
 import { useFelixTheme } from '@/shared/lib/felix-theme';
 import { yenString } from '@/shared/lib/format-money';
 import { BillingKindBadge } from '@/shared/ui/billing-kind-badge';
@@ -245,9 +245,12 @@ const rowButtonLabel = (row: BillingRow): string =>
                             </button>
                             <template v-else>{{ yenString(isView ? row.orderAmount : row.quotationAmount) }}</template>
                         </td>
-                        <!-- 発注承諾日（t_billing_orders.contract_approved_at）。未承諾は「—」。 -->
+                        <!-- 発注承諾日（t_billing_orders.contract_approved_at）。未承諾は「—」。
+                             承諾済みのチェックは【支払】業者承諾確認と同じ見た目に揃える。 -->
                         <td v-if="config.showAcceptedAt" class="px-3 py-2 text-center tabular-nums">
-                            <span v-if="row.orderAcceptedAt ?? row.acceptedAt">{{ row.orderAcceptedAt ?? row.acceptedAt }}</span>
+                            <span v-if="row.orderAcceptedAt ?? row.acceptedAt" class="inline-flex items-center justify-center gap-1">
+                                <CheckCircle2 class="size-4 shrink-0 text-emerald-600" />{{ row.orderAcceptedAt ?? row.acceptedAt }}
+                            </span>
                             <span v-else :class="mutedTextClass">—</span>
                         </td>
                         <!-- 操作列：pick はトグル選択、それ以外は押下で親がモーダルを開く。 -->

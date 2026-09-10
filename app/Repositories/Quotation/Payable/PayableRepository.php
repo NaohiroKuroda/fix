@@ -865,6 +865,26 @@ class PayableRepository implements PayableRepositoryInterface
      * 現行でチェックを外した項目（use_flg → is_enabled = false）は一覧に出さないため、
      * バッヂの件数からも除く（共通仕様 §3.4）。
      */
+    /**
+     * 必要な見積グループの設計ファイルが揃っている項目に絞る。
+     *
+     * 判定は一覧の `filesReady`（{@see attachFileReadiness()}）と同じで、
+     * 「項目の必要グループ（t_building_budget_item_groups）のうち、建物側で
+     * 完了していない（t_building_group_statuses.is_completed = false / 行なし）ものが1つも無い」。
+     *
+     * @param  Builder<TBuildingBudgetItem>  $item
+     * @return Builder<TBuildingBudgetItem>
+     */
+    private function whereFilesReady(Builder $item): Builder
+    {
+        return $item->whereDoesntHave('groups', fn (Builder $g) => $g
+            ->whereNotExists(fn (QueryBuilder $s) => $s->selectRaw('1')
+                ->from('t_building_group_statuses')
+                ->whereColumn('t_building_group_statuses.building_id', 't_building_budget_items.building_id')
+                ->whereColumn('t_building_group_statuses.group_code', 't_building_budget_item_groups.group_code')
+                ->where('t_building_group_statuses.is_completed', true)));
+    }
+
     private function countablePartners(): Builder
     {
         return TPayablePartner::query()
@@ -874,12 +894,16 @@ class PayableRepository implements PayableRepositoryInterface
     public function pendingCounts(): array
     {
         return [
-            // 見積依頼：移行済み（source_id あり）かつ費用見積依頼（t_payable_quotation_requests）が無い見積先。
+            // 見積依頼：移行済み（source_id あり）／一度も依頼していない（t_payable_quotation_requests が無い）
+            // ／必要な見積グループの設計ファイルが揃っている見積先。
+            // ファイルが揃っていない行は画面でチェックできないため、件数にも入れない
+            // （バッヂの件数と実際に依頼できる件数を一致させる）。
             'quote-request' => $this->countablePartners()
                 ->whereNotNull('source_id')
                 ->whereNotExists(fn (QueryBuilder $sub) => $sub->selectRaw('1')
                     ->from('t_payable_quotation_requests')
                     ->whereColumn('t_payable_quotation_requests.payable_partner_id', 't_payable_partners.id'))
+                ->whereHas('budgetItem', fn (Builder $i) => $this->whereFilesReady($i))
                 ->count(),
             // 業者選定：未選定（DRAFT）かつ業者回答あり（最新の相見積履歴 is_latest = 1 を持つ）。
             'vendor-selection' => $this->countablePartners()

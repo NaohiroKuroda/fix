@@ -13,6 +13,7 @@ use App\Services\FelixTotal\FelixTotalQuoteRequestGateway;
 use App\Utils\Blame;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
@@ -201,6 +202,11 @@ class PayableRepository implements PayableRepositoryInterface
             }
         }
 
+        // 見積依頼は「必要な見積グループの設計ファイルが揃っているか」を項目に付ける（→ filesReady）。
+        if ($isQuoteRequest) {
+            $this->attachFileReadiness($paginator);
+        }
+
         // やり取り（コメント）のメタ情報（件数・コメント有無・未読数）を各見積先に付与（全画面）。
         // コメントは建物予算項目（t_building_budget_items）単位。未読はログインユーザーの最終既読より新しい他者コメント。
         $this->attachCommentMeta($paginator);
@@ -259,6 +265,44 @@ class PayableRepository implements PayableRepositoryInterface
         }
 
         return $map;
+    }
+
+    /**
+     * 項目ごとに「必要な見積グループの設計ファイルが揃っているか」（files_ready）を付ける。
+     *
+     * 必要グループ＝t_building_budget_item_groups（項目 × group_code。1=A / 2=B / 3=C / 4=D）。
+     * 充足＝建物の見積グループ状態（t_building_group_statuses.is_completed）で、更新は現行側
+     * （laravel-filemanager のイベント／command:check_no_estimate）が行う。
+     * グループ指定が無い項目は制限しない（true）。
+     *
+     * @param  LengthAwarePaginator<int, TBuilding>  $paginator
+     */
+    private function attachFileReadiness(LengthAwarePaginator $paginator): void
+    {
+        $buildings = new EloquentCollection($paginator->items());
+        if ($buildings->isEmpty()) {
+            return;
+        }
+
+        // budgetItems は一覧のクエリが絞り込み付きで読み込み済みなので読み直さない
+        // （`budgetItems.groups` で読むと絞り込みが消えて一覧が変わってしまう）。
+        $buildings->load('groupStatuses');
+        (new EloquentCollection($buildings->flatMap->budgetItems->all()))->load('groups');
+
+        foreach ($buildings as $building) {
+            // 充足済みのグループコード。
+            $completed = $building->groupStatuses
+                ->where('is_completed', true)
+                ->pluck('group_code');
+
+            foreach ($building->budgetItems as $item) {
+                // 必要なグループが1つでも欠けていれば依頼させない。
+                $item->setAttribute(
+                    'files_ready',
+                    $item->groups->pluck('group_code')->diff($completed)->isEmpty(),
+                );
+            }
+        }
     }
 
     /**

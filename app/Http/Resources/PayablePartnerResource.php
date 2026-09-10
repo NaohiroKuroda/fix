@@ -120,6 +120,9 @@ class PayablePartnerResource extends JsonResource
             // 承認ステータス（DRAFT / APPLIED / APPROVED / CANCEL_APPLIED / CANCELLED / REJECTED）。
             // 一覧に状態バッジを出すために渡す。
             'approvalStatus' => $status === null ? null : (string) $status,
+            // 見積依頼できるか（必要な見積グループの設計ファイルが揃っているか）。
+            // 付与しない画面（見積依頼以外）は制限しないので true。
+            'filesReady' => (bool) ($item->files_ready ?? true),
             // この画面で操作できる行か（処理フロー J列）。false は一覧に出すが操作させない（K列）。
             'operable' => (bool) ($quotation?->operable ?? false),
         ];

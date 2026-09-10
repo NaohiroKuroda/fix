@@ -31,4 +31,10 @@ class TBuilding extends Model
     {
         return $this->hasMany(TBuildingBudgetItem::class, 'building_id');
     }
+
+    /** 見積グループ状態（A/B/C/D の4件）。設計ファイルが揃っているかを持つ。 */
+    public function groupStatuses()
+    {
+        return $this->hasMany(TBuildingGroupStatus::class, 'building_id');
+    }
 }

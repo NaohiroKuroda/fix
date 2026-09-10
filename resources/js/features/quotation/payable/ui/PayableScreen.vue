@@ -101,7 +101,8 @@ const checked = reactive<Record<string, boolean>>({});
 const checkedKeys = computed(() => new Set(Object.keys(checked).filter((k) => checked[k])));
 const toggleRow = (row: PayableRow): void => {
     // operable = 処理フロー J列の対象ステータスか。false の行は一覧に出すが操作させない（K列）。
-    if (row.partnerId == null || isApplied(row) || !row.operable) {
+    // filesReady = 項目に必要な見積グループの設計ファイルが揃っているか。揃うまで依頼させない。
+    if (row.partnerId == null || isApplied(row) || !row.operable || !row.filesReady) {
         return;
     }
     const key = payableRowKey(row);
@@ -109,7 +110,7 @@ const toggleRow = (row: PayableRow): void => {
 };
 // 選べるのは「見積先（業者）が紐づき、かつ未処理」の行だけ（処理済みは再操作不可）。
 const selectableRows = computed<PayableRow[]>(() =>
-    payableRows.value.filter((r) => r.partnerId != null && !isApplied(r) && r.operable),
+    payableRows.value.filter((r) => r.partnerId != null && !isApplied(r) && r.operable && r.filesReady),
 );
 const anyChecked = computed(() => checkedKeys.value.size > 0);
 

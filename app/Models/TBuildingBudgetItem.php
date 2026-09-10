@@ -47,6 +47,12 @@ class TBuildingBudgetItem extends Model
         return $this->belongsTo(TBuilding::class, 'building_id');
     }
 
+    /** この項目に必要な見積グループ（設計ファイルの充足判定に使う）。 */
+    public function groups()
+    {
+        return $this->hasMany(TBuildingBudgetItemGroup::class, 'building_budget_item_id');
+    }
+
     /** 支払取引先（はらい）。 */
     public function payablePartners()
     {

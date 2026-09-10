@@ -414,12 +414,16 @@ const chatBtnClass = (row: PayableRow): string => {
                                     <!-- 見積依頼：選択チップ（枠付き）。中身はネイティブ checkbox のままで多重選択を維持。 -->
                                     <label
                                         v-else-if="isCheckbox"
-                                        class="mx-auto inline-flex h-9 w-28 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-2 text-sm font-semibold shadow-sm backdrop-blur-md transition focus-within:ring-2 focus-within:ring-[#c4a35b]/40"
-                                        :class="isActive(row)
+                                        class="mx-auto inline-flex h-9 w-28 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-2 text-sm font-semibold shadow-sm backdrop-blur-md transition focus-within:ring-2 focus-within:ring-[#c4a35b]/40"
+                                        :title="row.filesReady ? '' : '必要な見積グループの設計ファイルが揃っていないため依頼できません'"
+                                        :class="[
+                                            row.filesReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-40',
+                                            isActive(row)
                                             ? (isThemed ? 'border-[#c4a35b] bg-[#c4a35b] text-white' : 'border-primary bg-primary text-primary-foreground')
-                                            : (isThemed ? 'border-[#c4a35b]/40 bg-[#c4a35b]/10 text-[#8a6a25] hover:border-[#c4a35b]/60 hover:bg-[#c4a35b]/20' : 'border bg-primary/5 text-muted-foreground hover:bg-accent')"
+                                            : (isThemed ? 'border-[#c4a35b]/40 bg-[#c4a35b]/10 text-[#8a6a25] hover:border-[#c4a35b]/60 hover:bg-[#c4a35b]/20' : 'border bg-primary/5 text-muted-foreground hover:bg-accent'),
+                                        ]"
                                     >
-                                        <input type="checkbox" :checked="isActive(row)" class="sr-only" @change="emit('row-toggle', row)" />
+                                        <input type="checkbox" :checked="isActive(row)" :disabled="!row.filesReady" class="sr-only" @change="emit('row-toggle', row)" />
                                         <span
                                             class="flex size-4 shrink-0 items-center justify-center rounded-[4px] border-2 transition"
                                             :class="isActive(row) ? 'border-white bg-white/25 text-white' : 'border-[#c4a35b] bg-white text-transparent'"

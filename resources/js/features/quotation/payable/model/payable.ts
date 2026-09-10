@@ -60,6 +60,8 @@ export interface PayableRow {
      * 値は見積管理_処理フロー準拠（00_共通仕様_詳細設計 §0）。
      */
     approvalStatus: PayableApprovalStatus | null;
+    /** 必要な見積グループの設計ファイルが揃っているか。false の行は見積依頼できない。 */
+    filesReady: boolean;
     /**
      * この画面で操作できる行か（処理フロー J列「表示承認ステータス」）。
      * false の行も一覧には出すが、操作は不可にする（K列「ステータス外表示形式」）。

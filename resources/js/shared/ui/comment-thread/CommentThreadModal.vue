@@ -8,6 +8,7 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { X, MessageSquare, Send, Paperclip, FileText } from 'lucide-vue-next';
 import type { QuotationChatMessage } from '@/shared/api';
+import { useXsrfToken } from '@/shared/lib/csrf';
 
 const props = defineProps<{
     /** モーダルの表示状態。 */
@@ -116,9 +117,8 @@ const formatFileSize = (bytes: number): string => {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 };
 
-// CSRF（axios 未導入のため XSRF-TOKEN クッキーを fetch ヘッダへ手当てする）。
-const xsrfToken = (): string =>
-    decodeURIComponent(document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='))?.split('=')[1] ?? '');
+// CSRF（Inertia を通さない fetch のため、クッキーの値をヘッダへ手当てする）。
+const xsrfToken = useXsrfToken();
 
 const scrollToBottom = (): void => {
     void nextTick(() => {

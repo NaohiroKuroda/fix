@@ -3,6 +3,7 @@
 use App\Exceptions\ServiceException;
 use App\Http\Middleware\CrossAuthCookie;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\PreventRequestForgery;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // cross_auth は平文＋HMAC で felix_total と共有するため暗号化しない。
         $middleware->encryptCookies(except: ['cross_auth']);
+
+        // XSRF クッキー名を config（SESSION_XSRF_COOKIE）で変えられるようにする。
+        // 現行と同じホストで動かす環境でクッキーが衝突するため（→ config/session.php）。
+        // replace() はグローバルミドルウェア用。CSRF は web グループなので replaceInGroup を使う。
+        $middleware->replaceInGroup(
+            'web',
+            Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+            PreventRequestForgery::class,
+        );
 
         $middleware->web(append: [
             // CrossAuthCookie は HandleInertiaRequests より前（auto-login を先に成立させる）。

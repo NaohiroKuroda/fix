@@ -7,6 +7,7 @@ import { computed, inject, nextTick, reactive, ref, type Ref } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { X, Ban, MessageSquare, Send, Paperclip, FileText, XCircle, CheckCircle2, ReceiptText } from 'lucide-vue-next';
 import { index as quotationMessagesIndex, store as quotationMessagesStore } from '@/shared/api/routes/quotation-management/payable-messages';
+import { useXsrfToken } from '@/shared/lib/csrf';
 import { SIDEBAR_COLLAPSED } from '@/shared/ui/layouts';
 import { FilterBar } from '@/shared/ui/filter-bar';
 import { Pager } from '@/shared/ui/pager';
@@ -305,8 +306,7 @@ const formatFileSize = (bytes: number): string => {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 };
-const xsrfToken = (): string =>
-    decodeURIComponent(document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='))?.split('=')[1] ?? '');
+const xsrfToken = useXsrfToken();
 const scrollChatToBottom = (): void => {
     void nextTick(() => {
         if (chatScroll.value) {

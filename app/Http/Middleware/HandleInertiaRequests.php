@@ -60,6 +60,8 @@ class HandleInertiaRequests extends Middleware
             ],
             // 現行 felix_total の URL（明細リンクの iframe 先）。
             'felixTotalUrl' => config('services.felix_total.url'),
+            // CSRF トークンのクッキー名。fetch / Inertia がこの名前で読む（→ config/session.php）。
+            'xsrfCookieName' => config('session.xsrf_cookie', 'XSRF-TOKEN'),
             // フラッシュメッセージ（成功 / エラー）。Controller の back()->with(...) で積む。
             'flash' => [
                 'success' => $request->session()->get('success'),

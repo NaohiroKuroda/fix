@@ -1,11 +1,13 @@
 # =============================================================
-# 本番（社内サーバー）用 docker-compose（new_felix_total）
+# 社内サーバー用 docker-compose（新Fix）
 #
-# 別リポジトリとして clone し、felix_total を docker 起動した状態で使う。
-# felix_total の MySQL はホストの 3307 に公開されているため、
-# host.docker.internal:3307 経由で接続する（felix_total 側は無変更）。
+# サーバーへは bundle から clone して置く（検証機は /home/felix-projects/fix2）。
+# DB は共通の MySQL コンテナ（felix-local-dev の felix-db）がホストの 3307 に
+# 公開されているので、host.docker.internal:3307 で繋ぐ（docker network に入る必要はない）。
 #
-# 起動: docker compose -f docker-compose.prod.yml up -d --build
+# 起動: docker compose -f docker-compose.prod.yml up -d
+#   ※ サーバーは外部ネットワークに出られず composer/npm が動かないため --build は付けない。
+#     コードは手元でビルドしたイメージを docker save / load で持ち込む（→ docs/deploy）。
 # アクセス: http://<サーバーIP>:8090/
 # =============================================================
 services:
@@ -14,7 +16,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: new-felix-total:latest
-    container_name: new_fix_app
+    container_name: fix2_app
     restart: unless-stopped
     ports:
       - "8090:80"
@@ -31,7 +33,7 @@ services:
       APP_DEBUG: "false"
       LOG_CHANNEL: stderr
 
-      # felix_total の公開 MySQL（ホスト 3307）へ接続。
+      # 共通 MySQL（felix-db。ホスト 3307 に公開）へ接続。
       DB_CONNECTION: mysql
       DB_HOST: host.docker.internal
       DB_PORT: "3307"

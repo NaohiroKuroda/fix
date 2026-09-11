@@ -1,259 +1,321 @@
 # 新Fix（new_felix_total）デプロイ手順 — 検証サーバー fix2-181
 
-## 前提
+最終更新: 2026-09-11（実機調査を反映して全面改訂）
+
+## 0. この文書の使い方
+
+新Fix を検証サーバーへ入れるための手順書。**§1〜§3 を満たしてから §4 の手順を上から順に実行する。**
+§1 の決定事項が未確定のうちは作業を始めない（途中で止まる）。
+
+---
+
+## 1. 決定事項
+
+| # | 論点 | 決定 |
+| --- | --- | --- |
+| 1-1 | `cross_auth` のドメイン共有方式 | **IP 運用**。`CROSS_AUTH_DOMAIN` は**空**にする。現行と新Fix は同一ホスト（`192.168.10.181`）なので、ポートが違ってもクッキーは共有される。hosts / DNS の作業は不要 |
+| 1-2 | felix_total のデプロイ対象 | **`epic/NewEstimate`**（現在サーバーは `snapshot-before-deploy-20260715` = `d954548cc8`） |
+
+### 1-1 に伴う対応（新Fix 側のみ・実装済み）
+
+同一ホストになるため、両アプリの **`XSRF-TOKEN` クッキーが互いに上書きされる**（クッキーはポートを
+区別しない）。新Fix は現行を iframe で開くので、開いた直後の POST が 419 になる。
+
+対策として **新Fix の XSRF クッキー名を env で変えられるようにした**（`SESSION_XSRF_COOKIE`）。
+
+- 未設定なら Laravel 標準の `XSRF-TOKEN` のまま＝**本番・ローカルは影響なし**
+- 検証サーバーだけ `SESSION_XSRF_COOKIE=XSRF-TOKEN-FIX2` を設定する
+- **現行 felix_total 側のコード修正は不要**（現行は `XSRF-TOKEN` のまま）
+- セッションクッキーはもともと別名（現行 `laravel_session` / 新Fix `laravel-session`）なので衝突しない
+
+---
+
+## 2. 前提と制約
 
 | 項目 | 値 |
-|---|---|
-| 接続 | `ssh fix2-181`（= `root@192.168.10.181`、鍵認証） |
-| 配置先 | `/home/felix-projects/new_felix_total`（`felix_total` と同じ階層） |
-| URL | http://192.168.10.181:8090 |
-| DB | 既存 `fix_db` コンテナを共有（`shared-net` 経由） |
+| --- | --- |
+| 接続 | `ssh fix2-181`（= `root@192.168.10.181`、鍵認証。ホスト名 `customer-uat-fix`） |
+| 新Fix 配置先 | `/home/felix-projects/new_felix_total` |
+| 現行 felix_total | `/home/felix-projects/felix_total`（コンテナ `fix_app` / ポート 8081） |
+| 新Fix の URL | http://192.168.10.181:8090（コンテナ `new_fix_app`） |
+| DB | 既存 `fix_db` コンテナを**現行と共有**（`shared-net` 経由 / データベース名は `fix_db`） |
+| サーバーのアーキテクチャ | amd64（手元が Apple Silicon なら **`--platform linux/amd64` でビルドすること**） |
 
-配置・`docker.env`・`shared-net`・`vendor`・`node_modules` は作成済み。
+`/home/itplus4/www/` は旧配置。触らない。
 
-**サーバーは外部ネットワークに出られない**（DNS も通らない）。そのため使えないものが3つある。
+### 2.1 サーバーは外部ネットワークに出られない（DNS も通らない）
+
+使えないもの:
 
 - `git pull`（GitHub / Backlog に到達できない）
 - `composer install` / `npm ci`（レジストリに到達できない）
-- `docker build` のうち**上記2つを実行するステージ**
+- `docker build`（上記2つを実行するステージで失敗する）
 
-→ **コードは手元から `git bundle` で持ち込み、ビルド済み資材も手元で用意して転送する。**
-（既存の `felix_total_deploy.bundle` と同じ運用）
+→ **コードは `git bundle` で持ち込み、イメージは手元でビルドして `docker save` / `docker load` で運ぶ。**
 
-現行 FiX は `/home/felix-projects/felix_total`（`fix_app` / ポート 8081）。`/home/itplus4/www/` は旧配置なので触らない。
+### 2.2 コードはイメージに焼き込まれる ★重要
+
+サーバーの `docker-compose.yml` に**ボリュームマウントは無い**。Dockerfile は `COPY . .` で
+コードをイメージへ取り込む。したがって
+
+```
+git checkout <ブランチ> → docker compose up -d      # ← これでは新しいコードにならない
+```
+
+**サーバー上の作業ディレクトリを更新しても、起動するのはイメージ内の古いコードのまま。**
+`vendor/` や `public/build/` を rsync しても同じ理由で使われない。
+コードを反映する唯一の方法は **手元でビルドしたイメージを持ち込むこと**（§4-4）。
+
+サーバー上の作業ディレクトリを更新するのは、`docker-compose.yml` / `docker.env` を最新にするため。
 
 ---
 
-## 手順
+## 3. 事前に済ませること
 
-### 1.（手元）bundle を作る
+### 3.1 felix_total（現行）を先に上げる ★必須
 
-```bash
-cd <fix リポジトリ>
-git bundle create /tmp/new_fix.bundle <ブランチ>
-```
+新Fix が依存する felix_total 側の実装（見積の新旧同期・業者承諾・発注書発行・メニュー/ロール・
+請求予定データ作成など）が、サーバーの 7/15 スナップショットには入っていない。
+**新テーブルを作るマイグレーションもすべて felix_total 側にある**（新Fix 側は5本だけで、
+中身はリネームとバックフィル）。
 
-### 2.（手元）ビルド済み資材を用意して転送
-
-サーバーで `composer install` / `npm run build` ができないため、手元で用意して送る。
-
-```bash
-composer install --no-dev --optimize-autoloader
-npm ci && npm run build
-
-scp /tmp/new_fix.bundle fix2-181:/home/felix-projects/
-rsync -avz --delete vendor/ fix2-181:/home/felix-projects/new_felix_total/vendor/
-rsync -avz --delete public/build/ fix2-181:/home/felix-projects/new_felix_total/public/build/
-```
-
-### 3.（サーバー）現状を控える
-
-```bash
-ssh fix2-181
-cd /home/felix-projects/new_felix_total
-git rev-parse --short HEAD     # ← 切り戻し用に控える
-git status --short             # 未コミット変更が無いことを確認
-```
-
-### 4.（サーバー）bundle から取り込む
-
-```bash
-git fetch /home/felix-projects/new_fix.bundle <ブランチ>:<ブランチ>
-git checkout <ブランチ>
-```
-
-### 5.（サーバー）起動
-
-```bash
-docker compose up -d
-```
-
-**`--build` は付けない。** ビルドすると Dockerfile 内の `composer install` / `npm ci` で失敗する。
-既存イメージ `new-felix-total:latest` をそのまま使う。
-
-### 6. 確認
-
-```bash
-docker ps | grep new_fix_app          # Up になっているか
-docker logs --tail 50 new_fix_app     # エラーが出ていないか
-curl -I http://localhost:8090         # 200 が返るか
-```
-
-ブラウザで http://192.168.10.181:8090 を開く。
-
----
-
-## 切り戻し
-
-```bash
-cd /home/felix-projects/new_felix_total
-git checkout <控えたコミット>
-docker compose up -d
-```
-
-イメージごと戻す場合は `new-felix-total:order-delivery-flow` などの過去タグを使う。
-
----
-
-## 注意
-
-- **DB は現行 FiX と同じ `fix_db` を共有している。** マイグレーションを流すと現行側にも影響する
-- `docker.env` は git 管理外。上書きしない
-- ポート 8090 は新Fix 専用。8081（現行 FiX）と混同しない
-- `docker compose down` は打たない（不要に停止させない）
-- Dockerfile を変更した場合は、**手元でイメージをビルドして `docker save` / `docker load` で持ち込む**必要がある
-
----
-
-## 未確認事項
-
-- 手元の `fix` リポジトリで `composer install` / `npm run build` が通るか（PHP 8.4 / Node が必要）
-- サーバーの `new-felix-total:latest` が、デプロイしたいブランチのコードと互換か（Dockerfile やPHP拡張に差分があれば作り直しが必要）
-
----
-
-# 実サーバー調査結果（2026-09-11）
-
-`ssh fix2-181` で接続して実機の状態を確認した。**上の手順のままではデプロイが完了しない。**
-サーバーの状態が手順書の前提とずれているため、下記を先に解消する必要がある。
-
-## 1. 手順どおりでは新しいコードが反映されない ★
-
-サーバーの `docker-compose.yml` には**ボリュームマウントが無い**。Dockerfile は `COPY . .` で
-コードをイメージへ焼き込む作りなので、
-
-```
-git checkout <ブランチ> → docker compose up -d（--build なし）
-```
-
-では**イメージ内の古いコードが起動するだけ**。`vendor/` `public/build/` を rsync しても、
-マウントされていないので使われない。
-
-→ 実際に必要なのは **手元で `--platform linux/amd64` でイメージをビルド → `docker save` →
-転送 → `docker load` → `docker compose up -d`**。サーバーに `new-felix-total-amd64.tar.gz` が
-残っており、以前もこの方法で入れたと思われる。上の「注意」に書いてある方法が実は本手順。
-
-## 2. サーバー側リポジトリが旧世代のまま汚れている
-
-```
-HEAD  e4d72a1  feature/mockData 「見積管理画面仮コミット」
-未コミット変更 40ファイル超（Dockerfile / docker-compose.yml / .env.example /
-  app/Http/Controllers/EstimateManagementController.php / resources/js/components/… ほか）
-```
-
-現在の `feature/quotations` は構成ごと変わっている（FSD 化・コントローラ分割）ため
-`git checkout` は衝突する。`docker.env` を退避して `reset --hard` する運用に変える。
-
-## 3. DB が旧世代スキーマ ★最大の課題
-
-サーバー `fix_db` データベースの新テーブルは**前の世代**だった。
+サーバー `fix_db` データベースの新テーブルは**前の世代**のままだった（2026-09-11 時点）。
 
 | | テーブル |
 | --- | --- |
 | ある | `t_buildings` `t_building_cost_items` `t_cost_quotations` `t_orders` `t_invoices` `m_companies` ほか |
 | **無い** | `t_building_budget_items` `t_payable_partners` `t_payable_orders` `t_billing_partners` `t_billing_quotations` `t_billing_orders` `t_building_group_statuses` `m_roles` `m_permissions` `m_menu_items` `p_user_roles` `p_role_permissions` `p_permission_menu_items` ほか |
 
-現在の新Fix はこれらが無いと**1画面も開かない**。作成するマイグレーションは**すべて
-felix_total 側のリポジトリ**にある（新Fix 側は5本だけで、中身はリネームとバックフィル）。
+現在の新Fix はこれらが無いと**1画面も開かない**。
 
-## 4. felix_total が7月のスナップショット
+### 3.2 `felix_total/.env` に追記するキー
 
+サーバーの現行 `.env` には `CROSS_AUTH_*` も `FRAME_ANCESTOR` も**無い**。
+
+```dotenv
+CROSS_AUTH_SECRET=<新Fix と同じ値>
+CROSS_AUTH_DOMAIN=                # 空（IP 運用。§1-1）
+CROSS_AUTH_TTL=1800
+CROSS_AUTH_SECURE=false          # http のため
+FRAME_ANCESTOR=http://192.168.10.181:8090
 ```
-/home/felix-projects/felix_total  d954548cc8  snapshot-before-deploy-20260715
-```
 
-新Fix が依存する felix_total 側の実装（見積の新旧同期・業者承諾・発注書発行・メニュー/ロール・
-請求予定データ作成など）が入っていない。**felix_total を先にデプロイしてマイグレーションを
-流すのが前提条件**。
+`FRAME_ANCESTOR` が無いと、新Fix から iframe で開く現行画面（業者マイページ・発注書プレビュー・
+見積先詳細）が**真っ白**になる。追記後は `docker exec fix_app php artisan config:clear`。
 
-## 5. その他の実機状態
+### 3.3 `new_felix_total/docker.env` に追記するキー
 
-- `new_fix_app` コンテナは**起動していない**（`list_app` / `fix_app` / `fix_db` のみ Up）
-- イメージ `new-felix-total:latest` の PHP は 8.3.32（`composer.json` の `~8.3.0` と一致）
-- ただし `gd` / `exif` 拡張が**入っていない**（現在の Dockerfile は入れる）。
-  添付画像の圧縮は `function_exists()` で握ってあるため動作はするが、圧縮は効かない
-- 現行 `http://192.168.10.181:8081` は 302 応答、新Fix `:8090` は無応答（未起動のため）
-
----
-
-# 必要な設定
-
-## A. ドメイン（要決定）★
-
-`cross_auth` は両アプリで共有するクッキーで、`CROSS_AUTH_DOMAIN` を親ドメインにして共有する。
-しかし検証サーバーは IP アクセス（現行 `192.168.10.181:8081` / 新Fix `:8090`）。
-**IP にドメイン属性は使えない**（`.192.168.10.181` は不正）。
-
-| 案 | 内容 |
-| --- | --- |
-| 1 | **`CROSS_AUTH_DOMAIN` を空にして IP のまま使う**。同一ホストなのでポートが違ってもクッキーは共有される。手っ取り早い |
-| 2 | 共通の親ドメインを振る（例 `fix.felix2.local` / `new.felix2.local` を hosts か社内DNSへ登録し `CROSS_AUTH_DOMAIN=.felix2.local`）。本番構成に近い |
-
-あわせて `CROSS_AUTH_SECURE=false`（http のため）。
-
-## B. `new_felix_total/docker.env` に足りないキー
-
-現状は **6キーのみ**（`APP_URL` `APP_KEY` `DB_DATABASE` `DB_USERNAME` `DB_PASSWORD` `APP_DEBUG`）。
+現状は **6キーのみ**（`APP_URL` `APP_KEY` `DB_DATABASE` `DB_USERNAME` `DB_PASSWORD` `APP_DEBUG`）で、
 現在のコードはこれだけでは動かない。
 
 ```dotenv
 # 現行との連携
 FELIX_TOTAL_URL=http://192.168.10.181:8081     # ブラウザから見た現行（iframe 用）
 FELIX_TOTAL_INTERNAL_URL=http://fix_app        # コンテナ間（shared-net 上の container_name）
-# cross_auth（felix_total と同じ値にする）
+# cross_auth（felix_total と同一値にする）
 CROSS_AUTH_SECRET=<両アプリ共通のランダム値>
-CROSS_AUTH_DOMAIN=                              # ← A の決定次第（IP運用なら空）
+CROSS_AUTH_DOMAIN=                             # 空（IP 運用。§1-1）
 CROSS_AUTH_TTL=1800
 CROSS_AUTH_SECURE=false
+# 現行と同一ホストのため XSRF クッキー名を分ける（§1-1。本番では設定しない）
+SESSION_XSRF_COOKIE=XSRF-TOKEN-FIX2
 # 業者マイページ・通知メール
 MAIL_QUEUE_VENDOR_BASE_URL=http://192.168.10.181:8081
 MAIL_QUEUE_OVERRIDE_TO=<検証中は自分のアドレスへ寄せる>
 # メールキューの別DB（現行 .env の DB_*_2 と同じ値）
-DB_HOST_2= / DB_PORT_2= / DB_DATABASE_2= / DB_USERNAME_2= / DB_PASSWORD_2=
+DB_HOST_2=
+DB_PORT_2=
+DB_DATABASE_2=
+DB_USERNAME_2=
+DB_PASSWORD_2=
 ```
 
-`FELIX_TOTAL_INTERNAL_URL` は重要。**部長承認・見積依頼・取消はコンテナから現行を HTTP で叩く**
-ため、到達できないと連携が全部失敗する（失敗時は画面にエラーが出るようになっている）。
+`FELIX_TOTAL_INTERNAL_URL` は特に重要。**見積依頼・部長承認・取消は、コンテナから現行を
+サーバ間 HTTP で叩く**ため、到達できないと連携が失敗する（失敗時は画面にエラーが出る）。
 
-## C. `felix_total/.env` に足りないキー
-
-サーバーの現行 `.env` には `CROSS_AUTH_*` も `FRAME_ANCESTOR` も**無い**。
-
-```dotenv
-CROSS_AUTH_SECRET=<新Fix と同じ値>
-CROSS_AUTH_DOMAIN=<A の決定に合わせる>
-CROSS_AUTH_TTL=1800
-CROSS_AUTH_SECURE=false
-FRAME_ANCESTOR=http://192.168.10.181:8090   # 新Fix から iframe で開くための CSP
-```
-
-`FRAME_ANCESTOR` が無いと、業者マイページ・発注書プレビュー・見積先詳細の **iframe が真っ白**になる。
-
-## D. マイグレーション
-
-- 流す場所は **felix_total 側**（`docker exec fix_app php artisan migrate`）
-- **DB は現行と共有**（`migrations` テーブルも共通）。流すと現行にも影響する
-- 旧世代テーブルが残っているため、7/15 以降の差分が素直に通るかは要検証。
-  **実行前に `fix_db` を dump すること**
-- 権限まわりは順番がある:
-  `create_p_user_permissions_table` → `backfill_new_user_tables_from_admin_tables`
-  → `seed_fix_menu_items_and_estimate_manager_role`
-  → `show_order_acceptance_menu_to_estimate_manager`
-  → `grant_all_permission_to_engineer_manager_role`
+`docker.env` は git 管理外。**上書きしない・消さない**（§4-5 で退避する）。
 
 ---
 
-# 進める順番
+## 4. 手順
 
-1. サーバーの `fix_db` を dump（切り戻し用）
-2. **felix_total を最新化**（bundle 持ち込み）→ `php artisan migrate` → 現行が動くことを確認
-3. `felix_total/.env` に **C** を追記 → `php artisan config:clear`
-4. 手元で新Fix のイメージを **amd64 でビルド** → `docker save` → 転送 → `docker load`
-5. サーバーの `new_felix_total` は `docker.env` を退避して `reset --hard` ＋ 目的ブランチへ
-6. `docker.env` に **B** を記入 → `docker compose up -d` → `curl -I http://localhost:8090`
-7. ログイン → サイドメニュー表示 → iframe 表示 → 見積依頼送信 の順に疎通確認
+### 4-0.（サーバー）DB を dump する ★切り戻し用
 
-## 先に決めること
+マイグレーションは現行と共有の DB に流れる。**必ず先に取る。**
 
-- **A**: ドメインを IP のままにするか、名前を振るか
-- felix_total をどのブランチ・どこまで上げるか
+```bash
+ssh fix2-181
+cd /home/felix-projects/felix_total
+docker exec fix_db sh -c 'mysqldump -u<ユーザー> -p<パスワード> fix_db' > /home/felix-projects/fix_db_$(date +%Y%m%d_%H%M).sql
+ls -lh /home/felix-projects/fix_db_*.sql
+```
+
+### 4-1.（手元）bundle を作る
+
+```bash
+cd <fix リポジトリ>
+git bundle create /tmp/new_fix.bundle develop
+
+cd <felix_total リポジトリ>
+git bundle create /tmp/felix_total.bundle epic/NewEstimate
+```
+
+### 4-2.（サーバー）felix_total を最新化してマイグレーション
+
+**前提**: 2026-09-11 時点で現行の `fix_app` コンテナが**存在しない**（8081 が無応答）。
+先に復旧してから進める。
+
+```bash
+ssh fix2-181
+cd /home/felix-projects/felix_total
+docker compose up -d
+docker ps | grep fix_app
+curl -I http://localhost:8081
+```
+
+```bash
+scp /tmp/felix_total.bundle fix2-181:/home/felix-projects/
+ssh fix2-181
+cd /home/felix-projects/felix_total
+git rev-parse --short HEAD                       # ← 切り戻し用に控える
+git fetch /home/felix-projects/felix_total.bundle epic/NewEstimate:epic/NewEstimate
+git checkout epic/NewEstimate
+docker exec fix_app php artisan migrate           # ★ 共有DBに流れる。4-0 の dump 必須
+docker exec fix_app php artisan config:clear
+curl -I http://localhost:8081                     # 現行が生きているか
+```
+
+権限まわりのマイグレーションは順番がある（自動で順に流れるが、個別実行するときは注意）:
+
+```
+create_p_user_permissions_table
+  → backfill_new_user_tables_from_admin_tables
+  → seed_fix_menu_items_and_estimate_manager_role
+  → show_order_acceptance_menu_to_estimate_manager
+  → grant_all_permission_to_engineer_manager_role
+```
+
+旧世代テーブルが残っているため、**7/15 以降の差分が素直に通るかは要検証**。
+落ちたらその場で止めて、dump から戻す判断をする。
+
+続けて §3.2 のキーを `.env` へ追記し、`docker exec fix_app php artisan config:clear`。
+
+### 4-3.（手元）新Fix のイメージをビルドする
+
+```bash
+cd <fix リポジトリ>
+git checkout develop
+docker build --platform linux/amd64 -t new-felix-total:$(git rev-parse --short HEAD) -t new-felix-total:latest .
+docker save new-felix-total:latest | gzip > /tmp/new-felix-total-amd64.tar.gz
+ls -lh /tmp/new-felix-total-amd64.tar.gz
+```
+
+Dockerfile 内で `composer install` / `npm ci` / `npm run build` が走るので、**手元はネットに繋がっていること**。
+コミットハッシュのタグも付けておくと切り戻しやすい。
+
+### 4-4.（サーバー）イメージを持ち込む
+
+```bash
+scp /tmp/new-felix-total-amd64.tar.gz fix2-181:/home/felix-projects/
+scp /tmp/new_fix.bundle fix2-181:/home/felix-projects/
+ssh fix2-181
+docker load < /home/felix-projects/new-felix-total-amd64.tar.gz
+docker images | grep new-felix-total              # 新しい latest が入ったか
+```
+
+### 4-5.（サーバー）作業ディレクトリを目的ブランチへ
+
+サーバー側は `feature/mockData`（`e4d72a1`）＋**未コミット変更が40ファイル超**あり、
+そのままでは `git checkout` が衝突する。`docker.env` を退避してから強制的に合わせる。
+
+```bash
+cd /home/felix-projects/new_felix_total
+git rev-parse --short HEAD                        # ← 切り戻し用に控える
+cp docker.env /home/felix-projects/docker.env.bak # ★ git 管理外なので必ず退避
+git fetch /home/felix-projects/new_fix.bundle develop:develop
+git checkout -f develop
+git reset --hard develop
+cp /home/felix-projects/docker.env.bak docker.env # 戻す
+```
+
+`docker.env` に §3.3 のキーを追記する。
+
+### 4-6.（サーバー）起動
+
+```bash
+cd /home/felix-projects/new_felix_total
+docker compose up -d          # --build は付けない（ビルドはサーバーでは通らない）
+docker ps | grep new_fix_app
+docker logs --tail 50 new_fix_app
+```
+
+---
+
+## 5. 確認
+
+```bash
+curl -I http://localhost:8090                     # 200 か 302 が返ること
+```
+
+ブラウザで http://192.168.10.181:8090 を開き、次の順に見る。
+
+| # | 確認 | 落ちたときの原因の当たり |
+| --- | --- | --- |
+| 1 | ログインできる | `APP_KEY` / DB 接続 |
+| 2 | サイドメニューがロールどおり出る | `m_menu_items` 系のマイグレーション未適用 |
+| 3 | 一覧にデータが出る | 新テーブル（`t_building_budget_items` ほか）未作成 |
+| 4 | 見積先名リンク・業者マイページの iframe が表示される | `FRAME_ANCESTOR` / `CROSS_AUTH_*`（§3.2） |
+| 4b | 現行を iframe で開いた**直後**にコメント送信などの POST ができる（419 にならない） | `SESSION_XSRF_COOKIE`（§1-1） |
+| 5 | 見積依頼を送信できる | `FELIX_TOTAL_INTERNAL_URL` / 現行側の権限（`admin_role_permissions`） |
+| 6 | 部長承認 → 現行に発注書ができる | 同上。失敗すれば画面にエラーが出る |
+
+---
+
+## 6. 切り戻し
+
+```bash
+# アプリ（イメージを戻す）
+ssh fix2-181
+cd /home/felix-projects/new_felix_total
+docker tag new-felix-total:<戻したいタグ> new-felix-total:latest
+docker compose up -d
+
+# 作業ディレクトリ
+git checkout <控えたコミット>
+
+# DB（マイグレーションを流して壊れた場合）
+docker exec -i fix_db sh -c 'mysql -u<ユーザー> -p<パスワード> fix_db' < /home/felix-projects/fix_db_<日時>.sql
+```
+
+サーバーに残っている過去タグ: `new-felix-total:order-delivery-flow` / `:order-delivery-flow-0bdf511`。
+
+---
+
+## 7. 注意
+
+- **DB は現行と共有**。マイグレーションは現行にも影響する（`migrations` テーブルも共通）
+- `docker.env` は git 管理外。上書き・削除しない
+- ポート 8090 は新Fix 専用。8081（現行）と混同しない
+- `docker compose down` は打たない（不要に停止させない）
+- サーバーの `new-felix-total:latest` は PHP 8.3.32（`composer.json` の `~8.3.0` と一致）だが、
+  **`gd` / `exif` 拡張が入っていない**。現在の Dockerfile は入れるので、§4-3 でビルドし直せば解消する
+  （添付画像の圧縮は `function_exists()` で握ってあるため、無くても動作自体はする）
+
+---
+
+## 付録. 実機調査の記録（2026-09-11）
+
+`ssh fix2-181` で確認した内容。上の手順はこの結果を反映済み。
+
+```
+接続           ssh fix2-181 → customer-uat-fix（疎通OK）
+新Fix リポジトリ HEAD e4d72a1 feature/mockData / 未コミット変更 40ファイル超
+新Fix コンテナ   new_fix_app は起動していない（Up は list_app / fix_app / fix_db のみ）
+イメージ        new-felix-total:latest / :order-delivery-flow / :order-delivery-flow-0bdf511
+イメージの PHP  8.3.32（gd・exif 無し）
+compose        volumes 無し（コードはイメージ焼き込み）
+docker.env     APP_URL / APP_KEY / DB_DATABASE / DB_USERNAME / DB_PASSWORD / APP_DEBUG の6キーのみ
+felix_total    d954548cc8 snapshot-before-deploy-20260715 / .env に CROSS_AUTH_* も FRAME_ANCESTOR も無し
+DB             fix_db データベース（434テーブル）。新テーブルは旧世代のみ
+応答           8081 → 302 / 8090 → 無応答（未起動）
+```
